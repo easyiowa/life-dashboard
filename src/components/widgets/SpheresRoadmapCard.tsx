@@ -35,7 +35,7 @@ function barGradient(pct: number) {
 
 export default function SpheresRoadmapCard() {
   const [active, setActive] = useState<SphereId>("Private");
-  const { tasks, projects } = useDashboard();
+  const { tasks, projects, tags } = useDashboard();
 
   const sphereMeta = SPHERE_META[active];
 
@@ -124,9 +124,15 @@ export default function SpheresRoadmapCard() {
                 <span className="text-sm font-medium text-white flex-1 leading-none">
                   {project.name}
                 </span>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLORS[project.tagColor] ?? TAG_COLORS.violet}`}>
-                  {project.tag}
-                </span>
+                {(() => {
+                  const firstId = project.tagIds?.[0];
+                  const tagObj  = firstId ? tags.find((t) => t.id === firstId) : null;
+                  return (
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLORS[tagObj?.color ?? "violet"] ?? TAG_COLORS.violet}`}>
+                      {tagObj?.label ?? "—"}
+                    </span>
+                  );
+                })()}
                 <span className="text-base font-semibold text-white w-12 text-right tabular-nums">
                   {project.progress}%
                 </span>

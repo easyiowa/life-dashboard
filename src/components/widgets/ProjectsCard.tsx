@@ -17,6 +17,7 @@ import {
   Settings2,
   X,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import {
   useDashboard,
@@ -27,6 +28,7 @@ import {
 } from "@/context/DashboardContext";
 import TaskModal from "@/components/TaskModal";
 import TaskInspectModal from "@/components/TaskInspectModal";
+import ProjectEditModal from "@/components/ProjectEditModal";
 
 // ── Style maps ────────────────────────────────────────────────────────────────
 
@@ -108,6 +110,7 @@ function ManageSpheresModal({ onClose }: { onClose: () => void }) {
   // Per-sphere inline edit state
   const [editName,  setEditName]  = useState<Record<string, string>>({});
   const [editColor, setEditColor] = useState<Record<string, string>>({});
+  const [editDesc,  setEditDesc]  = useState<Record<string, string>>({});
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   // New sphere form
@@ -115,16 +118,20 @@ function ManageSpheresModal({ onClose }: { onClose: () => void }) {
   const [newColor, setNewColor] = useState("blue");
   const [newErr,   setNewErr]   = useState(false);
 
-  function nameFor(s: Sphere)  { return editName[s.id]  ?? s.name;        }
-  function colorFor(s: Sphere) { return editColor[s.id] ?? s.labelColor;  }
-  function isDirty(s: Sphere)  { return nameFor(s) !== s.name || colorFor(s) !== s.labelColor; }
+  function nameFor(s: Sphere)  { return editName[s.id]  ?? s.name;              }
+  function colorFor(s: Sphere) { return editColor[s.id] ?? s.labelColor;        }
+  function descFor(s: Sphere)  { return editDesc[s.id]  ?? (s.description ?? ""); }
+  function isDirty(s: Sphere)  {
+    return nameFor(s) !== s.name || colorFor(s) !== s.labelColor || descFor(s) !== (s.description ?? "");
+  }
 
   function saveSphere(s: Sphere) {
-    const name  = nameFor(s).trim();
+    const name = nameFor(s).trim();
     if (!name) return;
-    updateSphere(s.id, { name, labelColor: colorFor(s) });
+    updateSphere(s.id, { name, labelColor: colorFor(s), description: descFor(s).trim() || undefined });
     setEditName((p)  => { const n = { ...p }; delete n[s.id]; return n; });
     setEditColor((p) => { const n = { ...p }; delete n[s.id]; return n; });
+    setEditDesc((p)  => { const n = { ...p }; delete n[s.id]; return n; });
   }
 
   function handleAdd() {
@@ -207,6 +214,15 @@ function ManageSpheresModal({ onClose }: { onClose: () => void }) {
                       </button>
                     </div>
 
+                    {/* Description input */}
+                    <input
+                      type="text"
+                      value={descFor(s)}
+                      onChange={(e) => setEditDesc((p) => ({ ...p, [s.id]: e.target.value }))}
+                      placeholder="Short description…"
+                      className="h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-[11px] text-slate-300 placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
+                    />
+
                     {/* Color picker */}
                     <div className="flex gap-1.5 pl-5">
                       {COLOR_PALETTE.map((c) => (
@@ -288,7 +304,7 @@ function TaskRow({
   return (
     <div
       onClick={() => onInspect(task)}
-      className={`group flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer ${
+      className={`group flex items-start gap-2 px-2.5 py-2 rounded-lg border transition-all duration-200 cursor-pointer ${
         isActive
           ? "border-violet-500/30 bg-violet-600/[0.07]"
           : task.done
@@ -348,7 +364,7 @@ function TaskRow({
 // ── Main card ─────────────────────────────────────────────────────────────────
 
 export default function ProjectsCard() {
-  const { tasks, projects, spheres, sessions } = useDashboard();
+  const { tasks, projects, spheres, sessions, tags } = useDashboard();
 
   const [activeSphereId,       setActiveSphereId]       = useState<string>(() => spheres[0]?.id ?? "");
   const [unfoldedProjects,     setUnfoldedProjects]      = useState<Record<string, boolean>>({});
@@ -356,6 +372,7 @@ export default function ProjectsCard() {
   const [showModal,            setShowModal]             = useState(false);
   const [inspectTask,          setInspectTask]           = useState<Task | null>(null);
   const [showManageSpheres,    setShowManageSpheres]     = useState(false);
+  const [editProjectId,        setEditProjectId]         = useState<string | null>(null);
 
   const toggleProject   = (id: string) => setUnfoldedProjects((p) => ({ ...p, [id]: !p[id] }));
   const toggleCompleted = (id: string) => setShowCompletedInProject((p) => ({ ...p, [id]: !p[id] }));
@@ -389,6 +406,11 @@ export default function ProjectsCard() {
           .reduce((sum, s) => sum + s.durationSeconds, 0);
       }
 
+      const firstTagId  = project.tagIds?.[0];
+      const tagObj      = (firstTagId ? tags.find((t) => t.id === firstTagId) : null)
+        ?? { id: "", label: "—", color: "violet" };
+      const extraTagCount = Math.max(0, (project.tagIds?.length ?? 0) - 1);
+
       return {
         ...project,
         progress,
@@ -398,6 +420,8 @@ export default function ProjectsCard() {
         projectLoggedSecs,
         projectSessionCount,
         taskLoggedSecsMap,
+        tagObj,
+        extraTagCount,
         index: i,
       };
     });
@@ -413,6 +437,10 @@ export default function ProjectsCard() {
       <TaskModal open={showModal} onClose={() => setShowModal(false)} />
       <TaskInspectModal task={inspectTask} onClose={() => setInspectTask(null)} />
       {showManageSpheres && <ManageSpheresModal onClose={() => setShowManageSpheres(false)} />}
+      <ProjectEditModal
+        project={projects.find((p) => p.id === editProjectId) ?? null}
+        onClose={() => setEditProjectId(null)}
+      />
 
       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col gap-5">
 
@@ -459,7 +487,11 @@ export default function ProjectsCard() {
 
         {/* Sub-header */}
         <div className="flex items-center justify-between -mt-1 pb-1 border-b border-white/[0.05]">
-          <p className="text-sm text-slate-400">{activeSphereObj?.name ?? ""}</p>
+          <div>
+            {activeSphereObj?.description && (
+              <p className="text-xs text-slate-400 font-sans">{activeSphereObj.description}</p>
+            )}
+          </div>
           <div className="flex items-center gap-1.5">
             <div className="h-1.5 w-16 rounded-full bg-white/[0.05] overflow-hidden">
               <div
@@ -485,59 +517,78 @@ export default function ProjectsCard() {
             return (
               <div key={project.id} className="flex flex-col gap-0">
 
-                {/* Project header — clickable */}
-                <button
+                {/* Project header — clickable div (avoids button-in-button) */}
+                <div
                   onClick={() => toggleProject(project.id)}
-                  className="w-full text-left group flex flex-col gap-2 p-3 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200"
+                  className="group flex flex-col gap-1.5 px-3 py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-mono text-slate-600 w-4 flex-shrink-0">
                       {String(project.index + 1).padStart(2, "0")}
                     </span>
                     <span className="text-sm font-medium text-white flex-1 leading-none">{project.name}</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLORS[project.tagColor] ?? TAG_COLORS.violet}`}>
-                      {project.tag}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLORS[project.tagObj.color] ?? TAG_COLORS.violet}`}>
+                      {project.tagObj.label}
                     </span>
-                    <span className="text-base font-semibold text-white w-10 text-right tabular-nums">{project.progress}%</span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-600 transition-transform duration-200 ml-1 ${isOpen ? "rotate-180" : ""}`} />
+                    {project.extraTagCount > 0 && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-white/[0.06] text-slate-500 border border-white/[0.08]">
+                        +{project.extraTagCount}
+                      </span>
+                    )}
+                    <span className="text-sm font-semibold text-white w-10 text-right tabular-nums">{project.progress}%</span>
+                    {/* Edit button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditProjectId(project.id); }}
+                      title="Edit project"
+                      className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-600 opacity-0 group-hover:opacity-100 hover:text-violet-400 hover:bg-violet-500/10 transition-all duration-150"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-600 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
                   </div>
 
-                  <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${barGradient(project.progress)} transition-all duration-700`}
-                      style={{ width: `${project.progress}%` }}
-                    />
-                  </div>
+                  {/* Progress bar — hidden when expanded to keep header minimal */}
+                  {!isOpen && (
+                    <div className="h-1 rounded-full bg-white/[0.05] overflow-hidden">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${barGradient(project.progress)} transition-all duration-700`}
+                        style={{ width: `${project.progress}%` }}
+                      />
+                    </div>
+                  )}
 
-                  <div className="flex items-center gap-3 pl-5">
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                      <CalendarClock className="w-3 h-3 flex-shrink-0" />
-                      <span>{project.milestone}</span>
+                  {/* Meta row — hidden when project is expanded */}
+                  {!isOpen && (
+                    <div className="flex items-center gap-3 pl-5">
+                      <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                        <CalendarClock className="w-3 h-3 flex-shrink-0" />
+                        <span>{project.milestone}</span>
+                      </div>
+                      <span className="text-slate-700 text-[10px]">·</span>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                        <CheckSquare className="w-3 h-3 flex-shrink-0" />
+                        <span>{project.taskDone}/{project.taskTotal} tasks</span>
+                      </div>
+                      {project.projectSessionCount > 0 && (
+                        <>
+                          <span className="text-slate-700 text-[10px]">·</span>
+                          <span className="text-[10px] text-slate-500 font-mono tabular-nums">
+                            {project.projectSessionCount} session{project.projectSessionCount !== 1 ? "s" : ""} · {fmtDuration(project.projectLoggedSecs)}
+                          </span>
+                        </>
+                      )}
+                      {openTasks > 0 && (
+                        <>
+                          <span className="text-slate-700 text-[10px]">·</span>
+                          <span className="text-[10px] text-violet-400">{openTasks} open</span>
+                        </>
+                      )}
+                      <div className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${status.color} ${status.bg}`}>
+                        {status.icon}{status.label}
+                      </div>
                     </div>
-                    <span className="text-slate-700 text-[10px]">·</span>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                      <CheckSquare className="w-3 h-3 flex-shrink-0" />
-                      <span>{project.taskDone}/{project.taskTotal} tasks</span>
-                    </div>
-                    {project.projectSessionCount > 0 && (
-                      <>
-                        <span className="text-slate-700 text-[10px]">·</span>
-                        <span className="text-[10px] text-slate-500 font-mono tabular-nums">
-                          {project.projectSessionCount} session{project.projectSessionCount !== 1 ? "s" : ""} · {fmtDuration(project.projectLoggedSecs)}
-                        </span>
-                      </>
-                    )}
-                    {openTasks > 0 && (
-                      <>
-                        <span className="text-slate-700 text-[10px]">·</span>
-                        <span className="text-[10px] text-violet-400">{openTasks} open</span>
-                      </>
-                    )}
-                    <div className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${status.color} ${status.bg}`}>
-                      {status.icon}{status.label}
-                    </div>
-                  </div>
-                </button>
+                  )}
+                </div>
 
                 {/* Nested task list */}
                 {(() => {
@@ -553,7 +604,7 @@ export default function ProjectsCard() {
                       {project.projectTasks.length === 0 ? (
                         <p className="text-xs text-slate-600 text-center py-3 px-3">No tasks yet.</p>
                       ) : (
-                        <div className="flex flex-col gap-1.5 pt-1.5 pl-3 pr-0.5">
+                        <div className="flex flex-col gap-0.5 pt-1 pl-2 pr-0.5">
                           {activeTasks.map((task) => (
                             <TaskRow key={task.id} task={task} onInspect={setInspectTask} loggedSeconds={project.taskLoggedSecsMap[task.id] ?? 0} />
                           ))}

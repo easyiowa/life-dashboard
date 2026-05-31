@@ -96,7 +96,22 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── World Clock row ─────────────────────────────────────── */}
+        {/* ── Calendar ────────────────────────────────────────────── */}
+        <div className="mt-4">
+          <CalendarCard />
+        </div>
+
+        {/* ── Habit Tracker ───────────────────────────────────────── */}
+        <div className="mt-4">
+          <HabitTrackerCard />
+        </div>
+
+        {/* ── Recurring Responsibilities ───────────────────────────── */}
+        <div className="mt-4">
+          <RecurringCard />
+        </div>
+
+        {/* ── World Clock ─────────────────────────────────────────── */}
         <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5">
           <div className="flex flex-wrap items-center gap-x-10 gap-y-3">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest w-full">
@@ -115,21 +130,6 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* ── Recurring Responsibilities ───────────────────────────── */}
-        <div className="mt-4">
-          <RecurringCard />
-        </div>
-
-        {/* ── Habit Tracker ───────────────────────────────────────── */}
-        <div className="mt-4">
-          <HabitTrackerCard />
-        </div>
-
-        {/* ── Calendar ────────────────────────────────────────────── */}
-        <div className="mt-4">
-          <CalendarCard />
         </div>
 
       </div>

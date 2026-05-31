@@ -9,6 +9,7 @@ import {
   type Task,
 } from "@/context/DashboardContext";
 
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -58,7 +59,7 @@ function ToggleGroup<T extends string>({
 }
 
 export default function TaskModal({ open, onClose }: Props) {
-  const { spheres, projects, addTask, addProject } = useDashboard();
+  const { spheres, projects, tags, addTask, addProject } = useDashboard();
 
   const defaultSphere = spheres[0]?.name ?? "";
   const defaultProject = projects.find((p) => p.sphere === defaultSphere)?.name ?? "";
@@ -80,6 +81,7 @@ export default function TaskModal({ open, onClose }: Props) {
   const [showNewProject, setShowNewProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectSphere, setNewProjectSphere] = useState(defaultSphere);
+  const [newProjectTagId, setNewProjectTagId] = useState(() => tags[0]?.id ?? "");
   const [newProjectError, setNewProjectError] = useState(false);
 
   useEffect(() => {
@@ -89,6 +91,7 @@ export default function TaskModal({ open, onClose }: Props) {
       setShowNewProject(false);
       setNewProjectName("");
       setNewProjectSphere(spheres[0]?.name ?? "");
+      setNewProjectTagId(tags[0]?.id ?? "");
       setNewProjectError(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,13 +107,10 @@ export default function TaskModal({ open, onClose }: Props) {
 
   function handleSaveNewProject() {
     if (!newProjectName.trim()) { setNewProjectError(true); return; }
-    const tag      = newProjectName.trim().split(" ")[0];
-    const tagColor = spheres.find((s) => s.name === newProjectSphere)?.labelColor ?? "violet";
     addProject({
       sphere:    newProjectSphere,
       name:      newProjectName.trim(),
-      tag,
-      tagColor,
+      tagIds:    newProjectTagId ? [newProjectTagId] : (tags[0] ? [tags[0].id] : []),
       status:    "on-track",
       milestone: "In progress",
     });
@@ -229,6 +229,18 @@ export default function TaskModal({ open, onClose }: Props) {
                       ))}
                     </select>
                   </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Tag</label>
+                  <select
+                    value={newProjectTagId}
+                    onChange={(e) => setNewProjectTagId(e.target.value)}
+                    className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors appearance-none cursor-pointer"
+                  >
+                    {tags.map((t) => (
+                      <option key={t.id} value={t.id} className="bg-[#0F1629]">{t.label}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => { setShowNewProject(false); setNewProjectName(""); setNewProjectError(false); }} className="flex-1 h-8 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-slate-400 hover:text-white transition-all">

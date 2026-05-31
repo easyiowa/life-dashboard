@@ -15,10 +15,17 @@ export type SphereId  = string;
 export type Priority  = "High" | "Med" | "Low";
 export type Energy    = "Flow" | "Quick" | "Easy";
 
+export interface Tag {
+  id: string;
+  label: string;
+  color: string; // palette key matching TAG_COLORS in ProjectsCard
+}
+
 export interface Sphere {
   id: string;
   name: string;
   labelColor: string; // palette key: "emerald" | "violet" | "sky" | "amber" | …
+  description?: string;
 }
 
 export interface Task {
@@ -38,8 +45,7 @@ export interface Project {
   id: string;
   sphere: SphereId;
   name: string;
-  tag: string;
-  tagColor: string;
+  tagIds: string[]; // references Tag.id — supports multiple tags
   status: "ahead" | "on-track" | "at-risk";
   milestone: string;
 }
@@ -91,12 +97,34 @@ export interface RecurringTask {
   history: RecurringHistoryEntry[];
 }
 
+// ── Tag seed data ────────────────────────────────────────────────────────────
+
+const INITIAL_TAGS: Tag[] = [
+  { id: "tag-home",        label: "Home",         color: "amber"   },
+  { id: "tag-outdoor",     label: "Outdoor",      color: "emerald" },
+  { id: "tag-finance",     label: "Finance",      color: "blue"    },
+  { id: "tag-marketing",   label: "Marketing",    color: "violet"  },
+  { id: "tag-product",     label: "Product",      color: "violet"  },
+  { id: "tag-design",      label: "Design",       color: "pink"    },
+  { id: "tag-operations",  label: "Operations",   color: "teal"    },
+  { id: "tag-analytics",   label: "Analytics",    color: "violet"  },
+  { id: "tag-bizdev",      label: "Business Dev", color: "amber"   },
+  { id: "tag-brand",       label: "Brand",        color: "rose"    },
+  { id: "tag-business",    label: "Business",     color: "amber"   },
+  { id: "tag-website",     label: "Website",      color: "blue"    },
+  { id: "tag-clients",     label: "Clients",      color: "teal"    },
+  { id: "tag-content",     label: "Content",      color: "orange"  },
+  { id: "tag-meetings",    label: "Meetings",     color: "sky"     },
+  { id: "tag-influencers", label: "Influencers",  color: "indigo"  },
+];
+
 // ── Sphere seed data ─────────────────────────────────────────────────────────
 
 const INITIAL_SPHERES: Sphere[] = [
-  { id: "sphere-private", name: "Private",    labelColor: "emerald" },
-  { id: "sphere-b1",      name: "Business 1", labelColor: "violet"  },
-  { id: "sphere-b2",      name: "Business 2", labelColor: "sky"     },
+  { id: "sphere-private", name: "Private",    labelColor: "emerald", description: "Personal life & wellbeing"   },
+  { id: "sphere-b1",      name: "Business 1", labelColor: "violet",  description: "Core business operations"    },
+  { id: "sphere-b2",      name: "Business 2", labelColor: "sky",     description: "Secondary venture & growth"  },
+  { id: "sphere-siin",    name: "siin",       labelColor: "rose",    description: "Local loyalty & discovery app" },
 ];
 
 // ── Habit seed data ──────────────────────────────────────────────────────────
@@ -183,15 +211,25 @@ const INITIAL_RECURRING: RecurringTask[] = [
 // ── Seed data ────────────────────────────────────────────────────────────────
 
 const INITIAL_PROJECTS: Project[] = [
-  { id: "priv-1", sphere: "Private",    name: "Home Renovation",         tag: "Home",         tagColor: "amber",   status: "on-track", milestone: "Kitchen complete · Jun 15" },
-  { id: "priv-2", sphere: "Private",    name: "Garden Landscaping",      tag: "Outdoor",      tagColor: "emerald", status: "at-risk",  milestone: "Design sign-off · Jul 1"  },
-  { id: "priv-3", sphere: "Private",    name: "Personal Finance Plan",   tag: "Finance",      tagColor: "blue",    status: "on-track", milestone: "Q3 review · Aug 1"        },
-  { id: "b1-1",   sphere: "Business 1", name: "Q2 Marketing Strategy",   tag: "Marketing",    tagColor: "violet",  status: "ahead",    milestone: "Campaign live · Jun 1"    },
-  { id: "b1-2",   sphere: "Business 1", name: "Product Launch v2.0",     tag: "Product",      tagColor: "blue",    status: "on-track", milestone: "Beta release · Jul 15"    },
-  { id: "b1-3",   sphere: "Business 1", name: "Brand Identity Refresh",  tag: "Design",       tagColor: "pink",    status: "on-track", milestone: "Final review · Jun 30"    },
-  { id: "b2-1",   sphere: "Business 2", name: "Client Onboarding System",tag: "Operations",   tagColor: "teal",    status: "on-track", milestone: "Soft launch · Jun 20"     },
-  { id: "b2-2",   sphere: "Business 2", name: "Revenue Dashboard",       tag: "Analytics",    tagColor: "violet",  status: "at-risk",  milestone: "MVP · Aug 1"              },
-  { id: "b2-3",   sphere: "Business 2", name: "Partnership Outreach",    tag: "Business Dev", tagColor: "amber",   status: "ahead",    milestone: "2 deals signed · Jun 10"  },
+  { id: "priv-1", sphere: "Private",    name: "Home Renovation",         tagIds: ["tag-home"],       status: "on-track", milestone: "Kitchen complete · Jun 15" },
+  { id: "priv-2", sphere: "Private",    name: "Garden Landscaping",      tagIds: ["tag-outdoor"],    status: "at-risk",  milestone: "Design sign-off · Jul 1"  },
+  { id: "priv-3", sphere: "Private",    name: "Personal Finance Plan",   tagIds: ["tag-finance"],    status: "on-track", milestone: "Q3 review · Aug 1"        },
+  { id: "b1-1",   sphere: "Business 1", name: "Q2 Marketing Strategy",   tagIds: ["tag-marketing"],  status: "ahead",    milestone: "Campaign live · Jun 1"    },
+  { id: "b1-2",   sphere: "Business 1", name: "Product Launch v2.0",     tagIds: ["tag-product"],    status: "on-track", milestone: "Beta release · Jul 15"    },
+  { id: "b1-3",   sphere: "Business 1", name: "Brand Identity Refresh",  tagIds: ["tag-design"],     status: "on-track", milestone: "Final review · Jun 30"    },
+  { id: "b2-1",   sphere: "Business 2", name: "Client Onboarding System",tagIds: ["tag-operations"], status: "on-track", milestone: "Soft launch · Jun 20"     },
+  { id: "b2-2",   sphere: "Business 2", name: "Revenue Dashboard",       tagIds: ["tag-analytics"],  status: "at-risk",  milestone: "MVP · Aug 1"              },
+  { id: "b2-3",   sphere: "Business 2", name: "Partnership Outreach",    tagIds: ["tag-bizdev"],     status: "ahead",    milestone: "2 deals signed · Jun 10"  },
+  // ── siin ──────────────────────────────────────────────────────────────────
+  { id: "siin-p1", sphere: "siin", name: "Brand",       tagIds: ["tag-brand"],       status: "on-track", milestone: "In progress" },
+  { id: "siin-p2", sphere: "siin", name: "Business",    tagIds: ["tag-business"],    status: "on-track", milestone: "In progress" },
+  { id: "siin-p3", sphere: "siin", name: "Product",     tagIds: ["tag-product"],     status: "on-track", milestone: "In progress" },
+  { id: "siin-p4", sphere: "siin", name: "Website",     tagIds: ["tag-website"],     status: "on-track", milestone: "In progress" },
+  { id: "siin-p5", sphere: "siin", name: "Marketing",   tagIds: ["tag-marketing"],   status: "on-track", milestone: "In progress" },
+  { id: "siin-p6", sphere: "siin", name: "Clients",     tagIds: ["tag-clients"],     status: "on-track", milestone: "In progress" },
+  { id: "siin-p7", sphere: "siin", name: "Content",     tagIds: ["tag-content"],     status: "on-track", milestone: "In progress" },
+  { id: "siin-p8", sphere: "siin", name: "Meetings",    tagIds: ["tag-meetings"],    status: "on-track", milestone: "In progress" },
+  { id: "siin-p9", sphere: "siin", name: "Influencers", tagIds: ["tag-influencers"], status: "on-track", milestone: "In progress" },
 ];
 
 const INITIAL_TASKS: Task[] = [
@@ -211,11 +249,36 @@ const INITIAL_TASKS: Task[] = [
   { id: "t14", sphere: "Business 2", project: "Revenue Dashboard",        title: "Define KPI definitions",             priority: "High", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
   { id: "t15", sphere: "Business 2", project: "Partnership Outreach",     title: "Send partnership deck to prospects", priority: "High", energy: "Flow",  done: true,  deadline: null, notes: "", manualMinutes: 0 },
   { id: "t16", sphere: "Business 2", project: "Partnership Outreach",     title: "Follow up on initial responses",     priority: "Med",  energy: "Quick", done: true,  deadline: null, notes: "", manualMinutes: 0 },
+  // ── siin ──────────────────────────────────────────────────────────────────
+  { id: "siin-t1",  sphere: "siin", project: "Brand",       title: "Siin Foundation Doc",                      priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t2",  sphere: "siin", project: "Business",    title: "Update PP/TC",                             priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t3",  sphere: "siin", project: "Product",     title: "Google maps",                              priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t4",  sphere: "siin", project: "Product",     title: "Reports Loyalty Program",                  priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t5",  sphere: "siin", project: "Product",     title: "In-app copy (Discount)",                   priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t6",  sphere: "siin", project: "Website",     title: "Skeleton Customers",                       priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t7",  sphere: "siin", project: "Website",     title: "Skeleton Businesses",                      priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t8",  sphere: "siin", project: "Product",     title: "Paywall",                                  priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t9",  sphere: "siin", project: "Marketing",   title: "Message Cafes",                            priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t10", sphere: "siin", project: "Clients",     title: "Instruction 'How to' for Põhjala Businesses", priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t11", sphere: "siin", project: "Content",     title: "Finish intro videos",                      priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t12", sphere: "siin", project: "Clients",     title: "Inform old users (Email)",                 priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t13", sphere: "siin", project: "Meetings",    title: "Rotermann Manager",                        priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t14", sphere: "siin", project: "Meetings",    title: "KIOSK Georg",                              priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t15", sphere: "siin", project: "Clients",     title: "Add koligriv to majaline",                 priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t16", sphere: "siin", project: "Product",     title: "Add checkbox (Marketing)",                 priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t17", sphere: "siin", project: "Product",     title: "Sentry Errors (Agent)",                    priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t18", sphere: "siin", project: "Influencers", title: "Message old influencers",                  priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t19", sphere: "siin", project: "Meetings",    title: "Andrei Kazakov",                           priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t20", sphere: "siin", project: "Meetings",    title: "Taavet/Silver",                            priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t21", sphere: "siin", project: "Meetings",    title: "Jahuu (Ksenia)",                           priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t22", sphere: "siin", project: "Clients",     title: "Buy black holders (temu)",                 priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
+  { id: "siin-t23", sphere: "siin", project: "Meetings",    title: "Alexandr Zdank",                           priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
 ];
 
 // ── State & actions ──────────────────────────────────────────────────────────
 
 interface State {
+  tags: Tag[];
   spheres: Sphere[];
   habits: Habit[];
   tasks: Task[];
@@ -244,8 +307,12 @@ type Action =
   | { type: "DELETE_RECURRING_TASK"; id: string }
   | { type: "COMPLETE_RECURRING_TASK"; id: string }
   | { type: "ADD_SPHERE"; name: string; labelColor: string }
-  | { type: "UPDATE_SPHERE"; id: string; fields: Partial<Pick<Sphere, "name" | "labelColor">> }
+  | { type: "UPDATE_SPHERE"; id: string; fields: Partial<Pick<Sphere, "name" | "labelColor" | "description">> }
   | { type: "DELETE_SPHERE"; id: string }
+  | { type: "UPDATE_PROJECT"; id: string; fields: Partial<Omit<Project, "id">> }
+  | { type: "ADD_TAG"; tag: Omit<Tag, "id"> }
+  | { type: "UPDATE_TAG"; id: string; fields: Partial<Omit<Tag, "id">> }
+  | { type: "DELETE_TAG"; id: string }
   | { type: "ADD_HABIT"; habit: Omit<Habit, "id" | "history"> }
   | { type: "TOGGLE_HABIT_DATE"; id: string; dateString: string }
   | { type: "UPDATE_HABIT"; id: string; fields: Partial<Omit<Habit, "id" | "history">> }
@@ -402,6 +469,40 @@ function reducer(state: State, action: Action): State {
       };
     }
 
+    case "ADD_TAG": {
+      const tag: Tag = {
+        ...action.tag,
+        id: `tag-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      };
+      return { ...state, tags: [...state.tags, tag] };
+    }
+
+    case "UPDATE_TAG":
+      return {
+        ...state,
+        tags: state.tags.map((t) => t.id !== action.id ? t : { ...t, ...action.fields }),
+      };
+
+    case "DELETE_TAG":
+      return { ...state, tags: state.tags.filter((t) => t.id !== action.id) };
+
+    case "UPDATE_PROJECT": {
+      const old = state.projects.find((p) => p.id === action.id);
+      const updatedProjects = state.projects.map((p) =>
+        p.id !== action.id ? p : { ...p, ...action.fields }
+      );
+      if (old && action.fields.name && action.fields.name !== old.name) {
+        const oldName = old.name;
+        const newName = action.fields.name;
+        return {
+          ...state,
+          projects: updatedProjects,
+          tasks: state.tasks.map((t) => t.project === oldName ? { ...t, project: newName } : t),
+        };
+      }
+      return { ...state, projects: updatedProjects };
+    }
+
     case "ADD_SPHERE": {
       const sphere: Sphere = {
         id: `sphere-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
@@ -487,11 +588,71 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+// ── Persistence helpers ───────────────────────────────────────────────────────
+
+const STORAGE_KEY = "life_dashboard_state";
+
+function reviveState(raw: Record<string, unknown>): State {
+  // JSON.parse loses Date prototypes — restore them before use.
+  const sessions = ((raw.sessions as unknown[]) ?? []).map((s) => {
+    const session = s as Record<string, unknown>;
+    return {
+      ...session,
+      completedAt: new Date(session.completedAt as string),
+    } as FocusSession;
+  });
+
+  const recurringTasks = ((raw.recurringTasks as unknown[]) ?? []).map((r) => {
+    const task = r as Record<string, unknown>;
+    return {
+      ...task,
+      lastDoneDate: task.lastDoneDate ? new Date(task.lastDoneDate as string) : null,
+    } as RecurringTask;
+  });
+
+  // Migrate projects from old tag/tagColor schema to tagId
+  const liveTags = ((raw.tags as Tag[]) ?? INITIAL_TAGS);
+  const projects = ((raw.projects as unknown[]) ?? []).map((p) => {
+    const proj = p as Record<string, unknown>;
+    // Already new schema (tagIds array)
+    if (Array.isArray(proj.tagIds)) return proj as unknown as Project;
+    // Previous schema: tagId as single string
+    if (typeof proj.tagId === "string" && proj.tagId) {
+      return { ...proj, tagIds: [proj.tagId] } as unknown as Project;
+    }
+    // Legacy schema: tag/tagColor raw strings
+    const match = liveTags.find((t) => t.label === proj.tag);
+    return { ...proj, tagIds: [match?.id ?? liveTags[0]?.id ?? "tag-product"] } as unknown as Project;
+  });
+
+  return {
+    ...(raw as unknown as State),
+    tags: liveTags,
+    sessions,
+    recurringTasks,
+    projects,
+    // Never auto-resume the timer across page loads.
+    running: false,
+    elapsed: (raw.elapsed as number) ?? 0,
+  };
+}
+
 // ── Initial state ────────────────────────────────────────────────────────────
 
 function buildInitialState(): State {
+  // Attempt to restore persisted state on the client.
+  if (typeof window !== "undefined") {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return reviveState(JSON.parse(saved) as Record<string, unknown>);
+    } catch {
+      // Corrupted storage — fall through to seeds.
+    }
+  }
+
   const now = Date.now();
   return {
+    tags: INITIAL_TAGS,
     spheres: INITIAL_SPHERES,
     habits: INITIAL_HABITS,
     tasks: INITIAL_TASKS,
@@ -574,6 +735,7 @@ function buildInitialState(): State {
 // ── Context ──────────────────────────────────────────────────────────────────
 
 interface DashboardContextType {
+  tags: Tag[];
   spheres: Sphere[];
   habits: Habit[];
   tasks: Task[];
@@ -583,13 +745,17 @@ interface DashboardContextType {
   elapsed: number;
   sessions: FocusSession[];
   recurringTasks: RecurringTask[];
+  addTag: (tag: Omit<Tag, "id">) => void;
+  updateTag: (id: string, fields: Partial<Omit<Tag, "id">>) => void;
+  deleteTag: (id: string) => void;
   addHabit: (habit: Omit<Habit, "id" | "history">) => void;
   toggleHabitDate: (id: string, dateString: string) => void;
   updateHabit: (id: string, fields: Partial<Omit<Habit, "id" | "history">>) => void;
   deleteHabit: (id: string) => void;
   addSphere: (name: string, labelColor: string) => void;
-  updateSphere: (id: string, fields: Partial<Pick<Sphere, "name" | "labelColor">>) => void;
+  updateSphere: (id: string, fields: Partial<Pick<Sphere, "name" | "labelColor" | "description">>) => void;
   deleteSphere: (id: string) => void;
+  updateProject: (id: string, fields: Partial<Omit<Project, "id">>) => void;
   addTask: (task: Omit<Task, "id">) => void;
   updateTask: (id: string, fields: Partial<Task>) => void;
   addProject: (project: Omit<Project, "id">) => void;
@@ -629,9 +795,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     };
   }, [state.running]);
 
+  // Persist data slices to localStorage whenever they change.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // Quota exceeded or private-browsing restriction — silently ignore.
+    }
+  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <DashboardContext.Provider
       value={{
+        tags: state.tags,
         spheres: state.spheres,
         habits: state.habits,
         tasks: state.tasks,
@@ -641,13 +818,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         elapsed: state.elapsed,
         sessions: state.sessions,
         recurringTasks: state.recurringTasks,
+        addTag:    (tag)          => dispatch({ type: "ADD_TAG", tag }),
+        updateTag: (id, fields)   => dispatch({ type: "UPDATE_TAG", id, fields }),
+        deleteTag: (id)           => dispatch({ type: "DELETE_TAG", id }),
         addHabit:        (habit)         => dispatch({ type: "ADD_HABIT", habit }),
         toggleHabitDate: (id, dateString)=> dispatch({ type: "TOGGLE_HABIT_DATE", id, dateString }),
         updateHabit:     (id, fields)    => dispatch({ type: "UPDATE_HABIT", id, fields }),
         deleteHabit:     (id)            => dispatch({ type: "DELETE_HABIT", id }),
-        addSphere:    (name, labelColor) => dispatch({ type: "ADD_SPHERE", name, labelColor }),
-        updateSphere: (id, fields)       => dispatch({ type: "UPDATE_SPHERE", id, fields }),
-        deleteSphere: (id)               => dispatch({ type: "DELETE_SPHERE", id }),
+        addSphere:     (name, labelColor) => dispatch({ type: "ADD_SPHERE", name, labelColor }),
+        updateSphere:  (id, fields)      => dispatch({ type: "UPDATE_SPHERE", id, fields }),
+        deleteSphere:  (id)              => dispatch({ type: "DELETE_SPHERE", id }),
+        updateProject: (id, fields)      => dispatch({ type: "UPDATE_PROJECT", id, fields }),
         addTask:              (task)              => dispatch({ type: "ADD_TASK", task }),
         updateTask:           (id, fields)        => dispatch({ type: "UPDATE_TASK", id, fields }),
         addProject:           (project)           => dispatch({ type: "ADD_PROJECT", project }),
