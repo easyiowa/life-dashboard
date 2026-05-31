@@ -39,6 +39,12 @@ export interface Task {
   deadline: string | null; // "YYYY-MM-DD"
   notes: string;
   manualMinutes: number;
+  // ── Daily planning queue ──────────────────────────────────────────────────
+  queuedDate?: string | null;          // "YYYY-MM-DD" when pushed to a day's deck
+  timeSpentMinutes?: number;           // accumulated focus time this session cycle
+  intent?: "finish" | "time" | "maybe"; // defaults to "finish"
+  dailyTargetMinutes?: number | null;  // explicit allocation for "time" intent
+  rolloverCount?: number;              // increments when unfinished at day end
 }
 
 export interface Project {
@@ -288,6 +294,8 @@ interface State {
   elapsed: number;
   sessions: FocusSession[];
   recurringTasks: RecurringTask[];
+  currentTrackingDate: string;  // "YYYY-MM-DD" — operational date of the dashboard
+  showNightlyReview: boolean;   // gate shown when tracking date lags real date
 }
 
 type Action =
@@ -298,6 +306,11 @@ type Action =
   | { type: "TICK" }
   | { type: "FINISH_SESSION" }
   | { type: "SET_ESTIMATE"; minutes: number }
+  | { type: "TOGGLE_TASK_FOR_TODAY"; id: string; dateString: string; intent: Task["intent"]; targetMinutes: number | null }
+  | { type: "UPDATE_TASK_TIME_SPENT"; id: string; minutes: number }
+  | { type: "TRANSITION_TO_NEXT_DAY" }
+  | { type: "REQUEST_NIGHTLY_REVIEW" }
+  | { type: "DISMISS_NIGHTLY_REVIEW" }
   | { type: "ADD_TASK"; task: Omit<Task, "id"> }
   | { type: "UPDATE_TASK"; id: string; fields: Partial<Task> }
   | { type: "ADD_PROJECT"; project: Omit<Project, "id"> }
@@ -356,12 +369,20 @@ function reducer(state: State, action: Action): State {
       return { ...state, activeTask: null, running: false, elapsed: 0 };
 
     case "FINISH_SESSION": {
-      // Log accumulated elapsed then fully reset.
       const sessions =
         state.activeTask && state.elapsed > 0
           ? [...state.sessions, mkSession(state.activeTask, state.elapsed)]
           : state.sessions;
-      return { ...state, activeTask: null, running: false, elapsed: 0, sessions };
+      // Auto-accumulate focus minutes on the task being worked on
+      const elapsedMinutes = Math.round(state.elapsed / 60);
+      const tasks = state.activeTask && elapsedMinutes > 0
+        ? state.tasks.map((t) =>
+            t.id === state.activeTask!.id
+              ? { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + elapsedMinutes }
+              : t
+          )
+        : state.tasks;
+      return { ...state, activeTask: null, running: false, elapsed: 0, sessions, tasks };
     }
 
     case "SET_ESTIMATE":
@@ -468,6 +489,57 @@ function reducer(state: State, action: Action): State {
         ),
       };
     }
+
+    case "TOGGLE_TASK_FOR_TODAY":
+      return {
+        ...state,
+        tasks: state.tasks.map((t) => {
+          if (t.id !== action.id) return t;
+          // Already queued for this date → remove
+          if ((t.queuedDate ?? null) === action.dateString) {
+            return { ...t, queuedDate: null };
+          }
+          // Add to queue with intent
+          return {
+            ...t,
+            queuedDate:         action.dateString,
+            intent:             action.intent ?? "finish",
+            dailyTargetMinutes: action.targetMinutes,
+          };
+        }),
+      };
+
+    case "UPDATE_TASK_TIME_SPENT":
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id !== action.id
+            ? t
+            : { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + action.minutes }
+        ),
+      };
+
+    case "TRANSITION_TO_NEXT_DAY": {
+      const newDate = new Date().toLocaleDateString("en-CA");
+      return {
+        ...state,
+        currentTrackingDate: newDate,
+        showNightlyReview:   false,
+        tasks: state.tasks.map((t) => {
+          if ((t.queuedDate ?? null) !== state.currentTrackingDate) return t;
+          if (t.done) return { ...t, queuedDate: null };
+          if ((t.intent ?? "finish") === "maybe") return { ...t, queuedDate: null };
+          // Incomplete commitment → increment rollover, remove from queue
+          return { ...t, queuedDate: null, rolloverCount: (t.rolloverCount ?? 0) + 1 };
+        }),
+      };
+    }
+
+    case "REQUEST_NIGHTLY_REVIEW":
+      return { ...state, showNightlyReview: true };
+
+    case "DISMISS_NIGHTLY_REVIEW":
+      return { ...state, showNightlyReview: false };
 
     case "ADD_TAG": {
       const tag: Tag = {
@@ -625,13 +697,19 @@ function reviveState(raw: Record<string, unknown>): State {
     return { ...proj, tagIds: [match?.id ?? liveTags[0]?.id ?? "tag-product"] } as unknown as Project;
   });
 
+  // If the stored tracking date is behind today, surface the nightly review gate.
+  const today              = new Date().toLocaleDateString("en-CA");
+  const savedTrackingDate  = (raw.currentTrackingDate as string) ?? today;
+  const showNightlyReview  = savedTrackingDate !== today;
+
   return {
     ...(raw as unknown as State),
     tags: liveTags,
     sessions,
     recurringTasks,
     projects,
-    // Never auto-resume the timer across page loads.
+    currentTrackingDate: savedTrackingDate,
+    showNightlyReview,
     running: false,
     elapsed: (raw.elapsed as number) ?? 0,
   };
@@ -652,6 +730,8 @@ function buildInitialState(): State {
 
   const now = Date.now();
   return {
+    currentTrackingDate: new Date().toLocaleDateString("en-CA"),
+    showNightlyReview:   false,
     tags: INITIAL_TAGS,
     spheres: INITIAL_SPHERES,
     habits: INITIAL_HABITS,
@@ -735,6 +815,13 @@ function buildInitialState(): State {
 // ── Context ──────────────────────────────────────────────────────────────────
 
 interface DashboardContextType {
+  currentTrackingDate: string;
+  showNightlyReview: boolean;
+  toggleTaskForToday: (id: string, dateString: string, intent: Task["intent"], targetMinutes: number | null) => void;
+  updateTaskTimeSpent: (id: string, minutes: number) => void;
+  transitionToNextDay: () => void;
+  requestNightlyReview: () => void;
+  dismissNightlyReview: () => void;
   tags: Tag[];
   spheres: Sphere[];
   habits: Habit[];
@@ -803,11 +890,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } catch {
       // Quota exceeded or private-browsing restriction — silently ignore.
     }
-  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <DashboardContext.Provider
       value={{
+        currentTrackingDate:  state.currentTrackingDate,
+        showNightlyReview:    state.showNightlyReview,
+        toggleTaskForToday:   (id, dateString, intent, targetMinutes) => dispatch({ type: "TOGGLE_TASK_FOR_TODAY", id, dateString, intent: intent ?? "finish", targetMinutes }),
+        updateTaskTimeSpent:  (id, minutes)    => dispatch({ type: "UPDATE_TASK_TIME_SPENT", id, minutes }),
+        transitionToNextDay:  ()               => dispatch({ type: "TRANSITION_TO_NEXT_DAY" }),
+        requestNightlyReview: ()               => dispatch({ type: "REQUEST_NIGHTLY_REVIEW" }),
+        dismissNightlyReview: ()               => dispatch({ type: "DISMISS_NIGHTLY_REVIEW" }),
         tags: state.tags,
         spheres: state.spheres,
         habits: state.habits,

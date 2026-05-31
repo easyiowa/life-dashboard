@@ -1,0 +1,273 @@
+"use client";
+
+import { useState } from "react";
+import { Target, Moon, Play, X, Clock, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { useDashboard, type Task } from "@/context/DashboardContext";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fmtDate(ds: string): string {
+  const [y, m, d] = ds.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric",
+  });
+}
+
+const INTENT_OPTIONS: { value: Task["intent"]; label: string }[] = [
+  { value: "finish", label: "🎯 Finish" },
+  { value: "time",   label: "⏱️ Time Goal" },
+  { value: "maybe",  label: "🎲 Maybe" },
+];
+
+const INTENT_ACTIVE: Record<NonNullable<Task["intent"]>, string> = {
+  finish: "bg-violet-600/25 border-violet-500/50 text-violet-200",
+  time:   "bg-blue-600/25 border-blue-500/50 text-blue-200",
+  maybe:  "bg-slate-600/25 border-slate-500/40 text-slate-300",
+};
+
+const INACTIVE_PILL = "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-slate-300";
+
+// ── Queue row ─────────────────────────────────────────────────────────────────
+
+function QueueRow({ task }: { task: Task }) {
+  const { updateTask, toggleTaskForToday, startTask, activeTask, currentTrackingDate } = useDashboard();
+  const intent       = task.intent ?? "finish";
+  const timeSpent    = task.timeSpentMinutes ?? 0;
+  const isActive     = activeTask?.id === task.id;
+  const isMaybe      = intent === "maybe";
+  const [localMins, setLocalMins] = useState<string>(task.dailyTargetMinutes?.toString() ?? "");
+
+  function handleIntentChange(val: Task["intent"]) {
+    updateTask(task.id, { intent: val, dailyTargetMinutes: val !== "time" ? null : (Number(localMins) || null) });
+  }
+
+  function handleTargetBlur() {
+    const mins = Number(localMins);
+    updateTask(task.id, { dailyTargetMinutes: mins > 0 ? mins : null });
+  }
+
+  function handleStart() {
+    startTask({
+      id:               task.id,
+      title:            task.title,
+      project:          task.project,
+      sphere:           task.sphere,
+      estimatedMinutes: task.dailyTargetMinutes ?? 25,
+    });
+  }
+
+  return (
+    <div className={`flex flex-col gap-2 p-2.5 rounded-xl border transition-all duration-200 ${
+      isMaybe
+        ? "border-dashed border-white/[0.07] bg-white/[0.01] opacity-70"
+        : "border-white/[0.05] bg-white/[0.02]"
+    }`}>
+      {/* Title row */}
+      <div className="flex items-center gap-2">
+        {isActive && <Zap className="w-3 h-3 text-violet-400 flex-shrink-0" />}
+        <span className={`text-sm flex-1 leading-none truncate ${task.done ? "line-through text-slate-500" : "text-white font-medium"}`}>
+          {task.title}
+        </span>
+        {timeSpent > 0 && (
+          <span className="flex items-center gap-1 text-[10px] font-mono text-slate-500 flex-shrink-0">
+            <Clock className="w-2.5 h-2.5" />
+            {timeSpent}m
+          </span>
+        )}
+        {!task.done && (
+          <button
+            onClick={handleStart}
+            title="Start focus timer"
+            className={`flex-shrink-0 flex items-center gap-1 px-2 h-6 rounded-lg text-[10px] font-medium transition-all duration-150 ${
+              isActive
+                ? "bg-violet-500/25 text-violet-300 border border-violet-400/40"
+                : "bg-white/[0.05] border border-white/[0.08] text-slate-400 hover:text-violet-300 hover:border-violet-500/40 hover:bg-violet-500/10"
+            }`}
+          >
+            <Play className="w-2.5 h-2.5" />
+            {isActive ? "Live" : "Focus"}
+          </button>
+        )}
+        <button
+          onClick={() => toggleTaskForToday(task.id, currentTrackingDate, "finish", null)}
+          title="Remove from today"
+          className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 transition-colors"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+
+      {/* Meta + intent selector */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[10px] text-slate-600 flex-shrink-0">{task.project}</span>
+        <span className="text-slate-700 text-[10px]">·</span>
+        {INTENT_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => handleIntentChange(opt.value)}
+            className={`px-2 h-5 rounded-full text-[10px] font-medium border transition-all duration-100 ${
+              intent === opt.value ? INTENT_ACTIVE[opt.value] : INACTIVE_PILL
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+        {intent === "time" && (
+          <div className="flex items-center gap-1 ml-1">
+            <input
+              type="number"
+              min={1}
+              value={localMins}
+              onChange={(e) => setLocalMins(e.target.value)}
+              onBlur={handleTargetBlur}
+              placeholder="min"
+              className="w-14 h-5 px-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-white outline-none focus:border-blue-500/60 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            <span className="text-[10px] text-slate-600">min goal</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Task picker (backlog → queue) ─────────────────────────────────────────────
+
+function TaskPicker({ onClose }: { onClose: () => void }) {
+  const { tasks, spheres, currentTrackingDate, toggleTaskForToday } = useDashboard();
+  const [search, setSearch] = useState("");
+  const today = currentTrackingDate;
+
+  const available = tasks.filter(
+    (t) => !t.done && (t.queuedDate ?? null) !== today &&
+      (search.trim() === "" || t.title.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  return (
+    <div className="flex flex-col gap-2 p-3 rounded-xl border border-violet-500/20 bg-violet-600/[0.04]">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-widest">Add from backlog</span>
+        <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <input
+        autoFocus
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search tasks…"
+        className="h-7 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/60 transition-colors"
+      />
+      <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+        {available.length === 0 && (
+          <p className="text-xs text-slate-600 text-center py-3">No tasks available.</p>
+        )}
+        {available.map((t) => {
+          const sphereColor = spheres.find((s) => s.name === t.sphere)?.labelColor ?? "slate";
+          return (
+            <button
+              key={t.id}
+              onClick={() => toggleTaskForToday(t.id, today, "finish", null)}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-white/[0.05] transition-colors group"
+            >
+              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 bg-${sphereColor}-400`} />
+              <span className="text-xs text-slate-300 flex-1 leading-none truncate">{t.title}</span>
+              <span className="text-[10px] text-slate-600 flex-shrink-0">{t.project}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+
+export default function DailyFocusQueueCard() {
+  const { tasks, currentTrackingDate, requestNightlyReview } = useDashboard();
+  const [showPicker, setShowPicker] = useState(false);
+  const [collapsed,  setCollapsed]  = useState(false);
+
+  const queuedTasks   = tasks.filter((t) => (t.queuedDate ?? null) === currentTrackingDate);
+  const commitments   = queuedTasks.filter((t) => (t.intent ?? "finish") !== "maybe");
+  const maybes        = queuedTasks.filter((t) => (t.intent ?? "finish") === "maybe");
+  const doneCount     = commitments.filter((t) => t.done).length;
+
+  return (
+    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col gap-4">
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Target className="w-4 h-4 text-violet-400" />
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
+            Today's Focus Queue
+          </h2>
+          {queuedTasks.length > 0 && (
+            <span className="text-[10px] text-slate-600">
+              {fmtDate(currentTrackingDate)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {queuedTasks.length > 0 && (
+            <span className="text-[10px] text-slate-500 tabular-nums">
+              {doneCount}/{commitments.length} done
+            </span>
+          )}
+          <button
+            onClick={() => requestNightlyReview()}
+            className="flex items-center gap-1.5 px-3 h-7 rounded-lg bg-slate-800/80 border border-white/[0.08] text-slate-300 text-[11px] font-medium hover:bg-slate-700/80 hover:text-white transition-all duration-150"
+            title="Open nightly review"
+          >
+            <Moon className="w-3 h-3" />
+            Call it a Day
+          </button>
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-slate-300 transition-colors"
+          >
+            {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Body — collapsible */}
+      {!collapsed && (
+        <>
+          {/* Commitment tasks */}
+          {commitments.length === 0 && maybes.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-4 text-center">
+              <Target className="w-6 h-6 text-slate-700" />
+              <p className="text-xs text-slate-600">No tasks queued for today.</p>
+              <p className="text-[10px] text-slate-700">Add tasks from your backlog to start planning.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {commitments.map((t) => <QueueRow key={t.id} task={t} />)}
+              {maybes.length > 0 && (
+                <>
+                  <p className="text-[10px] text-slate-600 mt-1 px-1">🎲 Bonus / Maybe</p>
+                  {maybes.map((t) => <QueueRow key={t.id} task={t} />)}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Picker + Add button */}
+          {showPicker
+            ? <TaskPicker onClose={() => setShowPicker(false)} />
+            : (
+              <button
+                onClick={() => setShowPicker(true)}
+                className="flex items-center gap-1.5 justify-center h-7 rounded-xl border border-dashed border-white/[0.10] text-[11px] text-slate-600 hover:text-slate-300 hover:border-white/[0.20] transition-all duration-150"
+              >
+                + Plan a task for today
+              </button>
+            )}
+        </>
+      )}
+    </div>
+  );
+}

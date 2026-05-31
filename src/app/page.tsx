@@ -1,10 +1,12 @@
 import TimeTrackerCard from "@/components/widgets/TimeTrackerCard";
+import DailyFocusQueueCard from "@/components/widgets/DailyFocusQueueCard";
 import ProgressCard from "@/components/widgets/ProgressCard";
 import CalendarCard from "@/components/widgets/CalendarCard";
 import ProjectsCard from "@/components/widgets/ProjectsCard";
 import ActivityLogCard from "@/components/widgets/ActivityLogCard";
 import RecurringCard from "@/components/widgets/RecurringCard";
 import HabitTrackerCard from "@/components/widgets/HabitTrackerCard";
+import NightlyReviewModal from "@/components/NightlyReviewModal";
 import { DashboardProvider } from "@/context/DashboardContext";
 
 function getGreeting() {
@@ -73,6 +75,11 @@ export default function DashboardPage() {
           </div>
         </header>
 
+        {/* ── Daily Focus Queue ───────────────────────────────────── */}
+        <div className="mb-4">
+          <DailyFocusQueueCard />
+        </div>
+
         {/* ── Primary grid: 3 cols ────────────────────────────────
             Col 1:   Focus column — TimeTracker + ActivityLog (spans 2 rows)
             Col 2–3: Projects & Tasks (row 1) + Progress (row 2)
@@ -133,6 +140,9 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      {/* Nightly review modal — self-contained, reads showNightlyReview from context */}
+      <NightlyReviewModal />
       </DashboardProvider>
     </main>
   );
