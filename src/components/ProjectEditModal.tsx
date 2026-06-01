@@ -3,10 +3,39 @@
 import { useState, useEffect } from "react";
 import { X, Trash2, Plus, Pencil, Check } from "lucide-react";
 import { useDashboard, type Project } from "@/context/DashboardContext";
+import EmojiPickerButton from "@/components/EmojiPickerButton";
 
 interface Props {
   project: Project | null;
   onClose: () => void;
+}
+
+// ── Emoji suggestion engine ───────────────────────────────────────────────────
+
+const PROJECT_EMOJI_RULES: { pattern: RegExp; emoji: string }[] = [
+  { pattern: /product|launch|ship|release/i,    emoji: "🚀" },
+  { pattern: /brand|design|creative|identity/i, emoji: "🎨" },
+  { pattern: /market|campaign|ads?|social/i,    emoji: "📣" },
+  { pattern: /client|customer|account/i,        emoji: "👥" },
+  { pattern: /website|web|frontend|backend|laptop|computer|\bpc\b|screen|coding|dev/i, emoji: "💻" },
+  { pattern: /finance|budget|revenue|money/i,   emoji: "💰" },
+  { pattern: /meeting|sync|standup/i,           emoji: "💬" },
+  { pattern: /home|house|renovat/i,             emoji: "🏡" },
+  { pattern: /garden|landscape|outdoor/i,       emoji: "🌿" },
+  { pattern: /content|blog|video|write/i,       emoji: "✍️" },
+  { pattern: /data|analytic|report|metric/i,    emoji: "📊" },
+  { pattern: /partner|deal|outreach|bizdev/i,   emoji: "🤝" },
+  { pattern: /influenc/i,                       emoji: "⭐" },
+  { pattern: /operat|process|system/i,          emoji: "⚙️" },
+  { pattern: /strateg|plan|roadmap/i,           emoji: "🗺️" },
+];
+
+function suggestProjectEmoji(name: string): string {
+  const lower = name.toLowerCase().trim();
+  for (const { pattern, emoji } of PROJECT_EMOJI_RULES) {
+    if (pattern.test(lower)) return emoji;
+  }
+  return "📁";
 }
 
 // ── Style maps ────────────────────────────────────────────────────────────────
@@ -103,6 +132,8 @@ export default function ProjectEditModal({ project, onClose }: Props) {
   const { tags, addTag, updateTag, deleteTag, updateProject } = useDashboard();
 
   const [name,        setName]        = useState("");
+  const [emoji,       setEmoji]       = useState("📁");
+  const [emojiLocked, setEmojiLocked] = useState(false);
   const [tagIds,      setTagIds]      = useState<string[]>([]);
   const [status,      setStatus]      = useState<Project["status"]>("on-track");
   const [milestone,   setMilestone]   = useState("");
@@ -116,6 +147,8 @@ export default function ProjectEditModal({ project, onClose }: Props) {
   useEffect(() => {
     if (project) {
       setName(project.name);
+      setEmoji(project.emoji ?? "📁");
+      setEmojiLocked(true); // existing emoji treated as locked by default
       setTagIds(project.tagIds ?? []);
       setStatus(project.status);
       setMilestone(project.milestone);
@@ -125,6 +158,11 @@ export default function ProjectEditModal({ project, onClose }: Props) {
       setPendingLabel(null);
     }
   }, [project]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-suggest emoji while the user types (when not manually locked)
+  useEffect(() => {
+    if (!emojiLocked) setEmoji(suggestProjectEmoji(name));
+  }, [name, emojiLocked]);
 
   // Auto-select newly created tag once it appears in the tags array
   useEffect(() => {
@@ -163,6 +201,7 @@ export default function ProjectEditModal({ project, onClose }: Props) {
     if (!name.trim()) { setNameErr(true); return; }
     updateProject(project!.id, {
       name:      name.trim(),
+      emoji,
       tagIds,
       status,
       milestone: milestone.trim(),
@@ -186,17 +225,29 @@ export default function ProjectEditModal({ project, onClose }: Props) {
 
         <div className="p-6 flex flex-col gap-5">
 
-          {/* Project name */}
+          {/* Project name + emoji */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Project Name</label>
-            <input
-              autoFocus
-              type="text"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setNameErr(false); }}
-              className={`h-10 px-3 rounded-xl bg-white/[0.04] border text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors ${nameErr ? "border-red-500/60" : "border-white/[0.07]"}`}
-            />
+            <div className="flex gap-2">
+              <EmojiPickerButton
+                emoji={emoji}
+                locked={emojiLocked}
+                onPick={(e) => { setEmoji(e); setEmojiLocked(true); }}
+              />
+              <input
+                autoFocus
+                type="text"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setNameErr(false); }}
+                className={`flex-1 h-10 px-3 rounded-xl bg-white/[0.04] border text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors ${nameErr ? "border-red-500/60" : "border-white/[0.07]"}`}
+              />
+            </div>
             {nameErr && <p className="text-[10px] text-red-400">Name is required.</p>}
+            {!emojiLocked && name.length > 0 && (
+              <p className="text-[10px] text-slate-600">
+                Auto-suggested: <span className="text-slate-400">{emoji}</span> · Click the emoji to browse all.
+              </p>
+            )}
           </div>
 
           {/* ── Tag grid ─────────────────────────────────────────────── */}

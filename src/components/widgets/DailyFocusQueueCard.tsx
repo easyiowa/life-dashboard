@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Target, Moon, Play, X, Clock, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { useDashboard, type Task } from "@/context/DashboardContext";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -30,11 +30,11 @@ const INACTIVE_PILL = "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:
 // ── Queue row ─────────────────────────────────────────────────────────────────
 
 function QueueRow({ task }: { task: Task }) {
-  const { updateTask, toggleTaskForToday, startTask, activeTask, currentTrackingDate } = useDashboard();
-  const intent       = task.intent ?? "finish";
-  const timeSpent    = task.timeSpentMinutes ?? 0;
-  const isActive     = activeTask?.id === task.id;
-  const isMaybe      = intent === "maybe";
+  const { updateTask, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, currentTrackingDate } = useDashboard();
+  const intent           = task.intent ?? "finish";
+  const timeSpent        = task.timeSpentMinutes ?? 0;
+  const isThisTaskActive = activeTaskId === task.id && timerIsRunning;
+  const isMaybe          = intent === "maybe";
   const [localMins, setLocalMins] = useState<string>(task.dailyTargetMinutes?.toString() ?? "");
 
   function handleIntentChange(val: Task["intent"]) {
@@ -47,13 +47,11 @@ function QueueRow({ task }: { task: Task }) {
   }
 
   function handleStart() {
-    startTask({
-      id:               task.id,
-      title:            task.title,
-      project:          task.project,
-      sphere:           task.sphere,
-      estimatedMinutes: task.dailyTargetMinutes ?? 25,
-    });
+    if (isThisTaskActive) {
+      pauseGlobalTimer();
+    } else {
+      startGlobalTimer(task.id);
+    }
   }
 
   return (
@@ -64,8 +62,20 @@ function QueueRow({ task }: { task: Task }) {
     }`}>
       {/* Title row */}
       <div className="flex items-center gap-2">
-        {isActive && <Zap className="w-3 h-3 text-violet-400 flex-shrink-0" />}
-        <span className={`text-sm flex-1 leading-none truncate ${task.done ? "line-through text-slate-500" : "text-white font-medium"}`}>
+        {/* Completion checkbox */}
+        <button
+          onClick={() => toggleTaskComplete(task.id)}
+          aria-label={task.done ? "Mark incomplete" : "Mark complete"}
+          className={`flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer transition-all duration-150 ${
+            task.done
+              ? "bg-violet-500/30 border-violet-400/60 shadow-[0_0_8px_rgba(139,92,246,0.35)]"
+              : "border-slate-600 hover:border-purple-400"
+          }`}
+        >
+          {task.done && <Check className="w-2.5 h-2.5 text-violet-300" />}
+        </button>
+        {isThisTaskActive && <Zap className="w-3 h-3 text-violet-400 flex-shrink-0" />}
+        <span className={`text-sm flex-1 leading-none truncate ${task.done ? "line-through text-slate-500 opacity-60" : "text-white font-medium"}`}>
           {task.title}
         </span>
         {timeSpent > 0 && (
@@ -77,15 +87,15 @@ function QueueRow({ task }: { task: Task }) {
         {!task.done && (
           <button
             onClick={handleStart}
-            title="Start focus timer"
+            title={isThisTaskActive ? "Pause focus timer" : "Start focus timer"}
             className={`flex-shrink-0 flex items-center gap-1 px-2 h-6 rounded-lg text-[10px] font-medium transition-all duration-150 ${
-              isActive
+              isThisTaskActive
                 ? "bg-violet-500/25 text-violet-300 border border-violet-400/40"
                 : "bg-white/[0.05] border border-white/[0.08] text-slate-400 hover:text-violet-300 hover:border-violet-500/40 hover:bg-violet-500/10"
             }`}
           >
-            <Play className="w-2.5 h-2.5" />
-            {isActive ? "Live" : "Focus"}
+            {isThisTaskActive ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
+            {isThisTaskActive ? "Pause" : "Focus"}
           </button>
         )}
         <button

@@ -209,7 +209,9 @@ function HabitRow({
     : `🎯 ${startDone}/${habit.targetCount} this week`;
 
   return (
-    <div className="group flex flex-col gap-2 p-3 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.07] transition-all duration-200">
+    <div className={`group flex flex-col gap-2 p-3 rounded-xl border border-white/[0.04] border-l-2 bg-white/[0.02] hover:bg-white/[0.03] transition-all duration-200 ${
+      isStop ? "border-l-rose-500/60" : "border-l-emerald-500/60"
+    }`}>
 
       {/* Row header */}
       <div className="flex items-center gap-2">
@@ -294,9 +296,7 @@ export default function HabitTrackerCard() {
   const [viewMode,       setViewMode]       = useState<"check" | "analytics">("check");
   const [analyticsDate,  setAnalyticsDate]  = useState(() => new Date());
 
-  const weekDates    = getWeekDates();
-  const startHabits  = habits.filter((h) => h.type === "start");
-  const stopHabits   = habits.filter((h) => h.type === "stop");
+  const weekDates     = getWeekDates();
   const showAnalytics = viewMode === "analytics";
 
   const analyticsYear  = analyticsDate.getFullYear();
@@ -378,38 +378,42 @@ export default function HabitTrackerCard() {
           </div>
         )}
 
-        {/* Building section */}
-        {startHabits.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-emerald-400">🔥 Building Consistency</span>
-              <span className="flex-1 h-px bg-emerald-500/15" />
-              <span className="text-[10px] text-slate-600">{startHabits.length} habit{startHabits.length !== 1 ? "s" : ""}</span>
-            </div>
-            {startHabits.map((h) => (
-              <HabitRow key={h.id} habit={h} {...rowProps} />
-            ))}
-          </div>
-        )}
-
-        {/* Breaking section */}
-        {stopHabits.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-red-400">🛑 Breaking Chains</span>
-              <span className="flex-1 h-px bg-red-500/15" />
-              <span className="text-[10px] text-slate-600">{stopHabits.length} habit{stopHabits.length !== 1 ? "s" : ""}</span>
-            </div>
-            {stopHabits.map((h) => (
-              <HabitRow key={h.id} habit={h} {...rowProps} />
-            ))}
-          </div>
-        )}
-
-        {habits.length === 0 && (
+        {/* ── Routine sections ────────────────────────────────────────────────── */}
+        {habits.length === 0 ? (
           <p className="text-xs text-slate-600 text-center py-6">
             No habits yet — add one to start tracking.
           </p>
+        ) : (
+          <>
+            {(
+              [
+                { key: "morning", label: "☀️ Morning Routine" },
+                { key: "day",     label: "🌤️ Day Routine"     },
+                { key: "evening", label: "🌙 Evening Routine"  },
+              ] as { key: NonNullable<Habit["routine"]>; label: string }[]
+            ).map(({ key, label }) => {
+              const section = habits.filter((h) => (h.routine ?? "day") === key);
+              if (section.length === 0) return null;
+
+              return (
+                <div key={key} className="flex flex-col gap-2">
+                  {/* Routine section header */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-300">{label}</span>
+                    <span className="flex-1 h-px bg-white/[0.05]" />
+                    <span className="text-[10px] text-slate-600">
+                      {section.length} habit{section.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {/* Flat habit list — type identity conveyed via left-border accent on each row */}
+                  <div className="flex flex-col gap-1.5">
+                    {section.map((h) => <HabitRow key={h.id} habit={h} {...rowProps} />)}
+                  </div>
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
     </>

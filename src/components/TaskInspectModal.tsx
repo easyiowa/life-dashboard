@@ -7,6 +7,7 @@ import {
   type Task,
   type Priority,
   type Energy,
+  type Urgency,
 } from "@/context/DashboardContext";
 
 interface Props {
@@ -95,6 +96,7 @@ export default function TaskInspectModal({ task, onClose }: Props) {
       project:       form.project,
       priority:      form.priority,
       energy:        form.energy,
+      urgency:       form.urgency,
       done:          form.done,
       deadline:      form.deadline,
       notes:         form.notes,
@@ -184,6 +186,32 @@ export default function TaskInspectModal({ task, onClose }: Props) {
               onChange={(v) => setForm((f) => f ? { ...f, energy: v } : f)}
               activeStyles={ENERGY_ACTIVE}
             />
+          </div>
+
+          {/* Urgency */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Urgency</label>
+            <div className="flex gap-2">
+              {([
+                { value: "urgent",     label: "🔥 Urgent"    },
+                { value: "not-urgent", label: "🧊 Not Urgent" },
+              ] as { value: Urgency; label: string }[]).map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm((f) => f ? { ...f, urgency: value } : f)}
+                  className={`flex-1 h-8 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                    (form.urgency ?? "not-urgent") === value
+                      ? value === "urgent"
+                        ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
+                        : "bg-white/[0.06] border-white/[0.12] text-slate-300"
+                      : "border-white/[0.07] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Deadline + Manual Time */}

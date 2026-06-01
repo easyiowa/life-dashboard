@@ -6,8 +6,10 @@ import {
   useDashboard,
   type Priority,
   type Energy,
+  type Urgency,
   type Task,
 } from "@/context/DashboardContext";
+import EmojiPickerButton from "@/components/EmojiPickerButton";
 
 
 interface Props {
@@ -70,6 +72,7 @@ export default function TaskModal({ open, onClose }: Props) {
     title: "",
     priority: "Med",
     energy: "Easy",
+    urgency: "not-urgent",
     deadline: null,
     notes: "",
     manualMinutes: 0,
@@ -78,11 +81,13 @@ export default function TaskModal({ open, onClose }: Props) {
   const [form, setForm] = useState<FormData>(blank);
   const [titleError, setTitleError] = useState(false);
 
-  const [showNewProject, setShowNewProject] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [newProjectSphere, setNewProjectSphere] = useState(defaultSphere);
-  const [newProjectTagId, setNewProjectTagId] = useState(() => tags[0]?.id ?? "");
-  const [newProjectError, setNewProjectError] = useState(false);
+  const [showNewProject,       setShowNewProject]       = useState(false);
+  const [newProjectName,       setNewProjectName]       = useState("");
+  const [newProjectEmoji,      setNewProjectEmoji]      = useState("📁");
+  const [newProjectEmojiLocked,setNewProjectEmojiLocked]= useState(false);
+  const [newProjectSphere,     setNewProjectSphere]     = useState(defaultSphere);
+  const [newProjectTagIds, setNewProjectTagIds] = useState<string[]>(() => tags[0] ? [tags[0].id] : []);
+  const [newProjectError,  setNewProjectError]  = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -90,8 +95,10 @@ export default function TaskModal({ open, onClose }: Props) {
       setTitleError(false);
       setShowNewProject(false);
       setNewProjectName("");
+      setNewProjectEmoji("📁");
+      setNewProjectEmojiLocked(false);
       setNewProjectSphere(spheres[0]?.name ?? "");
-      setNewProjectTagId(tags[0]?.id ?? "");
+      setNewProjectTagIds(tags[0] ? [tags[0].id] : []);
       setNewProjectError(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,13 +117,17 @@ export default function TaskModal({ open, onClose }: Props) {
     addProject({
       sphere:    newProjectSphere,
       name:      newProjectName.trim(),
-      tagIds:    newProjectTagId ? [newProjectTagId] : (tags[0] ? [tags[0].id] : []),
+      emoji:     newProjectEmoji,
+      tagIds:    newProjectTagIds.length > 0 ? newProjectTagIds : (tags[0] ? [tags[0].id] : []),
       status:    "on-track",
       milestone: "In progress",
     });
     setForm((f) => ({ ...f, sphere: newProjectSphere, project: newProjectName.trim() }));
     setShowNewProject(false);
     setNewProjectName("");
+    setNewProjectEmoji("📁");
+    setNewProjectEmojiLocked(false);
+    setNewProjectTagIds(tags[0] ? [tags[0].id] : []);
     setNewProjectError(false);
   }
 
@@ -201,52 +212,124 @@ export default function TaskModal({ open, onClose }: Props) {
             </div>
 
             {showNewProject && (
-              <div className="rounded-xl border border-violet-500/20 bg-violet-600/[0.05] p-4 flex flex-col gap-3">
+              <div className="rounded-xl border border-violet-500/20 bg-violet-600/[0.05] p-4 flex flex-col gap-4">
                 <p className="text-xs font-semibold text-violet-300">New Project</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Name *</label>
+
+                {/* Name — full width with emoji picker */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Name *</label>
+                  <div className="flex gap-1.5">
+                    <EmojiPickerButton
+                      emoji={newProjectEmoji}
+                      locked={newProjectEmojiLocked}
+                      onPick={(e) => { setNewProjectEmoji(e); setNewProjectEmojiLocked(true); }}
+                    />
                     <input
                       type="text"
                       value={newProjectName}
-                      onChange={(e) => { setNewProjectName(e.target.value); setNewProjectError(false); }}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setNewProjectName(v);
+                        setNewProjectError(false);
+                        if (!newProjectEmojiLocked) {
+                          const rules: { pattern: RegExp; emoji: string }[] = [
+                            { pattern: /product|launch/i,  emoji: "🚀" },
+                            { pattern: /brand|design/i,    emoji: "🎨" },
+                            { pattern: /market|campaign/i, emoji: "📣" },
+                            { pattern: /client/i,          emoji: "👥" },
+                            { pattern: /website|web/i,     emoji: "💻" },
+                            { pattern: /finance|budget/i,  emoji: "💰" },
+                            { pattern: /meeting/i,         emoji: "💬" },
+                          ];
+                          let found = "📁";
+                          for (const { pattern, emoji } of rules) {
+                            if (pattern.test(v)) { found = emoji; break; }
+                          }
+                          setNewProjectEmoji(found);
+                        }
+                      }}
                       placeholder="e.g. Website Redesign"
-                      className={`h-9 px-3 rounded-lg bg-white/[0.04] border text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors ${
+                      className={`flex-1 h-9 px-3 rounded-lg bg-white/[0.04] border text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors ${
                         newProjectError ? "border-red-500/60" : "border-white/[0.07]"
                       }`}
                     />
-                    {newProjectError && <p className="text-[10px] text-red-400">Name required.</p>}
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Sphere</label>
-                    <select
-                      value={newProjectSphere}
-                      onChange={(e) => setNewProjectSphere(e.target.value)}
-                      className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors appearance-none cursor-pointer"
-                    >
-                      {spheres.map((s) => (
-                        <option key={s.id} value={s.name} className="bg-[#0F1629]">{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {newProjectError && <p className="text-[10px] text-red-400">Name required.</p>}
                 </div>
+
+                {/* Sphere — full width */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Tag</label>
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Sphere</label>
                   <select
-                    value={newProjectTagId}
-                    onChange={(e) => setNewProjectTagId(e.target.value)}
+                    value={newProjectSphere}
+                    onChange={(e) => setNewProjectSphere(e.target.value)}
                     className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors appearance-none cursor-pointer"
                   >
-                    {tags.map((t) => (
-                      <option key={t.id} value={t.id} className="bg-[#0F1629]">{t.label}</option>
+                    {spheres.map((s) => (
+                      <option key={s.id} value={s.name} className="bg-[#0F1629]">{s.name}</option>
                     ))}
                   </select>
                 </div>
+
+                {/* Tags — interactive pill grid */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+                    Tags
+                    {newProjectTagIds.length > 0 && (
+                      <span className="ml-1.5 text-violet-400 font-normal normal-case tracking-normal">
+                        {newProjectTagIds.length} selected
+                      </span>
+                    )}
+                  </label>
+                  <div className="flex flex-wrap gap-1.5 p-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl max-h-36 overflow-y-auto">
+                    {tags.map((tag) => {
+                      const isSelected = newProjectTagIds.includes(tag.id);
+                      const dotColors: Record<string, string> = {
+                        amber: "bg-amber-500", emerald: "bg-emerald-500", blue: "bg-blue-500",
+                        violet: "bg-violet-500", pink: "bg-pink-500", teal: "bg-teal-500",
+                        sky: "bg-sky-500", rose: "bg-rose-500", orange: "bg-orange-500", indigo: "bg-indigo-500",
+                      };
+                      const dot = dotColors[tag.color] ?? "bg-slate-500";
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => setNewProjectTagIds((prev) =>
+                            prev.includes(tag.id)
+                              ? prev.filter((x) => x !== tag.id)
+                              : [...prev, tag.id]
+                          )}
+                          className={`flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full border text-[11px] font-medium transition-all duration-150 cursor-pointer select-none ${
+                            isSelected
+                              ? "bg-violet-500/25 text-violet-200 border-violet-400/60 shadow-[0_0_8px_rgba(139,92,246,0.25)]"
+                              : "bg-white/[0.04] text-slate-400 border-white/[0.05] hover:border-white/[0.12] hover:text-slate-300"
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+                          {tag.label}
+                        </button>
+                      );
+                    })}
+                    {tags.length === 0 && (
+                      <p className="text-xs text-slate-600 py-1 w-full text-center">No tags yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => { setShowNewProject(false); setNewProjectName(""); setNewProjectError(false); }} className="flex-1 h-8 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-slate-400 hover:text-white transition-all">
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewProject(false); setNewProjectName(""); setNewProjectError(false); }}
+                    className="flex-1 h-8 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-slate-400 hover:text-white transition-all"
+                  >
                     Cancel
                   </button>
-                  <button type="button" onClick={handleSaveNewProject} className="flex-1 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs text-white font-medium transition-all">
+                  <button
+                    type="button"
+                    onClick={handleSaveNewProject}
+                    className="flex-1 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs text-white font-medium transition-all"
+                  >
                     Create Project
                   </button>
                 </div>
@@ -274,6 +357,32 @@ export default function TaskModal({ open, onClose }: Props) {
               onChange={(v) => setForm((f) => ({ ...f, energy: v }))}
               activeStyles={ENERGY_ACTIVE}
             />
+          </div>
+
+          {/* Urgency */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Urgency</label>
+            <div className="flex gap-2">
+              {([
+                { value: "urgent",     label: "🔥 Urgent"    },
+                { value: "not-urgent", label: "🧊 Not Urgent" },
+              ] as { value: Urgency; label: string }[]).map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, urgency: value }))}
+                  className={`flex-1 h-8 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                    (form.urgency ?? "not-urgent") === value
+                      ? value === "urgent"
+                        ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
+                        : "bg-white/[0.06] border-white/[0.12] text-slate-300"
+                      : "border-white/[0.07] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Deadline + Manual Time */}

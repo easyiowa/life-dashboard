@@ -14,6 +14,7 @@ import {
 export type SphereId  = string;
 export type Priority  = "High" | "Med" | "Low";
 export type Energy    = "Flow" | "Quick" | "Easy";
+export type Urgency   = "urgent" | "not-urgent";
 
 export interface Tag {
   id: string;
@@ -35,6 +36,7 @@ export interface Task {
   title: string;
   priority: Priority;
   energy: Energy;
+  urgency?: Urgency;                   // defaults to "not-urgent"
   done: boolean;
   deadline: string | null; // "YYYY-MM-DD"
   notes: string;
@@ -51,6 +53,7 @@ export interface Project {
   id: string;
   sphere: SphereId;
   name: string;
+  emoji?: string;                        // decorative project icon; defaults to "📁"
   tagIds: string[]; // references Tag.id — supports multiple tags
   status: "ahead" | "on-track" | "at-risk";
   milestone: string;
@@ -78,12 +81,13 @@ export interface FocusSession {
 export interface Habit {
   id: string;
   title: string;
-  type: "start" | "stop";        // start = build positive, stop = break negative
+  type: "start" | "stop";                        // start = build positive, stop = break negative
+  routine?: "morning" | "day" | "evening";       // which part of the day; defaults to "day"
   frequency: "daily" | "weekly" | "monthly";
-  targetCount: number;           // how many completions per frequency window
+  targetCount: number;                           // how many completions per frequency window
   emoji: string;
   notes: string;
-  history: Record<string, boolean>; // { "YYYY-MM-DD": true }
+  history: Record<string, boolean>;              // { "YYYY-MM-DD": true }
 }
 
 export interface RecurringHistoryEntry {
@@ -146,6 +150,7 @@ const INITIAL_HABITS: Habit[] = [
     id: "habit-1",
     title:       "Read Books",
     type:        "start",
+    routine:     "evening",
     frequency:   "daily",
     targetCount: 5,
     emoji:       "📚",
@@ -156,6 +161,7 @@ const INITIAL_HABITS: Habit[] = [
     id: "habit-2",
     title:       "Morning Workout",
     type:        "start",
+    routine:     "morning",
     frequency:   "daily",
     targetCount: 5,
     emoji:       "💪",
@@ -166,6 +172,7 @@ const INITIAL_HABITS: Habit[] = [
     id: "habit-3",
     title:       "Eat Junk Food",
     type:        "stop",
+    routine:     "day",
     frequency:   "weekly",
     targetCount: 2,
     emoji:       "🍔",
@@ -176,6 +183,7 @@ const INITIAL_HABITS: Habit[] = [
     id: "habit-4",
     title:       "Late Night Screen Time",
     type:        "stop",
+    routine:     "evening",
     frequency:   "daily",
     targetCount: 3,
     emoji:       "📵",
@@ -217,25 +225,25 @@ const INITIAL_RECURRING: RecurringTask[] = [
 // ── Seed data ────────────────────────────────────────────────────────────────
 
 const INITIAL_PROJECTS: Project[] = [
-  { id: "priv-1", sphere: "Private",    name: "Home Renovation",         tagIds: ["tag-home"],       status: "on-track", milestone: "Kitchen complete · Jun 15" },
-  { id: "priv-2", sphere: "Private",    name: "Garden Landscaping",      tagIds: ["tag-outdoor"],    status: "at-risk",  milestone: "Design sign-off · Jul 1"  },
-  { id: "priv-3", sphere: "Private",    name: "Personal Finance Plan",   tagIds: ["tag-finance"],    status: "on-track", milestone: "Q3 review · Aug 1"        },
-  { id: "b1-1",   sphere: "Business 1", name: "Q2 Marketing Strategy",   tagIds: ["tag-marketing"],  status: "ahead",    milestone: "Campaign live · Jun 1"    },
-  { id: "b1-2",   sphere: "Business 1", name: "Product Launch v2.0",     tagIds: ["tag-product"],    status: "on-track", milestone: "Beta release · Jul 15"    },
-  { id: "b1-3",   sphere: "Business 1", name: "Brand Identity Refresh",  tagIds: ["tag-design"],     status: "on-track", milestone: "Final review · Jun 30"    },
-  { id: "b2-1",   sphere: "Business 2", name: "Client Onboarding System",tagIds: ["tag-operations"], status: "on-track", milestone: "Soft launch · Jun 20"     },
-  { id: "b2-2",   sphere: "Business 2", name: "Revenue Dashboard",       tagIds: ["tag-analytics"],  status: "at-risk",  milestone: "MVP · Aug 1"              },
-  { id: "b2-3",   sphere: "Business 2", name: "Partnership Outreach",    tagIds: ["tag-bizdev"],     status: "ahead",    milestone: "2 deals signed · Jun 10"  },
+  { id: "priv-1", sphere: "Private",    emoji: "🏡", name: "Home Renovation",         tagIds: ["tag-home"],       status: "on-track", milestone: "Kitchen complete · Jun 15" },
+  { id: "priv-2", sphere: "Private",    emoji: "🌿", name: "Garden Landscaping",      tagIds: ["tag-outdoor"],    status: "at-risk",  milestone: "Design sign-off · Jul 1"  },
+  { id: "priv-3", sphere: "Private",    emoji: "💰", name: "Personal Finance Plan",   tagIds: ["tag-finance"],    status: "on-track", milestone: "Q3 review · Aug 1"        },
+  { id: "b1-1",   sphere: "Business 1", emoji: "📣", name: "Q2 Marketing Strategy",   tagIds: ["tag-marketing"],  status: "ahead",    milestone: "Campaign live · Jun 1"    },
+  { id: "b1-2",   sphere: "Business 1", emoji: "🚀", name: "Product Launch v2.0",     tagIds: ["tag-product"],    status: "on-track", milestone: "Beta release · Jul 15"    },
+  { id: "b1-3",   sphere: "Business 1", emoji: "🎨", name: "Brand Identity Refresh",  tagIds: ["tag-design"],     status: "on-track", milestone: "Final review · Jun 30"    },
+  { id: "b2-1",   sphere: "Business 2", emoji: "👥", name: "Client Onboarding System",tagIds: ["tag-operations"], status: "on-track", milestone: "Soft launch · Jun 20"     },
+  { id: "b2-2",   sphere: "Business 2", emoji: "📊", name: "Revenue Dashboard",       tagIds: ["tag-analytics"],  status: "at-risk",  milestone: "MVP · Aug 1"              },
+  { id: "b2-3",   sphere: "Business 2", emoji: "🤝", name: "Partnership Outreach",    tagIds: ["tag-bizdev"],     status: "ahead",    milestone: "2 deals signed · Jun 10"  },
   // ── siin ──────────────────────────────────────────────────────────────────
-  { id: "siin-p1", sphere: "siin", name: "Brand",       tagIds: ["tag-brand"],       status: "on-track", milestone: "In progress" },
-  { id: "siin-p2", sphere: "siin", name: "Business",    tagIds: ["tag-business"],    status: "on-track", milestone: "In progress" },
-  { id: "siin-p3", sphere: "siin", name: "Product",     tagIds: ["tag-product"],     status: "on-track", milestone: "In progress" },
-  { id: "siin-p4", sphere: "siin", name: "Website",     tagIds: ["tag-website"],     status: "on-track", milestone: "In progress" },
-  { id: "siin-p5", sphere: "siin", name: "Marketing",   tagIds: ["tag-marketing"],   status: "on-track", milestone: "In progress" },
-  { id: "siin-p6", sphere: "siin", name: "Clients",     tagIds: ["tag-clients"],     status: "on-track", milestone: "In progress" },
-  { id: "siin-p7", sphere: "siin", name: "Content",     tagIds: ["tag-content"],     status: "on-track", milestone: "In progress" },
-  { id: "siin-p8", sphere: "siin", name: "Meetings",    tagIds: ["tag-meetings"],    status: "on-track", milestone: "In progress" },
-  { id: "siin-p9", sphere: "siin", name: "Influencers", tagIds: ["tag-influencers"], status: "on-track", milestone: "In progress" },
+  { id: "siin-p1", sphere: "siin", emoji: "🎨", name: "Brand",       tagIds: ["tag-brand"],       status: "on-track", milestone: "In progress" },
+  { id: "siin-p2", sphere: "siin", emoji: "💼", name: "Business",    tagIds: ["tag-business"],    status: "on-track", milestone: "In progress" },
+  { id: "siin-p3", sphere: "siin", emoji: "🚀", name: "Product",     tagIds: ["tag-product"],     status: "on-track", milestone: "In progress" },
+  { id: "siin-p4", sphere: "siin", emoji: "💻", name: "Website",     tagIds: ["tag-website"],     status: "on-track", milestone: "In progress" },
+  { id: "siin-p5", sphere: "siin", emoji: "📣", name: "Marketing",   tagIds: ["tag-marketing"],   status: "on-track", milestone: "In progress" },
+  { id: "siin-p6", sphere: "siin", emoji: "👥", name: "Clients",     tagIds: ["tag-clients"],     status: "on-track", milestone: "In progress" },
+  { id: "siin-p7", sphere: "siin", emoji: "✍️", name: "Content",     tagIds: ["tag-content"],     status: "on-track", milestone: "In progress" },
+  { id: "siin-p8", sphere: "siin", emoji: "💬", name: "Meetings",    tagIds: ["tag-meetings"],    status: "on-track", milestone: "In progress" },
+  { id: "siin-p9", sphere: "siin", emoji: "⭐", name: "Influencers", tagIds: ["tag-influencers"], status: "on-track", milestone: "In progress" },
 ];
 
 const INITIAL_TASKS: Task[] = [
@@ -322,6 +330,7 @@ type Action =
   | { type: "ADD_SPHERE"; name: string; labelColor: string }
   | { type: "UPDATE_SPHERE"; id: string; fields: Partial<Pick<Sphere, "name" | "labelColor" | "description">> }
   | { type: "DELETE_SPHERE"; id: string }
+  | { type: "REORDER_SPHERES"; startIndex: number; endIndex: number }
   | { type: "UPDATE_PROJECT"; id: string; fields: Partial<Omit<Project, "id">> }
   | { type: "ADD_TAG"; tag: Omit<Tag, "id"> }
   | { type: "UPDATE_TAG"; id: string; fields: Partial<Omit<Tag, "id">> }
@@ -634,6 +643,13 @@ function reducer(state: State, action: Action): State {
       };
     }
 
+    case "REORDER_SPHERES": {
+      const next = [...state.spheres];
+      const [moved] = next.splice(action.startIndex, 1);
+      next.splice(action.endIndex, 0, moved);
+      return { ...state, spheres: next };
+    }
+
     case "ADD_HABIT": {
       const habit: Habit = {
         ...action.habit,
@@ -698,20 +714,28 @@ function reviveState(raw: Record<string, unknown>): State {
     } as RecurringTask;
   });
 
-  // Migrate projects from old tag/tagColor schema to tagId
+  // Migrate projects from old tag/tagColor schema to tagId; backfill emoji
   const liveTags = ((raw.tags as Tag[]) ?? INITIAL_TAGS);
   const projects = ((raw.projects as unknown[]) ?? []).map((p) => {
     const proj = p as Record<string, unknown>;
+    const withEmoji = (base: Record<string, unknown>) =>
+      ({ emoji: "📁", ...base } as unknown as Project);
     // Already new schema (tagIds array)
-    if (Array.isArray(proj.tagIds)) return proj as unknown as Project;
+    if (Array.isArray(proj.tagIds)) return withEmoji(proj);
     // Previous schema: tagId as single string
     if (typeof proj.tagId === "string" && proj.tagId) {
-      return { ...proj, tagIds: [proj.tagId] } as unknown as Project;
+      return withEmoji({ ...proj, tagIds: [proj.tagId] });
     }
     // Legacy schema: tag/tagColor raw strings
     const match = liveTags.find((t) => t.label === proj.tag);
-    return { ...proj, tagIds: [match?.id ?? liveTags[0]?.id ?? "tag-product"] } as unknown as Project;
+    return withEmoji({ ...proj, tagIds: [match?.id ?? liveTags[0]?.id ?? "tag-product"] });
   });
+
+  // Migrate habits — backfill routine field for records saved before it existed
+  const habits = ((raw.habits as Habit[]) ?? INITIAL_HABITS).map((h) => ({
+    ...h,
+    routine: h.routine ?? "day",
+  })) as Habit[];
 
   // If the stored tracking date is behind today, surface the nightly review gate.
   const today              = new Date().toLocaleDateString("en-CA");
@@ -721,6 +745,7 @@ function reviveState(raw: Record<string, unknown>): State {
   return {
     ...(raw as unknown as State),
     tags: liveTags,
+    habits,
     sessions,
     recurringTasks,
     projects,
@@ -858,9 +883,11 @@ interface DashboardContextType {
   addSphere: (name: string, labelColor: string) => void;
   updateSphere: (id: string, fields: Partial<Pick<Sphere, "name" | "labelColor" | "description">>) => void;
   deleteSphere: (id: string) => void;
+  reorderSpheres: (startIndex: number, endIndex: number) => void;
   updateProject: (id: string, fields: Partial<Omit<Project, "id">>) => void;
   addTask: (task: Omit<Task, "id">) => void;
   updateTask: (id: string, fields: Partial<Task>) => void;
+  toggleTaskComplete: (id: string) => void;
   deleteTask: (id: string) => void;
   addProject: (project: Omit<Project, "id">) => void;
   addManualTime: (projectId: string, minutes: number) => void;
@@ -870,6 +897,10 @@ interface DashboardContextType {
   resetTimer: () => void;
   finishSession: () => void;
   setEstimate: (minutes: number) => void;
+  activeTaskId: string | null;
+  timerIsRunning: boolean;
+  startGlobalTimer: (taskId: string) => void;
+  pauseGlobalTimer: () => void;
   addRecurringTask: (task: Omit<RecurringTask, "id" | "completionCount" | "history">) => void;
   updateRecurringTask: (id: string, fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel">>) => void;
   deleteRecurringTask: (id: string) => void;
@@ -936,18 +967,37 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         toggleHabitDate: (id, dateString)=> dispatch({ type: "TOGGLE_HABIT_DATE", id, dateString }),
         updateHabit:     (id, fields)    => dispatch({ type: "UPDATE_HABIT", id, fields }),
         deleteHabit:     (id)            => dispatch({ type: "DELETE_HABIT", id }),
-        addSphere:     (name, labelColor) => dispatch({ type: "ADD_SPHERE", name, labelColor }),
-        updateSphere:  (id, fields)      => dispatch({ type: "UPDATE_SPHERE", id, fields }),
-        deleteSphere:  (id)              => dispatch({ type: "DELETE_SPHERE", id }),
+        addSphere:      (name, labelColor)           => dispatch({ type: "ADD_SPHERE", name, labelColor }),
+        updateSphere:   (id, fields)                => dispatch({ type: "UPDATE_SPHERE", id, fields }),
+        deleteSphere:   (id)                        => dispatch({ type: "DELETE_SPHERE", id }),
+        reorderSpheres: (startIndex, endIndex)      => dispatch({ type: "REORDER_SPHERES", startIndex, endIndex }),
         updateProject: (id, fields)      => dispatch({ type: "UPDATE_PROJECT", id, fields }),
         addTask:              (task)              => dispatch({ type: "ADD_TASK", task }),
         updateTask:           (id, fields)        => dispatch({ type: "UPDATE_TASK", id, fields }),
+        toggleTaskComplete:   (id)               => {
+          const t = state.tasks.find((task) => task.id === id);
+          if (t) dispatch({ type: "UPDATE_TASK", id, fields: { done: !t.done } });
+        },
         deleteTask:           (id)               => dispatch({ type: "DELETE_TASK", id }),
         addProject:           (project)           => dispatch({ type: "ADD_PROJECT", project }),
         addManualTime:        (projectId, minutes)=> dispatch({ type: "ADD_MANUAL_TIME", projectId, minutes }),
         startTask:            (task)              => dispatch({ type: "START_TASK", task }),
         startFree:            ()                  => dispatch({ type: "START_FREE" }),
         pauseSession:         ()                  => dispatch({ type: "PAUSE_SESSION" }),
+        activeTaskId:         state.activeTask?.id ?? null,
+        timerIsRunning:       state.running,
+        startGlobalTimer:     (taskId) => {
+          // Resume: same task is already loaded but paused — preserve elapsed, just restart the ticker
+          if (state.activeTask?.id === taskId && !state.running) {
+            dispatch({ type: "START_FREE" });
+            return;
+          }
+          // New task: commit any in-progress elapsed as a partial session, then start fresh
+          const t = state.tasks.find((task) => task.id === taskId);
+          if (!t) return;
+          dispatch({ type: "START_TASK", task: { id: t.id, title: t.title, project: t.project, sphere: t.sphere, estimatedMinutes: t.dailyTargetMinutes ?? undefined } });
+        },
+        pauseGlobalTimer:     () => dispatch({ type: "PAUSE_SESSION" }),
         resetTimer:           ()                  => dispatch({ type: "RESET" }),
         finishSession:        ()                  => dispatch({ type: "FINISH_SESSION" }),
         setEstimate:          (minutes)           => dispatch({ type: "SET_ESTIMATE", minutes }),

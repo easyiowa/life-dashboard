@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useDashboard, type Habit } from "@/context/DashboardContext";
+import EmojiPickerButton from "@/components/EmojiPickerButton";
 
 interface Props {
   open: boolean;
@@ -25,13 +26,14 @@ const EMOJI_RULES: { pattern: RegExp; emoji: string }[] = [
   { pattern: /screen|phone|social.?media|scroll/i,  emoji: "📵" },
   { pattern: /coffee|caffeine/i,                    emoji: "☕" },
   { pattern: /alcohol|drink|wine|beer/i,            emoji: "🍷" },
-  { pattern: /code|program|dev/i,                   emoji: "💻" },
+  { pattern: /code|program|dev|laptop|computer|\bpc\b|coding/i, emoji: "💻" },
   { pattern: /stretch|yoga|flexib/i,                emoji: "🤸" },
 ];
 
 function suggestEmoji(title: string): string {
+  const lower = title.toLowerCase().trim();
   for (const { pattern, emoji } of EMOJI_RULES) {
-    if (pattern.test(title)) return emoji;
+    if (pattern.test(lower)) return emoji;
   }
   return "⭐";
 }
@@ -71,7 +73,7 @@ function ToggleGroup<T extends string>({
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
-const TYPE_OPTIONS:      { value: Habit["type"];      label: string }[] = [
+const TYPE_OPTIONS: { value: Habit["type"]; label: string }[] = [
   { value: "start", label: "🔥 Start (build)" },
   { value: "stop",  label: "🛑 Stop (break)"  },
 ];
@@ -80,12 +82,18 @@ const FREQ_OPTIONS: { value: Habit["frequency"]; label: string }[] = [
   { value: "weekly",  label: "Weekly"  },
   { value: "monthly", label: "Monthly" },
 ];
+const ROUTINE_OPTIONS: { value: NonNullable<Habit["routine"]>; label: string }[] = [
+  { value: "morning", label: "☀️ Morning" },
+  { value: "day",     label: "🌤️ Day"     },
+  { value: "evening", label: "🌙 Evening" },
+];
 
 export default function HabitModal({ open, onClose }: Props) {
   const { addHabit } = useDashboard();
 
   const [title,       setTitle]       = useState("");
   const [type,        setType]        = useState<Habit["type"]>("start");
+  const [routine,     setRoutine]     = useState<NonNullable<Habit["routine"]>>("morning");
   const [frequency,   setFrequency]   = useState<Habit["frequency"]>("daily");
   const [targetCount, setTargetCount] = useState(5);
   const [emoji,       setEmoji]       = useState("⭐");
@@ -99,7 +107,7 @@ export default function HabitModal({ open, onClose }: Props) {
   }, [title, emojiLocked]);
 
   function reset() {
-    setTitle(""); setType("start"); setFrequency("daily");
+    setTitle(""); setType("start"); setRoutine("morning"); setFrequency("daily");
     setTargetCount(5); setEmoji("⭐"); setEmojiLocked(false);
     setNotes(""); setTitleErr(false);
   }
@@ -109,7 +117,7 @@ export default function HabitModal({ open, onClose }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setTitleErr(true); return; }
-    addHabit({ title: title.trim(), type, frequency, targetCount, emoji, notes });
+    addHabit({ title: title.trim(), type, routine, frequency, targetCount, emoji, notes });
     handleClose();
   }
 
@@ -135,19 +143,11 @@ export default function HabitModal({ open, onClose }: Props) {
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Habit Name *</label>
             <div className="flex gap-2">
-              {/* Emoji pill — click to cycle or lock */}
-              <button
-                type="button"
-                title="Click to lock/unlock emoji"
-                onClick={() => setEmojiLocked((v) => !v)}
-                className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg border transition-all ${
-                  emojiLocked
-                    ? "border-violet-500/50 bg-violet-600/15"
-                    : "border-white/[0.07] bg-white/[0.04] hover:bg-white/[0.07]"
-                }`}
-              >
-                {emoji}
-              </button>
+              <EmojiPickerButton
+                emoji={emoji}
+                locked={emojiLocked}
+                onPick={(e) => { setEmoji(e); setEmojiLocked(true); }}
+              />
               <input
                 autoFocus
                 type="text"
@@ -162,7 +162,7 @@ export default function HabitModal({ open, onClose }: Props) {
             {titleErr && <p className="text-[10px] text-red-400">Habit name is required.</p>}
             {!emojiLocked && title.length > 0 && (
               <p className="text-[10px] text-slate-600">
-                Suggested emoji: <span className="text-slate-400">{emoji}</span> · Click the emoji to lock it.
+                Auto-suggested: <span className="text-slate-400">{emoji}</span> · Click the emoji to browse all.
               </p>
             )}
           </div>
@@ -179,6 +179,17 @@ export default function HabitModal({ open, onClose }: Props) {
                   ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-300"
                   : "bg-red-600/20 border-red-500/50 text-red-300"
               }
+            />
+          </div>
+
+          {/* Routine */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Assign Routine</label>
+            <ToggleGroup
+              options={ROUTINE_OPTIONS}
+              value={routine}
+              onChange={setRoutine}
+              activeClass="bg-violet-600/20 border-violet-500/50 text-violet-200"
             />
           </div>
 

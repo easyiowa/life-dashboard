@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FolderKanban,
   CheckSquare,
@@ -12,13 +12,33 @@ import {
   CheckCircle2,
   Circle,
   Play,
+  Pause,
   Zap,
   Plus,
   Settings2,
   X,
+  Target,
   Trash2,
   Pencil,
+  GripVertical,
+  FileText,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   useDashboard,
   type Task,
@@ -102,36 +122,157 @@ const COLOR_PALETTE: { value: string; dot: string }[] = [
   { value: "indigo",  dot: "bg-indigo-500"  },
 ];
 
+// ── Sortable sphere row ───────────────────────────────────────────────────────
+
+function SortableSphereItem({ sphere, canDelete }: { sphere: Sphere; canDelete: boolean }) {
+  const { updateSphere, deleteSphere } = useDashboard();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: sphere.id });
+
+  const [name,    setName]    = useState(sphere.name);
+  const [color,   setColor]   = useState(sphere.labelColor);
+  const [desc,    setDesc]    = useState(sphere.description ?? "");
+  const [confirm, setConfirm] = useState(false);
+
+  // Re-sync if an external update changes the sphere's canonical values
+  useEffect(() => {
+    setName(sphere.name);
+    setColor(sphere.labelColor);
+    setDesc(sphere.description ?? "");
+  }, [sphere.name, sphere.labelColor, sphere.description]);
+
+  const isDirty =
+    name !== sphere.name ||
+    color !== sphere.labelColor ||
+    desc !== (sphere.description ?? "");
+
+  function save() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    updateSphere(sphere.id, { name: trimmed, labelColor: color, description: desc.trim() || undefined });
+  }
+
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-xl border p-3 flex flex-col gap-2 transition-all duration-150 ${
+        isDragging
+          ? "shadow-2xl border-purple-500/30 bg-white/[0.04] scale-[1.01] z-50 opacity-80"
+          : "border-white/[0.06] bg-white/[0.02]"
+      }`}
+    >
+      {confirm ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-slate-300">
+            Delete <span className="text-white font-medium">"{sphere.name}"</span>? All tasks will be reassigned to the first sphere.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirm(false)}
+              className="flex-1 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-slate-400 hover:text-white transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => { deleteSphere(sphere.id); setConfirm(false); }}
+              className="flex-1 h-7 rounded-lg bg-red-600 hover:bg-red-500 text-xs text-white font-medium transition-all"
+            >
+              Confirm Delete
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            {/* Drag handle */}
+            <button
+              {...attributes}
+              {...listeners}
+              className="flex-shrink-0 text-slate-600 hover:text-slate-400 cursor-grab active:cursor-grabbing transition-colors touch-none"
+              title="Drag to reorder"
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
+            {/* Color dot */}
+            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${COLOR_PALETTE.find(c => c.value === color)?.dot ?? "bg-slate-500"}`} />
+            {/* Name input */}
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors"
+            />
+            {/* Save */}
+            {isDirty && (
+              <button
+                onClick={save}
+                className="px-2.5 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs text-white font-medium transition-all flex-shrink-0"
+              >
+                Save
+              </button>
+            )}
+            {/* Delete */}
+            <button
+              onClick={() => setConfirm(true)}
+              disabled={!canDelete}
+              className="w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title={!canDelete ? "Cannot delete last sphere" : "Delete sphere"}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+
+          {/* Description */}
+          <input
+            type="text"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder="Short description…"
+            className="h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-[11px] text-slate-300 placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
+          />
+
+          {/* Color picker — indented to align under name */}
+          <div className="flex gap-1.5 pl-10">
+            {COLOR_PALETTE.map((c) => (
+              <button
+                key={c.value}
+                onClick={() => setColor(c.value)}
+                className={`w-4 h-4 rounded-full ${c.dot} transition-all ${
+                  color === c.value ? "ring-2 ring-white/60 ring-offset-1 ring-offset-[#0F1629]" : "opacity-50 hover:opacity-100"
+                }`}
+                title={c.value}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Manage Spheres modal ──────────────────────────────────────────────────────
 
 function ManageSpheresModal({ onClose }: { onClose: () => void }) {
-  const { spheres, addSphere, updateSphere, deleteSphere } = useDashboard();
+  const { spheres, addSphere, reorderSpheres } = useDashboard();
 
-  // Per-sphere inline edit state
-  const [editName,  setEditName]  = useState<Record<string, string>>({});
-  const [editColor, setEditColor] = useState<Record<string, string>>({});
-  const [editDesc,  setEditDesc]  = useState<Record<string, string>>({});
-  const [confirmId, setConfirmId] = useState<string | null>(null);
-
-  // New sphere form
   const [newName,  setNewName]  = useState("");
   const [newColor, setNewColor] = useState("blue");
   const [newErr,   setNewErr]   = useState(false);
 
-  function nameFor(s: Sphere)  { return editName[s.id]  ?? s.name;              }
-  function colorFor(s: Sphere) { return editColor[s.id] ?? s.labelColor;        }
-  function descFor(s: Sphere)  { return editDesc[s.id]  ?? (s.description ?? ""); }
-  function isDirty(s: Sphere)  {
-    return nameFor(s) !== s.name || colorFor(s) !== s.labelColor || descFor(s) !== (s.description ?? "");
-  }
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
-  function saveSphere(s: Sphere) {
-    const name = nameFor(s).trim();
-    if (!name) return;
-    updateSphere(s.id, { name, labelColor: colorFor(s), description: descFor(s).trim() || undefined });
-    setEditName((p)  => { const n = { ...p }; delete n[s.id]; return n; });
-    setEditColor((p) => { const n = { ...p }; delete n[s.id]; return n; });
-    setEditDesc((p)  => { const n = { ...p }; delete n[s.id]; return n; });
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = spheres.findIndex((s) => s.id === active.id);
+    const to   = spheres.findIndex((s) => s.id === over.id);
+    if (from !== -1 && to !== -1) reorderSpheres(from, to);
   }
 
   function handleAdd() {
@@ -160,87 +301,16 @@ function ManageSpheresModal({ onClose }: { onClose: () => void }) {
 
         <div className="p-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
 
-          {/* Existing spheres */}
-          <div className="flex flex-col gap-2">
-            {spheres.map((s) => (
-              <div key={s.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 flex flex-col gap-2">
-                {confirmId === s.id ? (
-                  /* Delete confirmation inline */
-                  <div className="flex flex-col gap-2">
-                    <p className="text-xs text-slate-300">
-                      Delete <span className="text-white font-medium">"{s.name}"</span>? All tasks will be reassigned to the first sphere.
-                    </p>
-                    <div className="flex gap-2">
-                      <button onClick={() => setConfirmId(null)} className="flex-1 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-slate-400 hover:text-white transition-all">
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => { deleteSphere(s.id); setConfirmId(null); }}
-                        className="flex-1 h-7 rounded-lg bg-red-600 hover:bg-red-500 text-xs text-white font-medium transition-all"
-                      >
-                        Confirm Delete
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2">
-                      {/* Color dot indicator */}
-                      <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${COLOR_PALETTE.find(c => c.value === colorFor(s))?.dot ?? "bg-slate-500"}`} />
-                      {/* Name input */}
-                      <input
-                        type="text"
-                        value={nameFor(s)}
-                        onChange={(e) => setEditName((p) => ({ ...p, [s.id]: e.target.value }))}
-                        className="flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors"
-                      />
-                      {/* Save */}
-                      {isDirty(s) && (
-                        <button
-                          onClick={() => saveSphere(s)}
-                          className="px-2.5 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs text-white font-medium transition-all flex-shrink-0"
-                        >
-                          Save
-                        </button>
-                      )}
-                      {/* Delete */}
-                      <button
-                        onClick={() => setConfirmId(s.id)}
-                        disabled={spheres.length <= 1}
-                        className="w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                        title={spheres.length <= 1 ? "Cannot delete last sphere" : "Delete sphere"}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-
-                    {/* Description input */}
-                    <input
-                      type="text"
-                      value={descFor(s)}
-                      onChange={(e) => setEditDesc((p) => ({ ...p, [s.id]: e.target.value }))}
-                      placeholder="Short description…"
-                      className="h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-[11px] text-slate-300 placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
-                    />
-
-                    {/* Color picker */}
-                    <div className="flex gap-1.5 pl-5">
-                      {COLOR_PALETTE.map((c) => (
-                        <button
-                          key={c.value}
-                          onClick={() => setEditColor((p) => ({ ...p, [s.id]: c.value }))}
-                          className={`w-4 h-4 rounded-full ${c.dot} transition-all ${
-                            colorFor(s) === c.value ? "ring-2 ring-white/60 ring-offset-1 ring-offset-[#0F1629]" : "opacity-50 hover:opacity-100"
-                          }`}
-                          title={c.value}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
+          {/* Sortable sphere list */}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={spheres.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-2">
+                {spheres.map((s) => (
+                  <SortableSphereItem key={s.id} sphere={s} canDelete={spheres.length > 1} />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
 
           {/* Divider */}
           <div className="border-t border-white/[0.05]" />
@@ -286,6 +356,19 @@ function ManageSpheresModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── Multi-axis sort weights ───────────────────────────────────────────────────
+
+const URGENCY_W:  Record<string, number> = { urgent: 2, "not-urgent": 1 };
+const PRIORITY_W: Record<string, number> = { High: 3, Med: 2, Low: 1 };
+
+function sortTasks(tasks: Task[]): Task[] {
+  return [...tasks].sort((a, b) => {
+    const uDiff = (URGENCY_W[b.urgency ?? "not-urgent"] ?? 1) - (URGENCY_W[a.urgency ?? "not-urgent"] ?? 1);
+    if (uDiff !== 0) return uDiff;
+    return (PRIORITY_W[b.priority] ?? 0) - (PRIORITY_W[a.priority] ?? 0);
+  });
+}
+
 // ── Nested task row ───────────────────────────────────────────────────────────
 
 function TaskRow({
@@ -297,74 +380,116 @@ function TaskRow({
   onInspect: (t: Task) => void;
   loggedSeconds?: number;
 }) {
-  const { updateTask, deleteTask, activeTask, startTask } = useDashboard();
-  const isActive = activeTask?.id === task.id;
-  const timeLabel = fmtDuration(loggedSeconds);
+  const { updateTask, deleteTask, activeTaskId, timerIsRunning, startGlobalTimer, pauseGlobalTimer, toggleTaskForToday, currentTrackingDate } = useDashboard();
+  const isThisTaskActive = activeTaskId === task.id && timerIsRunning;
+  const isQueued         = (task.queuedDate ?? null) === currentTrackingDate;
+  const timeLabel        = fmtDuration(loggedSeconds);
+  const hasNote          = !!(task.notes && task.notes.trim().length > 0);
 
   return (
     <div
       onClick={() => onInspect(task)}
-      className={`group flex items-start gap-2 px-2.5 py-2 rounded-lg border transition-all duration-200 cursor-pointer ${
-        isActive
-          ? "border-violet-500/30 bg-violet-600/[0.07]"
-          : task.done
-            ? "border-transparent opacity-40"
-            : "border-white/[0.04] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.03]"
-      }`}
-    >
-      <button
-        onClick={(e) => { e.stopPropagation(); updateTask(task.id, { done: !task.done }); }}
-        className="mt-0.5 flex-shrink-0"
-        aria-label="Toggle complete"
+        className={`group flex items-center justify-between w-full px-2.5 py-2 rounded-lg border transition-all duration-200 cursor-pointer ${
+          isThisTaskActive
+            ? "border-violet-500/30 bg-violet-600/[0.07]"
+            : task.done
+              ? "border-transparent opacity-40"
+              : "border-white/[0.04] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.03]"
+        }`}
       >
-        {task.done
-          ? <CheckCircle2 className="w-4 h-4 text-violet-500" />
-          : <Circle className="w-4 h-4 text-slate-600 hover:text-slate-400 transition-colors" />}
-      </button>
+        {/* ── Left: checkbox + title + taxonomy pills ─────────────────────── */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); updateTask(task.id, { done: !task.done }); }}
+            className="flex-shrink-0"
+            aria-label="Toggle complete"
+          >
+            {task.done
+              ? <CheckCircle2 className="w-4 h-4 text-violet-500" />
+              : <Circle className="w-4 h-4 text-slate-600 hover:text-slate-400 transition-colors" />}
+          </button>
 
-      <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-        <p className={`text-sm text-white leading-none ${task.done ? "line-through text-slate-500" : ""}`}>
-          {task.title}
-        </p>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Pill label={task.priority} className={PRIORITY_STYLE[task.priority]} />
-          <Pill label={task.energy}   className={ENERGY_STYLE[task.energy]}     />
-          {task.deadline && (
-            <span className="text-[10px] text-slate-500">
-              {new Date(task.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          <div className="flex flex-col gap-1 min-w-0">
+            <p className={`text-sm text-white leading-none truncate ${task.done ? "line-through text-slate-500" : ""}`}>
+              {task.title}
+            </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {task.urgency === "urgent" && (
+                <span className="text-[11px] leading-none" title="Urgent">🔥</span>
+              )}
+              <Pill label={task.priority} className={PRIORITY_STYLE[task.priority]} />
+              <Pill label={task.energy}   className={ENERGY_STYLE[task.energy]}     />
+              {task.deadline && (
+                <span className="text-[10px] text-slate-500">
+                  {new Date(task.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Right: contextual actions ────────────────────────────────────── */}
+        <div className="flex items-center gap-1.5 ml-4 flex-shrink-0">
+
+          {/* Time logged */}
+          {timeLabel && (
+            <span className="text-[10px] font-mono text-slate-500 tabular-nums mr-1">
+              {timeLabel}
             </span>
           )}
+
+          {/* Note indicator — CSS group-hover tooltip */}
+          {hasNote && (
+            <div
+              className="relative flex-shrink-0 group/note"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="flex items-center justify-center p-1 text-slate-500 hover:text-purple-400 cursor-pointer transition-colors">
+                <FileText className="w-3.5 h-3.5" />
+              </span>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover/note:block w-max max-w-xs bg-slate-900/95 border border-white/[0.08] text-slate-200 text-xs rounded-lg px-3 py-2.5 shadow-2xl backdrop-blur-md z-50 whitespace-pre-wrap break-words leading-relaxed pointer-events-none">
+                {task.notes}
+              </div>
+            </div>
+          )}
+
+          {/* Queue to Today */}
+          {!task.done && (
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, "finish", null); }}
+              title={isQueued ? "Queued for today" : "Queue for today"}
+              className={`flex-shrink-0 p-1 rounded transition-colors opacity-0 group-hover:opacity-100 ${
+                isQueued ? "text-purple-400" : "text-slate-500 hover:text-purple-400"
+              }`}
+            >
+              <Target className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Play / Pause global timer */}
+          {!task.done && (
+            <button
+              onClick={(e) => { e.stopPropagation(); isThisTaskActive ? pauseGlobalTimer() : startGlobalTimer(task.id); }}
+              aria-label={isThisTaskActive ? "Pause focus session" : "Start focus session"}
+              className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
+                isThisTaskActive
+                  ? "bg-violet-500/25 text-violet-300 ring-1 ring-violet-400/40 shadow-[0_0_10px_rgba(139,92,246,0.35)]"
+                  : "bg-white/[0.04] text-slate-500 border border-white/[0.07] opacity-0 group-hover:opacity-100 hover:bg-violet-500/20 hover:text-violet-400 hover:border-violet-500/30"
+              }`}
+            >
+              {isThisTaskActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3 h-3 translate-x-[1px]" />}
+            </button>
+          )}
+
+          {/* Delete */}
+          <button
+            onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+            aria-label="Delete task"
+            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-600 hover:text-rose-400 transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
-      </div>
-
-      {/* Per-task logged time — only when sessions exist */}
-      {timeLabel && (
-        <span className="flex-shrink-0 self-center text-[10px] font-mono text-slate-500 tabular-nums">
-          {timeLabel} logged
-        </span>
-      )}
-
-      {!task.done && (
-        <button
-          onClick={(e) => { e.stopPropagation(); startTask({ id: task.id, title: task.title, project: task.project, sphere: task.sphere }); }}
-          aria-label={isActive ? "Currently active" : "Start focus session"}
-          className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
-            isActive
-              ? "bg-violet-500/25 text-violet-300 ring-1 ring-violet-400/40 shadow-[0_0_10px_rgba(139,92,246,0.35)]"
-              : "bg-white/[0.04] text-slate-500 border border-white/[0.07] opacity-0 group-hover:opacity-100 hover:bg-violet-500/20 hover:text-violet-400 hover:border-violet-500/30"
-          }`}
-        >
-          {isActive ? <Zap className="w-3.5 h-3.5" /> : <Play className="w-3 h-3 translate-x-[1px]" />}
-        </button>
-      )}
-
-      <button
-        onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-        aria-label="Delete task"
-        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-600 hover:text-rose-400 transition-colors cursor-pointer p-1"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
     </div>
   );
 }
@@ -391,7 +516,7 @@ export default function ProjectsCard() {
 
   const sphereProjects = projects
     .filter((p) => p.sphere === activeSphere)
-    .map((project, i) => {
+    .map((project) => {
       const projectTasks = tasks.filter((t) => t.sphere === project.sphere && t.project === project.name);
       const total    = projectTasks.length;
       const done     = projectTasks.filter((t) => t.done).length;
@@ -419,6 +544,15 @@ export default function ProjectsCard() {
         ?? { id: "", label: "—", color: "violet" };
       const extraTagCount = Math.max(0, (project.tagIds?.length ?? 0) - 1);
 
+      // Composite urgency rank: urgent×high=10, urgent×med=5, urgent×low=2, else 0
+      const openTasks    = projectTasks.filter((t) => !t.done);
+      const urgencyScore = openTasks.reduce((sum, t) => {
+        if (t.urgency !== "urgent") return sum;
+        if (t.priority === "High")  return sum + 10;
+        if (t.priority === "Med")   return sum + 5;
+        return sum + 2;
+      }, 0);
+
       return {
         ...project,
         progress,
@@ -430,9 +564,17 @@ export default function ProjectsCard() {
         taskLoggedSecsMap,
         tagObj,
         extraTagCount,
-        index: i,
+        urgencyScore,
+        openTaskCount: openTasks.length,
+        index: 0, // re-assigned after sort
       };
-    });
+    })
+    .sort((a, b) => {
+      if (b.urgencyScore !== a.urgencyScore) return b.urgencyScore - a.urgencyScore;
+      if (b.openTaskCount !== a.openTaskCount) return b.openTaskCount - a.openTaskCount;
+      return a.progress - b.progress; // less complete rises
+    })
+    .map((project, i) => ({ ...project, index: i }));
 
   const avgProgress = sphereProjects.length > 0
     ? Math.round(sphereProjects.reduce((s, p) => s + p.progress, 0) / sphereProjects.length)
@@ -534,7 +676,10 @@ export default function ProjectsCard() {
                     <span className="text-[10px] font-mono text-slate-600 w-4 flex-shrink-0">
                       {String(project.index + 1).padStart(2, "0")}
                     </span>
-                    <span className="text-sm font-medium text-white flex-1 leading-none">{project.name}</span>
+                    <span className="text-sm font-medium text-white flex-1 leading-none flex items-center gap-1.5">
+                      {project.emoji && <span className="text-base leading-none flex-shrink-0">{project.emoji}</span>}
+                      {project.name}
+                    </span>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLORS[project.tagObj.color] ?? TAG_COLORS.violet}`}>
                       {project.tagObj.label}
                     </span>
@@ -600,7 +745,7 @@ export default function ProjectsCard() {
 
                 {/* Nested task list */}
                 {(() => {
-                  const activeTasks    = project.projectTasks.filter((t) => !t.done);
+                  const activeTasks    = sortTasks(project.projectTasks.filter((t) => !t.done));
                   const completedTasks = project.projectTasks.filter((t) =>  t.done);
                   const showCompleted  = !!showCompletedInProject[project.id];
                   const totalHeight    = project.projectTasks.length * 80 + (completedTasks.length > 0 ? 60 : 0) + 24;

@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Activity, ChevronDown } from "lucide-react";
-import { useDashboard, type FocusSession } from "@/context/DashboardContext";
+import { useDashboard, type FocusSession, type Sphere } from "@/context/DashboardContext";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const GOAL_SECONDS = 8 * 3600;
 const RING_R = 34;
 const RING_C = 2 * Math.PI * RING_R;
+
+// ── Formatters ────────────────────────────────────────────────────────────────
 
 function fmt(s: number): string {
   const h = Math.floor(s / 3600);
@@ -24,43 +26,64 @@ function fmtTime(date: Date): string {
   });
 }
 
-// ── Day-grouping ──────────────────────────────────────────────────────────────
+function fmtDayHeader(dateKey: string): string {
+  const [y, mo, d] = dateKey.split("-").map(Number);
+  return new Date(y, mo - 1, d).toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric",
+  });
+}
+
+function fmtMonthHeader(monthKey: string): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-US", {
+    month: "long", year: "numeric",
+  });
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface DayGroup {
-  key: string;          // "YYYY-MM-DD"
-  label: string;        // "Today" | "Yesterday" | "May 29, 2026"
+  key: string;           // "YYYY-MM-DD"
+  label: string;         // "Monday, June 1"
   totalSeconds: number;
   sessions: FocusSession[];
 }
 
-function getDayLabel(dateKey: string): string {
-  const todayKey = new Date().toLocaleDateString("en-CA");
-  const yd = new Date();
-  yd.setDate(yd.getDate() - 1);
-  const yesterdayKey = yd.toLocaleDateString("en-CA");
+interface WeekBucket  { id: string;       label: string; days: DayGroup[]; total: number; }
+interface MonthBucket { monthKey: string; label: string; days: DayGroup[]; total: number; }
 
-  if (dateKey === todayKey)     return "Today";
-  if (dateKey === yesterdayKey) return "Yesterday";
+// ── Date helpers ──────────────────────────────────────────────────────────────
 
-  const [y, mo, d] = dateKey.split("-").map(Number);
-  return new Date(y, mo - 1, d).toLocaleDateString("en-US", {
-    month: "long", day: "numeric", year: "numeric",
-  });
+function getMonday(d: Date): Date {
+  const date = new Date(d);
+  const day  = date.getDay(); // 0 = Sun
+  date.setDate(date.getDate() - day + (day === 0 ? -6 : 1));
+  date.setHours(0, 0, 0, 0);
+  return date;
 }
+
+function addDays(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function dk(d: Date): string { return d.toLocaleDateString("en-CA"); }
+
+// ── Group sessions by calendar day ────────────────────────────────────────────
 
 function groupByDay(sessions: FocusSession[]): DayGroup[] {
   const map = new Map<string, FocusSession[]>();
   for (const s of sessions) {
-    const key = s.completedAtDateString ??
-      new Date(s.completedAt).toLocaleDateString("en-CA");
+    const key = s.completedAtDateString ?? new Date(s.completedAt).toLocaleDateString("en-CA");
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(s);
   }
   return Array.from(map.entries())
-    .sort(([a], [b]) => b.localeCompare(a)) // newest first
+    .sort(([a], [b]) => b.localeCompare(a))
     .map(([key, ss]) => ({
       key,
-      label:        getDayLabel(key),
+      label:        fmtDayHeader(key),
       totalSeconds: ss.reduce((sum, s) => sum + s.durationSeconds, 0),
       sessions:     [...ss].sort(
         (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
@@ -68,12 +91,58 @@ function groupByDay(sessions: FocusSession[]): DayGroup[] {
     }));
 }
 
-// ── Sphere accent colours (mapped from labelColor palette) ───────────────────
+// ── Bucket day-groups into week / month hierarchy ─────────────────────────────
+
+function bucketGroups(allGroups: DayGroup[]): {
+  currentWeek:    WeekBucket;
+  previousWeek:   WeekBucket;
+  monthlyArchive: MonthBucket[];
+} {
+  const today      = new Date();
+  const thisMonday = getMonday(today);
+  const thisSunday = addDays(thisMonday, 6);
+  const prevMonday = addDays(thisMonday, -7);
+  const prevSunday = addDays(thisMonday, -1);
+
+  const curDays:  DayGroup[] = [];
+  const prevDays: DayGroup[] = [];
+  const archDays: DayGroup[] = [];
+
+  for (const g of allGroups) {
+    if      (g.key >= dk(thisMonday) && g.key <= dk(thisSunday)) curDays.push(g);
+    else if (g.key >= dk(prevMonday) && g.key <= dk(prevSunday)) prevDays.push(g);
+    else archDays.push(g);
+  }
+
+  const monthMap = new Map<string, DayGroup[]>();
+  for (const g of archDays) {
+    const mk = g.key.slice(0, 7); // "YYYY-MM"
+    if (!monthMap.has(mk)) monthMap.set(mk, []);
+    monthMap.get(mk)!.push(g);
+  }
+
+  const sum = (days: DayGroup[]) => days.reduce((s, d) => s + d.totalSeconds, 0);
+
+  return {
+    currentWeek:  { id: "cur",  label: "Current Week",  days: curDays,  total: sum(curDays)  },
+    previousWeek: { id: "prev", label: "Previous Week", days: prevDays, total: sum(prevDays) },
+    monthlyArchive: Array.from(monthMap.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([mk, days]) => ({
+        monthKey: mk,
+        label:    fmtMonthHeader(mk),
+        days:     [...days].sort((a, b) => b.key.localeCompare(a.key)),
+        total:    sum(days),
+      })),
+  };
+}
+
+// ── Sphere accent colours ─────────────────────────────────────────────────────
 
 const LABEL_DOT: Record<string, string> = {
-  emerald: "bg-emerald-400",  violet: "bg-violet-400",  sky:    "bg-sky-400",
-  amber:   "bg-amber-400",    pink:   "bg-pink-400",    teal:   "bg-teal-400",
-  blue:    "bg-blue-400",     rose:   "bg-rose-400",    orange: "bg-orange-400",
+  emerald: "bg-emerald-400", violet: "bg-violet-400", sky:    "bg-sky-400",
+  amber:   "bg-amber-400",   pink:   "bg-pink-400",   teal:   "bg-teal-400",
+  blue:    "bg-blue-400",    rose:   "bg-rose-400",   orange: "bg-orange-400",
   indigo:  "bg-indigo-400",
 };
 const LABEL_TEXT: Record<string, string> = {
@@ -83,23 +152,137 @@ const LABEL_TEXT: Record<string, string> = {
   indigo:  "text-indigo-400",
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── DayAccordion ──────────────────────────────────────────────────────────────
+
+function DayAccordion({
+  group, isOpen, onToggle, spheres,
+}: {
+  group: DayGroup; isOpen: boolean; onToggle: () => void; spheres: Sphere[];
+}) {
+  return (
+    <div className="rounded-lg border border-white/[0.04] overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-2 px-3 py-2 bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-150"
+      >
+        <span className="text-[11px] font-semibold text-white flex-1 text-left">{group.label}</span>
+        <span className="text-[10px] text-slate-500 tabular-nums">
+          {fmt(group.totalSeconds)} · {group.sessions.length} session{group.sessions.length !== 1 ? "s" : ""}
+        </span>
+        <ChevronDown className={`w-3 h-3 text-slate-600 ml-1 flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: isOpen ? `${group.sessions.length * 56 + 16}px` : "0px" }}
+      >
+        <div className="px-3 pt-1 pb-2 flex flex-col">
+          {group.sessions.map((session, i) => {
+            const sphereObj = spheres.find((s) => s.name === session.sphere);
+            const dotClass  = LABEL_DOT[sphereObj?.labelColor ?? ""] ?? "bg-slate-400";
+            const textClass = LABEL_TEXT[sphereObj?.labelColor ?? ""] ?? "text-slate-400";
+            const isLast    = i === group.sessions.length - 1;
+
+            return (
+              <div key={session.id} className="flex gap-2.5">
+                {/* Spine */}
+                <div className="flex flex-col items-center flex-shrink-0 w-3">
+                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${dotClass}`} />
+                  {!isLast && <div className="w-px flex-1 bg-white/[0.05] mt-0.5 mb-0.5" />}
+                </div>
+
+                {/* Content */}
+                <div className={`flex flex-col gap-0.5 min-w-0 flex-1 ${isLast ? "pb-0" : "pb-2"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="text-xs font-medium text-white leading-tight truncate">
+                        {session.taskName}
+                      </p>
+                      {session.isManual && (
+                        <span className="flex-shrink-0 px-1 py-0.5 rounded text-[9px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                          Manual
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-semibold text-violet-300 tabular-nums flex-shrink-0">
+                      {fmt(session.durationSeconds)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] font-medium ${textClass}`}>{session.sphere}</span>
+                    <span className="text-slate-700 text-[10px]">·</span>
+                    <span className="text-[10px] text-slate-500 truncate">{session.project}</span>
+                    <span className="text-slate-700 text-[10px] ml-auto flex-shrink-0">
+                      {fmtTime(new Date(session.completedAt))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SectionNode: collapsible week / month container ───────────────────────────
+
+function SectionNode({
+  label, sublabel, isOpen, onToggle, children, accent = false,
+}: {
+  label: string; sublabel?: string; isOpen: boolean; onToggle: () => void;
+  children: ReactNode; accent?: boolean;
+}) {
+  return (
+    <div className={`rounded-xl border overflow-hidden ${
+      accent ? "border-violet-500/20 bg-violet-600/[0.03]" : "border-white/[0.06] bg-white/[0.01]"
+    }`}>
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center gap-2 px-4 py-2.5 transition-colors duration-150 ${
+          accent ? "hover:bg-violet-600/[0.06]" : "hover:bg-white/[0.03]"
+        }`}
+      >
+        <span className={`text-xs font-semibold flex-1 text-left ${accent ? "text-violet-200" : "text-slate-300"}`}>
+          {label}
+        </span>
+        {sublabel && <span className="text-[10px] text-slate-500 tabular-nums">{sublabel}</span>}
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-600 flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: isOpen ? "3000px" : "0px" }}
+      >
+        <div className="px-3 pb-3 pt-1 flex flex-col gap-1">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main card ─────────────────────────────────────────────────────────────────
 
 export default function ActivityLogCard() {
   const { sessions, spheres } = useDashboard();
 
-  // Default: today open, everything else closed
   const todayKey = new Date().toLocaleDateString("en-CA");
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
-    () => ({ [todayKey]: true })
-  );
-  const toggle = (key: string) =>
-    setOpenGroups((p) => ({ ...p, [key]: !p[key] }));
 
-  const groups = groupByDay(sessions);
+  // Top-level section nodes: current week open by default
+  const [openNodes, setOpenNodes] = useState<Record<string, boolean>>({ cur: true });
+  // Individual day accordions: today open by default
+  const [openDays,  setOpenDays]  = useState<Record<string, boolean>>({ [todayKey]: true });
 
-  // Today-only stats for the ring
-  const todaySessions = sessions.filter(
+  const toggleNode = (id: string)  => setOpenNodes((p) => ({ ...p, [id]: !p[id] }));
+  const toggleDay  = (key: string) => setOpenDays((p)  => ({ ...p, [key]: !p[key] }));
+
+  const allGroups = groupByDay(sessions);
+  const { currentWeek, previousWeek, monthlyArchive } = bucketGroups(allGroups);
+
+  // Today stats for the ring
+  const todaySessions    = sessions.filter(
     (s) => (s.completedAtDateString ?? new Date(s.completedAt).toLocaleDateString("en-CA")) === todayKey
   );
   const todaySeconds     = todaySessions.reduce((sum, s) => sum + s.durationSeconds, 0);
@@ -175,8 +358,8 @@ export default function ActivityLogCard() {
         </div>
       </div>
 
-      {/* Grouped day sections */}
-      {groups.length === 0 ? (
+      {/* ── Hierarchical log ───────────────────────────────────────────────────── */}
+      {allGroups.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-6 text-center">
           <div className="w-8 h-8 rounded-full border border-white/[0.07] flex items-center justify-center mb-2">
             <Activity className="w-4 h-4 text-slate-600" />
@@ -185,84 +368,70 @@ export default function ActivityLogCard() {
           <p className="text-[10px] text-slate-700 mt-0.5">Click ▶ on a task to begin</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 overflow-y-auto max-h-72">
-          {groups.map((group) => {
-            const isOpen = !!openGroups[group.key];
-            return (
-              <div key={group.key} className="rounded-xl border border-white/[0.05] overflow-hidden">
+        <div className="flex flex-col gap-2">
 
-                {/* Day header — collapsible toggle */}
-                <button
-                  onClick={() => toggle(group.key)}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-150"
-                >
-                  <span className="text-xs font-semibold text-white">{group.label}</span>
-                  <span className="text-[10px] text-slate-500 ml-1">
-                    · {fmt(group.totalSeconds)} · {group.sessions.length} session{group.sessions.length !== 1 ? "s" : ""}
-                  </span>
-                  <ChevronDown
-                    className={`w-3 h-3 text-slate-600 ml-auto transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
+          {/* Current Week — open by default */}
+          {currentWeek.days.length > 0 && (
+            <SectionNode
+              label="Current Week"
+              sublabel={currentWeek.total > 0 ? fmt(currentWeek.total) : undefined}
+              isOpen={!!openNodes["cur"]}
+              onToggle={() => toggleNode("cur")}
+              accent
+            >
+              {currentWeek.days.map((day) => (
+                <DayAccordion
+                  key={day.key}
+                  group={day}
+                  isOpen={!!openDays[day.key]}
+                  onToggle={() => toggleDay(day.key)}
+                  spheres={spheres}
+                />
+              ))}
+            </SectionNode>
+          )}
 
-                {/* Session timeline */}
-                <div
-                  className="overflow-hidden transition-all duration-300 ease-in-out"
-                  style={{ maxHeight: isOpen ? `${group.sessions.length * 72 + 16}px` : "0px" }}
-                >
-                  <div className="px-3 pt-1 pb-3 flex flex-col">
-                    {group.sessions.map((session, i) => {
-                      const sphereObj   = spheres.find((s) => s.name === session.sphere);
-                      const dotClass    = LABEL_DOT[sphereObj?.labelColor ?? ""] ?? "bg-slate-400";
-                      const textClass   = LABEL_TEXT[sphereObj?.labelColor ?? ""] ?? "text-slate-400";
-                      const isLast      = i === group.sessions.length - 1;
+          {/* Previous Week — collapsed by default */}
+          {previousWeek.days.length > 0 && (
+            <SectionNode
+              label="Previous Week"
+              sublabel={previousWeek.total > 0 ? fmt(previousWeek.total) : undefined}
+              isOpen={!!openNodes["prev"]}
+              onToggle={() => toggleNode("prev")}
+            >
+              {previousWeek.days.map((day) => (
+                <DayAccordion
+                  key={day.key}
+                  group={day}
+                  isOpen={!!openDays[day.key]}
+                  onToggle={() => toggleDay(day.key)}
+                  spheres={spheres}
+                />
+              ))}
+            </SectionNode>
+          )}
 
-                      return (
-                        <div key={session.id} className="flex gap-3">
-                          {/* Spine */}
-                          <div className="flex flex-col items-center flex-shrink-0 w-4">
-                            <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${dotClass} shadow-[0_0_5px_rgba(139,92,246,0.35)]`} />
-                            {!isLast && <div className="w-px flex-1 bg-white/[0.06] mt-1 mb-1" />}
-                          </div>
+          {/* Monthly Archive — each month collapsed by default */}
+          {monthlyArchive.map((month) => (
+            <SectionNode
+              key={month.monthKey}
+              label={month.label}
+              sublabel={month.total > 0 ? fmt(month.total) : undefined}
+              isOpen={!!openNodes[month.monthKey]}
+              onToggle={() => toggleNode(month.monthKey)}
+            >
+              {month.days.map((day) => (
+                <DayAccordion
+                  key={day.key}
+                  group={day}
+                  isOpen={!!openDays[day.key]}
+                  onToggle={() => toggleDay(day.key)}
+                  spheres={spheres}
+                />
+              ))}
+            </SectionNode>
+          ))}
 
-                          {/* Content */}
-                          <div className={`flex flex-col gap-0.5 min-w-0 flex-1 ${isLast ? "pb-0" : "pb-3"}`}>
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <p className="text-sm font-medium text-white leading-tight truncate">
-                                  {session.taskName}
-                                </p>
-                                {session.isManual && (
-                                  <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
-                                    Manual
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-xs font-semibold text-violet-300 tabular-nums flex-shrink-0">
-                                {fmt(session.durationSeconds)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className={`text-[10px] font-medium ${textClass}`}>
-                                {session.sphere}
-                              </span>
-                              <span className="text-slate-700 text-[10px]">·</span>
-                              <span className="text-[10px] text-slate-500 truncate">
-                                {session.project}
-                              </span>
-                              <span className="text-slate-700 text-[10px] ml-auto flex-shrink-0">
-                                {fmtTime(new Date(session.completedAt))}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
     </div>
