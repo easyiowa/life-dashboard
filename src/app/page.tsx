@@ -60,20 +60,29 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto">
 
         {/* ── Header ─────────────────────────────────────────────── */}
-        <header className="mb-8 flex items-start justify-between">
-          <div>
-            <p className="text-slate-500 text-xs font-medium tracking-widest uppercase mb-1">
-              {date}
-            </p>
-            <h1 className="text-3xl font-semibold text-white tracking-tight">
-              {greeting}, Olaf
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 mt-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-            <span className="text-slate-400 text-sm">Live</span>
-          </div>
-        </header>
+        <div className="relative min-h-[160px] pb-12 mb-0">
+          <header className="flex items-start justify-between">
+            <div>
+              <p className="text-slate-500 text-xs font-medium tracking-widest uppercase mb-1">
+                {date}
+              </p>
+              <h1 className="text-3xl font-semibold text-white tracking-tight">
+                {greeting}, Olaf
+              </h1>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+              <span className="text-slate-400 text-sm">Live</span>
+            </div>
+          </header>
+
+          {/* Monstera — floating transparent decoration, no layout footprint */}
+          <img
+            src="/monstera.png"
+            alt=""
+            className="absolute top-4 right-4 w-36 h-36 z-0 object-contain opacity-70 hover:opacity-95 transition-opacity duration-300 pointer-events-none select-none"
+          />
+        </div>
 
         {/* ── Daily Focus Queue ───────────────────────────────────── */}
         <div className="mb-4">
