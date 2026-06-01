@@ -241,56 +241,58 @@ function RecurringRow({
   return (
     <div
       onClick={() => onInspect(task)}
-      className="group flex items-center gap-3 px-3 py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
+      className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 py-2.5 sm:py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
     >
-      {/* Complete button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); completeRecurringTask(task.id); }}
-        title="Mark done — resets cycle"
-        className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-white/[0.04] border border-white/[0.07] text-slate-500 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 transition-all duration-150"
-      >
-        <CheckCircle2 className="w-3 h-3" />
-      </button>
+      {/* ── Top / Left: checkbox + title ──────────────────────────────────── */}
+      <div className="flex items-center gap-3 min-w-0 sm:flex-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); completeRecurringTask(task.id); }}
+          title="Mark done — resets cycle"
+          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-white/[0.04] border border-white/[0.07] text-slate-500 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 transition-all duration-150"
+        >
+          <CheckCircle2 className="w-3 h-3" />
+        </button>
+        <span className="text-sm font-medium text-slate-200 leading-none truncate">
+          {task.title}
+        </span>
+      </div>
 
-      {/* Left: title + cadence */}
-      <div className="flex items-baseline gap-2 min-w-0 flex-1">
-        <span className="text-sm font-medium text-slate-200 leading-none truncate">{task.title}</span>
-        <span className="text-[10px] text-slate-500 flex-shrink-0 leading-none">
+      {/* ── Bottom / Right: cadence · badge · progress · delete ───────────── */}
+      {/* pl-9 on mobile = checkbox(w-6 = 24px) + gap-3(12px) = 36px — aligns under title */}
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 pl-9 sm:pl-0 sm:ml-auto justify-between sm:justify-end">
+        <span className="text-[10px] text-slate-500 flex-shrink-0">
           {task.intervalLabel}{task.completionCount > 0 ? ` · 🔄 ${task.completionCount}x` : ""}
         </span>
-      </div>
 
-      {/* Right: last-done · urgency badge · micro progress bar */}
-      <div className="flex items-center gap-3 ml-auto flex-shrink-0">
-        {task.lastDoneDate && (
-          <span className="text-[10px] text-slate-600 tabular-nums hidden sm:block">
-            {new Date(task.lastDoneDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          {task.lastDoneDate && (
+            <span className="text-[10px] text-slate-600 tabular-nums hidden sm:block">
+              {new Date(task.lastDoneDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            </span>
+          )}
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0 ${URGENCY_BADGE[urgency]}`}>
+            {label}
           </span>
-        )}
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0 ${URGENCY_BADGE[urgency]}`}>
-          {label}
-        </span>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <div className="w-20 h-1 bg-white/[0.05] rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${URGENCY_BAR[urgency]}`}
-              style={{ width: `${pct}%` }}
-            />
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="w-16 sm:w-20 h-1 bg-white/[0.05] rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${URGENCY_BAR[urgency]}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className={`text-[10px] font-medium tabular-nums w-7 text-right ${URGENCY_TEXT[urgency]}`}>
+              {pct}%
+            </span>
           </div>
-          <span className={`text-[10px] font-medium tabular-nums w-7 text-right ${URGENCY_TEXT[urgency]}`}>
-            {pct}%
-          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDeleteRequest(task); }}
+            title="Delete"
+            className="flex-shrink-0 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
         </div>
       </div>
-
-      {/* Delete */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onDeleteRequest(task); }}
-        title="Delete"
-        className="flex-shrink-0 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
-      >
-        <Trash2 className="w-3 h-3" />
-      </button>
     </div>
   );
 }
