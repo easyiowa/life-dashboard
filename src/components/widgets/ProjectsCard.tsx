@@ -297,7 +297,7 @@ function TaskRow({
   onInspect: (t: Task) => void;
   loggedSeconds?: number;
 }) {
-  const { updateTask, activeTask, startTask } = useDashboard();
+  const { updateTask, deleteTask, activeTask, startTask } = useDashboard();
   const isActive = activeTask?.id === task.id;
   const timeLabel = fmtDuration(loggedSeconds);
 
@@ -357,6 +357,14 @@ function TaskRow({
           {isActive ? <Zap className="w-3.5 h-3.5" /> : <Play className="w-3 h-3 translate-x-[1px]" />}
         </button>
       )}
+
+      <button
+        onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+        aria-label="Delete task"
+        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-600 hover:text-rose-400 transition-colors cursor-pointer p-1"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 }

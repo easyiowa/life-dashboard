@@ -329,7 +329,8 @@ type Action =
   | { type: "ADD_HABIT"; habit: Omit<Habit, "id" | "history"> }
   | { type: "TOGGLE_HABIT_DATE"; id: string; dateString: string }
   | { type: "UPDATE_HABIT"; id: string; fields: Partial<Omit<Habit, "id" | "history">> }
-  | { type: "DELETE_HABIT"; id: string };
+  | { type: "DELETE_HABIT"; id: string }
+  | { type: "DELETE_TASK"; id: string };
 
 function mkDateString(d: Date): string {
   return d.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local time
@@ -416,6 +417,21 @@ function reducer(state: State, action: Action): State {
         ...state,
         tasks: state.tasks.map((t) => (t.id === action.id ? { ...t, ...action.fields } : t)),
       };
+
+    case "DELETE_TASK": {
+      const target = state.tasks.find((t) => t.id === action.id);
+      if (!target) return state;
+      const updatedTasks = state.tasks.filter((t) => t.id !== action.id);
+      const stillHasTasks = updatedTasks.some(
+        (t) => t.project === target.project && t.sphere === target.sphere
+      );
+      const updatedProjects = stillHasTasks
+        ? state.projects
+        : state.projects.filter(
+            (p) => !(p.name === target.project && p.sphere === target.sphere)
+          );
+      return { ...state, tasks: updatedTasks, projects: updatedProjects };
+    }
 
     case "ADD_PROJECT": {
       const project: Project = {
@@ -845,6 +861,7 @@ interface DashboardContextType {
   updateProject: (id: string, fields: Partial<Omit<Project, "id">>) => void;
   addTask: (task: Omit<Task, "id">) => void;
   updateTask: (id: string, fields: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
   addProject: (project: Omit<Project, "id">) => void;
   addManualTime: (projectId: string, minutes: number) => void;
   startTask: (task: ActiveTask) => void;
@@ -925,6 +942,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         updateProject: (id, fields)      => dispatch({ type: "UPDATE_PROJECT", id, fields }),
         addTask:              (task)              => dispatch({ type: "ADD_TASK", task }),
         updateTask:           (id, fields)        => dispatch({ type: "UPDATE_TASK", id, fields }),
+        deleteTask:           (id)               => dispatch({ type: "DELETE_TASK", id }),
         addProject:           (project)           => dispatch({ type: "ADD_PROJECT", project }),
         addManualTime:        (projectId, minutes)=> dispatch({ type: "ADD_MANUAL_TIME", projectId, minutes }),
         startTask:            (task)              => dispatch({ type: "START_TASK", task }),
