@@ -999,14 +999,34 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         for (const action of actions) {
           if (action.type === "ADD_QUICK_NOTE") {
             dispatch({ type: "ADD_QUICK_NOTE", note: action.payload as Omit<QuickNote, "id"> });
+          } else if (action.type === "DELETE_QUICK_NOTE") {
+            dispatch({ type: "DELETE_QUICK_NOTE", id: action.payload.id as string });
           } else if (action.type === "ADD_HABIT") {
             dispatch({ type: "ADD_HABIT", habit: action.payload as Omit<Habit, "id" | "history"> });
+          } else if (action.type === "DELETE_HABIT") {
+            dispatch({ type: "DELETE_HABIT", id: action.payload.id as string });
+          } else if (action.type === "TOGGLE_HABIT_DATE") {
+            dispatch({ type: "TOGGLE_HABIT_DATE", id: action.payload.id as string, dateString: action.payload.dateString as string });
           } else if (action.type === "ADD_TASK") {
             dispatch({ type: "ADD_TASK", task: action.payload as Omit<Task, "id"> });
-          } else if (action.type === "ADD_PROJECT") {
-            dispatch({ type: "ADD_PROJECT", project: action.payload as Omit<Project, "id"> });
           } else if (action.type === "UPDATE_TASK") {
             dispatch({ type: "UPDATE_TASK", id: action.payload.id as string, fields: action.payload.fields as Partial<Task> });
+          } else if (action.type === "DELETE_TASK") {
+            dispatch({ type: "DELETE_TASK", id: action.payload.id as string });
+          } else if (action.type === "ADD_PROJECT") {
+            dispatch({ type: "ADD_PROJECT", project: action.payload as Omit<Project, "id"> });
+          } else if (action.type === "UPDATE_PROJECT") {
+            dispatch({ type: "UPDATE_PROJECT", id: action.payload.id as string, fields: action.payload.fields as Partial<Omit<Project, "id">> });
+          } else if (action.type === "ADD_RECURRING_TASK") {
+            dispatch({ type: "ADD_RECURRING_TASK", task: action.payload as Omit<RecurringTask, "id" | "completionCount" | "history"> });
+          } else if (action.type === "COMPLETE_RECURRING_TASK") {
+            dispatch({ type: "COMPLETE_RECURRING_TASK", id: action.payload.id as string });
+          } else if (action.type === "DELETE_RECURRING_TASK") {
+            dispatch({ type: "DELETE_RECURRING_TASK", id: action.payload.id as string });
+          } else if (action.type === "START_TASK") {
+            dispatch({ type: "START_TASK", task: action.payload as unknown as ActiveTask });
+          } else if (action.type === "PAUSE_SESSION") {
+            dispatch({ type: "PAUSE_SESSION" });
           }
         }
         // Clear the queue once processed
