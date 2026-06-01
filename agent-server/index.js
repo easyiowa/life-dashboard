@@ -112,6 +112,25 @@ const TOOLS = [
       required: ["itemType", "content", "sphere"],
     },
   },
+  {
+    name: "create_dashboard_project",
+    description: "Call this tool when Olaf explicitly asks to create a new project container in his dashboard.",
+    input_schema: {
+      type: "object",
+      properties: {
+        projectName: {
+          type: "string",
+          description: "The exact title name of the new project to create.",
+        },
+        sphere: {
+          type: "string",
+          enum: ["iowa", "siin", "vibing", "education"],
+          description: "The sphere this project belongs to.",
+        },
+      },
+      required: ["projectName", "sphere"],
+    },
+  },
 ];
 
 // ── Tool executor — writes real actions to the pending queue ──────────────────
@@ -149,7 +168,25 @@ function executeTool(input, snap) {
     return `Task queued [${priority}/${sphere}]: "${content}"`;
   }
 
+  if (itemType === "create_project") {
+    // handled via create_dashboard_project tool, not itemType — fallthrough below
+  }
+
   return `Unknown itemType: ${itemType}`;
+}
+
+// ── Project creation tool executor ────────────────────────────────────────────
+function executeCreateProject(input) {
+  const { projectName, sphere } = input;
+  queueAction("ADD_PROJECT", {
+    name:      projectName,
+    sphere,
+    emoji:     "📁",
+    tagIds:    [],
+    status:    "on-track",
+    milestone: "In progress",
+  });
+  return `Project "${projectName}" created in sphere "${sphere}"`;
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
@@ -176,10 +213,16 @@ bot.on('message', async (msg) => {
       : "You are Benicio, Olaf's executive assistant.";
 
     if (snap) {
-      const today  = snap.currentTrackingDate || '';
-      const open   = (snap.tasks || []).filter(t => !t.done);
-      const habits = snap.habits || [];
-      const notes  = (snap.quickNotes || []).filter(n => n.createdAt?.startsWith(today));
+      const today    = snap.currentTrackingDate || '';
+      const open     = (snap.tasks    || []).filter(t => !t.done);
+      const habits   = snap.habits    || [];
+      const notes    = (snap.quickNotes || []).filter(n => n.createdAt?.startsWith(today));
+      const projects = (snap.projects || []).map(p => ({ name: p.name, sphere: p.sphere }));
+      // Derive sphere names: prefer synced spheres array, fall back to unique values from projects
+      const spheres  = snap.spheres
+        ? snap.spheres.map(s => s.name)
+        : [...new Set(projects.map(p => p.sphere))].filter(Boolean);
+
       system +=
         `\n\n---\n## 📊 Live Dashboard — ${today}` +
         `\n**Open Tasks (${open.length}):**\n` +
@@ -188,7 +231,20 @@ bot.on('message', async (msg) => {
         (habits.length ? habits.map(h => `- ${h.emoji} ${h.title} [${h.type}]`).join('\n') : '- None') +
         `\n**Notes Today (${notes.length}):**\n` +
         (notes.length ? notes.map(n => `- "${n.text}" [${n.sphere}]`).join('\n') : '- None') +
-        '\n---';
+        '\n---' +
+
+        // ── Live validation guardrails ────────────────────────────────────────
+        `\n\n## 🔒 Tool Use Validation Rules (STRICT — no exceptions)\n` +
+        `These are the ONLY valid sphere names in Olaf's dashboard right now:\n` +
+        spheres.map(s => `- "${s}"`).join('\n') +
+        `\n\nThese are the ONLY valid project names, with their sphere:\n` +
+        projects.map(p => `- "${p.name}" (sphere: "${p.sphere}")`).join('\n') +
+        `\n\n**Rules:**\n` +
+        `1. When calling add_dashboard_item, the sphere value MUST be an exact match from the sphere list above. Do NOT invent new sphere names.\n` +
+        `2. For tasks, the project value MUST be an exact match from the project list above. Do NOT invent project names.\n` +
+        `3. If Olaf asks to add a task but does NOT specify a project, or if no project in the list is an obvious match for his request, do NOT call the tool. Instead, ask him in your dry, witty voice: "Which project does this belong to, Olaf? Your active lines: ${projects.map(p => `${p.name} (${p.sphere})`).join(', ')}."\n` +
+        `4. Only call the tool once you have confirmed sphere AND project values that exist in the lists above.\n` +
+        `---`;
     }
 
     // Push user message to rolling history
@@ -208,7 +264,9 @@ bot.on('message', async (msg) => {
     if (toolBlock) {
       // ── Tool was triggered — execute it for real ───────────────────────────
       console.log(`🔧 Tool call: ${toolBlock.name}`, toolBlock.input);
-      const execResult = executeTool(toolBlock.input, snap);
+      const execResult = toolBlock.name === 'create_dashboard_project'
+        ? executeCreateProject(toolBlock.input)
+        : executeTool(toolBlock.input, snap);
 
       // Append tool exchange to history so context is preserved
       pushMsg(allowedUserId, { role: 'assistant', content: res1.content });

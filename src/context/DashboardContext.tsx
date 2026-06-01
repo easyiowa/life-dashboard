@@ -979,6 +979,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         tasks:               state.tasks,
         habits:              state.habits,
         projects:            state.projects,
+        spheres:             state.spheres,
         recurringTasks:      state.recurringTasks,
         quickNotes:          state.quickNotes,
         currentTrackingDate: state.currentTrackingDate,
@@ -1002,6 +1003,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             dispatch({ type: "ADD_HABIT", habit: action.payload as Omit<Habit, "id" | "history"> });
           } else if (action.type === "ADD_TASK") {
             dispatch({ type: "ADD_TASK", task: action.payload as Omit<Task, "id"> });
+          } else if (action.type === "ADD_PROJECT") {
+            dispatch({ type: "ADD_PROJECT", project: action.payload as Omit<Project, "id"> });
           } else if (action.type === "UPDATE_TASK") {
             dispatch({ type: "UPDATE_TASK", id: action.payload.id as string, fields: action.payload.fields as Partial<Task> });
           }
