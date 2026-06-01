@@ -236,73 +236,61 @@ function RecurringRow({
 }) {
   const { completeRecurringTask } = useDashboard();
   const { progress, label, urgency } = computeCountdown(task);
+  const pct = Math.round(progress * 100);
 
   return (
     <div
       onClick={() => onInspect(task)}
-      className="group flex flex-col gap-2 p-3 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
+      className="group flex items-center gap-3 px-3 py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
     >
-      <div className="flex items-center gap-2.5">
-        {/* Complete button */}
-        <button
-          onClick={(e) => { e.stopPropagation(); completeRecurringTask(task.id); }}
-          title="Mark done — resets cycle"
-          className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-white/[0.04] border border-white/[0.07] text-slate-500 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 transition-all duration-150"
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" />
-        </button>
+      {/* Complete button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); completeRecurringTask(task.id); }}
+        title="Mark done — resets cycle"
+        className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-white/[0.04] border border-white/[0.07] text-slate-500 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 transition-all duration-150"
+      >
+        <CheckCircle2 className="w-3 h-3" />
+      </button>
 
-        {/* Title + meta */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-white font-medium truncate">{task.title}</span>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${URGENCY_BADGE[urgency]}`}>
-              {label}
-            </span>
+      {/* Left: title + cadence */}
+      <div className="flex items-baseline gap-2 min-w-0 flex-1">
+        <span className="text-sm font-medium text-slate-200 leading-none truncate">{task.title}</span>
+        <span className="text-[10px] text-slate-500 flex-shrink-0 leading-none">
+          {task.intervalLabel}{task.completionCount > 0 ? ` · 🔄 ${task.completionCount}x` : ""}
+        </span>
+      </div>
+
+      {/* Right: last-done · urgency badge · micro progress bar */}
+      <div className="flex items-center gap-3 ml-auto flex-shrink-0">
+        {task.lastDoneDate && (
+          <span className="text-[10px] text-slate-600 tabular-nums hidden sm:block">
+            {new Date(task.lastDoneDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </span>
+        )}
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0 ${URGENCY_BADGE[urgency]}`}>
+          {label}
+        </span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="w-20 h-1 bg-white/[0.05] rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${URGENCY_BAR[urgency]}`}
+              style={{ width: `${pct}%` }}
+            />
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[10px] text-slate-600">{task.intervalLabel}</span>
-            {task.completionCount > 0 && (
-              <>
-                <span className="text-slate-700">·</span>
-                <span className="text-[10px] text-slate-600 flex items-center gap-0.5">
-                  <RefreshCw className="w-2.5 h-2.5" />
-                  {task.completionCount}x
-                </span>
-              </>
-            )}
-          </div>
+          <span className={`text-[10px] font-medium tabular-nums w-7 text-right ${URGENCY_TEXT[urgency]}`}>
+            {pct}%
+          </span>
         </div>
-
-        {/* Delete — stops propagation so row click doesn't also fire */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onDeleteRequest(task); }}
-          title="Delete"
-          className="flex-shrink-0 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-1 rounded-full bg-white/[0.05] overflow-hidden">
-        <div
-          className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${URGENCY_BAR[urgency]}`}
-          style={{ width: `${Math.round(progress * 100)}%` }}
-        />
-      </div>
-
-      {/* Progress footnote */}
-      <div className="flex justify-between items-center">
-        <span className="text-[10px] text-slate-600">
-          {task.lastDoneDate
-            ? `Last done ${new Date(task.lastDoneDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-            : "Never completed"}
-        </span>
-        <span className={`text-[10px] font-medium tabular-nums ${URGENCY_TEXT[urgency]}`}>
-          {Math.round(progress * 100)}%
-        </span>
-      </div>
+      {/* Delete */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onDeleteRequest(task); }}
+        title="Delete"
+        className="flex-shrink-0 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
+      >
+        <Trash2 className="w-3 h-3" />
+      </button>
     </div>
   );
 }
@@ -389,7 +377,7 @@ export default function RecurringCard() {
         {showAdd && <AddForm onClose={() => setShowAdd(false)} />}
 
         {/* Task rows */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           {visible.length === 0 ? (
             <p className="text-sm text-slate-600 text-center py-6">
               No recurring tasks for {activeSphere}.

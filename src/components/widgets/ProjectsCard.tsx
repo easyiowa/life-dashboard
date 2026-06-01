@@ -582,6 +582,18 @@ export default function ProjectsCard() {
   const totalTasks = sphereProjects.reduce((s, p) => s + p.taskTotal, 0);
   const doneTasks  = sphereProjects.reduce((s, p) => s + p.taskDone,  0);
 
+  // Expand / Collapse All — scoped to the active sphere's visible projects
+  const isAnyProjectOpen = sphereProjects.some((p) => !!unfoldedProjects[p.id]);
+
+  function handleToggleAllProjects() {
+    const target = !isAnyProjectOpen;
+    setUnfoldedProjects((prev) => {
+      const next = { ...prev };
+      for (const p of sphereProjects) next[p.id] = target;
+      return next;
+    });
+  }
+
   return (
     <>
       <TaskModal open={showModal} onClose={() => setShowModal(false)} />
@@ -626,13 +638,27 @@ export default function ProjectsCard() {
               {sphere.name}
             </button>
           ))}
-          <button
-            onClick={() => setShowManageSpheres(true)}
-            title="Manage spheres"
-            className="ml-auto w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 border border-white/[0.05] hover:text-violet-400 hover:border-violet-500/30 hover:bg-violet-500/10 transition-all duration-150"
-          >
-            <Settings2 className="w-3.5 h-3.5" />
-          </button>
+          <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+            {/* Expand / Collapse All */}
+            {sphereProjects.length > 0 && (
+              <button
+                type="button"
+                onClick={handleToggleAllProjects}
+                title={isAnyProjectOpen ? "Collapse All Projects" : "Expand All Projects"}
+                className="h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] text-[11px] font-medium flex items-center gap-1.5 transition-colors duration-150"
+              >
+                {isAnyProjectOpen ? "▲ Collapse All" : "▼ Expand All"}
+              </button>
+            )}
+            {/* Manage spheres */}
+            <button
+              onClick={() => setShowManageSpheres(true)}
+              title="Manage spheres"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 border border-white/[0.05] hover:text-violet-400 hover:border-violet-500/30 hover:bg-violet-500/10 transition-all duration-150"
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Sub-header */}
