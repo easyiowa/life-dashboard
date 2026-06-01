@@ -1,0 +1,805 @@
+{
+  "tasks": [
+    {
+      "id": "siin-t1",
+      "sphere": "siin",
+      "project": "Brand",
+      "title": "Siin Foundation Doc",
+      "priority": "Med",
+      "energy": "Flow",
+      "done": false,
+      "deadline": "2026-06-19",
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t2",
+      "sphere": "siin",
+      "project": "Business",
+      "title": "Update PP/TC",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "queuedDate": "2026-06-01",
+      "intent": "finish",
+      "dailyTargetMinutes": null
+    },
+    {
+      "id": "siin-t3",
+      "sphere": "siin",
+      "project": "Product",
+      "title": "Google maps",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "hui",
+      "manualMinutes": 0,
+      "urgency": "not-urgent"
+    },
+    {
+      "id": "siin-t4",
+      "sphere": "siin",
+      "project": "Product",
+      "title": "Reports Loyalty Program",
+      "priority": "High",
+      "energy": "Flow",
+      "done": false,
+      "deadline": null,
+      "notes": "this is the way to do!",
+      "manualMinutes": 0,
+      "urgency": "urgent"
+    },
+    {
+      "id": "siin-t5",
+      "sphere": "siin",
+      "project": "Product",
+      "title": "In-app copy (Discount)",
+      "priority": "Med",
+      "energy": "Easy",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "urgency": "urgent"
+    },
+    {
+      "id": "siin-t6",
+      "sphere": "siin",
+      "project": "Website",
+      "title": "Skeleton Customers",
+      "priority": "Med",
+      "energy": "Flow",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t7",
+      "sphere": "siin",
+      "project": "Website",
+      "title": "Skeleton Businesses",
+      "priority": "Med",
+      "energy": "Flow",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t8",
+      "sphere": "siin",
+      "project": "Product",
+      "title": "Paywall",
+      "priority": "Med",
+      "energy": "Flow",
+      "done": true,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "urgency": "not-urgent"
+    },
+    {
+      "id": "siin-t9",
+      "sphere": "siin",
+      "project": "Marketing",
+      "title": "Message Cafes",
+      "priority": "Med",
+      "energy": "Easy",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t10",
+      "sphere": "siin",
+      "project": "Clients",
+      "title": "Instruction 'How to' for Põhjala Businesses",
+      "priority": "Med",
+      "energy": "Easy",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t11",
+      "sphere": "siin",
+      "project": "Content",
+      "title": "Finish intro videos",
+      "priority": "Med",
+      "energy": "Flow",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t12",
+      "sphere": "siin",
+      "project": "Clients",
+      "title": "Inform old users (Email)",
+      "priority": "Med",
+      "energy": "Easy",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t13",
+      "sphere": "siin",
+      "project": "Meetings",
+      "title": "Rotermann Manager",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t14",
+      "sphere": "siin",
+      "project": "Meetings",
+      "title": "KIOSK Georg",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "urgency": "urgent"
+    },
+    {
+      "id": "siin-t15",
+      "sphere": "siin",
+      "project": "Clients",
+      "title": "Add koligriv to majaline",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t16",
+      "sphere": "siin",
+      "project": "Product",
+      "title": "Add checkbox (Marketing)",
+      "priority": "Med",
+      "energy": "Easy",
+      "done": true,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t17",
+      "sphere": "siin",
+      "project": "Product",
+      "title": "Sentry Errors (Agent)",
+      "priority": "Med",
+      "energy": "Flow",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t18",
+      "sphere": "siin",
+      "project": "Influencers",
+      "title": "Message old influencers",
+      "priority": "Med",
+      "energy": "Easy",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t19",
+      "sphere": "siin",
+      "project": "Meetings",
+      "title": "Andrei Kazakov",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t20",
+      "sphere": "siin",
+      "project": "Meetings",
+      "title": "Taavet/Silver",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t21",
+      "sphere": "siin",
+      "project": "Meetings",
+      "title": "Jahuu (Ksenia)",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t22",
+      "sphere": "siin",
+      "project": "Clients",
+      "title": "Buy black holders (temu)",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "id": "siin-t23",
+      "sphere": "siin",
+      "project": "Meetings",
+      "title": "Alexandr Zdank",
+      "priority": "Med",
+      "energy": "Quick",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0
+    },
+    {
+      "sphere": "vibing",
+      "project": "Dashboard",
+      "title": "Create modules",
+      "priority": "High",
+      "energy": "Easy",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1780261239765-gd5",
+      "queuedDate": "2026-06-01",
+      "intent": "time",
+      "dailyTargetMinutes": 20,
+      "timeSpentMinutes": 24
+    },
+    {
+      "sphere": "iowa",
+      "project": "Random",
+      "title": "Make dinner",
+      "priority": "High",
+      "energy": "Quick",
+      "deadline": "2026-06-01",
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1780317638245-tiq",
+      "queuedDate": "2026-06-01",
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "timeSpentMinutes": 21
+    },
+    {
+      "sphere": "iowa",
+      "project": "Random",
+      "title": "Window decor",
+      "priority": "High",
+      "energy": "Quick",
+      "urgency": "urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1780326027230-vtd",
+      "queuedDate": "2026-06-01",
+      "intent": "finish",
+      "dailyTargetMinutes": null
+    },
+    {
+      "title": "Buy milk tomorrow",
+      "sphere": "Private",
+      "project": "",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780344342851-tsh"
+    },
+    {
+      "title": "Buy car",
+      "sphere": "iowa",
+      "project": "No Project",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780345517849-3nx"
+    },
+    {
+      "title": "DO IT NOW",
+      "sphere": "vibing",
+      "project": "No Project",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780345715849-4c9"
+    }
+  ],
+  "habits": [
+    {
+      "id": "habit-1",
+      "title": "Read Books",
+      "type": "start",
+      "frequency": "daily",
+      "targetCount": 5,
+      "emoji": "📚",
+      "notes": "At least 20 pages before bed.",
+      "history": {
+        "2026-05-30": true,
+        "2026-05-29": true,
+        "2026-05-28": true,
+        "2026-05-27": true,
+        "2026-06-03": true,
+        "2026-06-01": true,
+        "2026-06-02": true,
+        "2026-06-04": true,
+        "2026-06-05": true
+      },
+      "routine": "day"
+    },
+    {
+      "id": "habit-2",
+      "title": "Morning Workout",
+      "type": "start",
+      "frequency": "daily",
+      "targetCount": 5,
+      "emoji": "💪",
+      "notes": "30 min run or gym session.",
+      "history": {
+        "2026-05-31": true,
+        "2026-05-29": true,
+        "2026-05-27": true,
+        "2026-06-03": true
+      },
+      "routine": "day"
+    },
+    {
+      "id": "habit-3",
+      "title": "Eat Junk Food",
+      "type": "stop",
+      "frequency": "weekly",
+      "targetCount": 2,
+      "emoji": "🍔",
+      "notes": "Max 2 cheat meals per week.",
+      "history": {
+        "2026-05-30": true,
+        "2026-05-28": true,
+        "2026-06-01": false
+      },
+      "routine": "evening"
+    },
+    {
+      "id": "habit-4",
+      "title": "Late Night Screen Time",
+      "type": "stop",
+      "frequency": "daily",
+      "targetCount": 3,
+      "emoji": "📵",
+      "notes": "No screens after 22:00.",
+      "history": {
+        "2026-05-29": true,
+        "2026-05-28": true
+      },
+      "routine": "day"
+    },
+    {
+      "title": "Water",
+      "type": "start",
+      "routine": "morning",
+      "frequency": "daily",
+      "targetCount": 1,
+      "emoji": "💧",
+      "notes": "",
+      "id": "habit-1780316678026-4f5",
+      "history": {}
+    },
+    {
+      "title": "Phone",
+      "type": "stop",
+      "routine": "morning",
+      "frequency": "daily",
+      "targetCount": 5,
+      "emoji": "📵",
+      "notes": "",
+      "id": "habit-1780316695237-823",
+      "history": {}
+    },
+    {
+      "title": "laptop",
+      "type": "start",
+      "routine": "morning",
+      "frequency": "daily",
+      "targetCount": 5,
+      "emoji": "⭐",
+      "notes": "",
+      "id": "habit-1780320570102-ai6",
+      "history": {}
+    }
+  ],
+  "projects": [
+    {
+      "emoji": "📁",
+      "id": "siin-p1",
+      "sphere": "siin",
+      "name": "Brand",
+      "tag": "Brand",
+      "tagColor": "rose",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-brand",
+      "tagIds": [
+        "tag-brand"
+      ]
+    },
+    {
+      "emoji": "📁",
+      "id": "siin-p2",
+      "sphere": "siin",
+      "name": "Business",
+      "tag": "Business",
+      "tagColor": "amber",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-business",
+      "tagIds": [
+        "tag-business"
+      ]
+    },
+    {
+      "emoji": "📱",
+      "id": "siin-p3",
+      "sphere": "siin",
+      "name": "Product",
+      "tag": "Product",
+      "tagColor": "violet",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-product",
+      "tagIds": [
+        "tag-product"
+      ]
+    },
+    {
+      "emoji": "📁",
+      "id": "siin-p4",
+      "sphere": "siin",
+      "name": "Website",
+      "tag": "Website",
+      "tagColor": "blue",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-website",
+      "tagIds": [
+        "tag-website"
+      ]
+    },
+    {
+      "emoji": "🎯",
+      "id": "siin-p5",
+      "sphere": "siin",
+      "name": "Marketing",
+      "tag": "Marketing",
+      "tagColor": "pink",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-marketing",
+      "tagIds": [
+        "tag-marketing"
+      ]
+    },
+    {
+      "emoji": "👥",
+      "id": "siin-p6",
+      "sphere": "siin",
+      "name": "Clients",
+      "tag": "Clients",
+      "tagColor": "teal",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-clients",
+      "tagIds": [
+        "tag-clients"
+      ]
+    },
+    {
+      "emoji": "✍️",
+      "id": "siin-p7",
+      "sphere": "siin",
+      "name": "Content",
+      "tag": "Content",
+      "tagColor": "orange",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-content",
+      "tagIds": [
+        "tag-content"
+      ]
+    },
+    {
+      "emoji": "🤝",
+      "id": "siin-p8",
+      "sphere": "siin",
+      "name": "Meetings",
+      "tag": "Meetings",
+      "tagColor": "sky",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-meetings",
+      "tagIds": [
+        "tag-meetings"
+      ]
+    },
+    {
+      "emoji": "💅",
+      "id": "siin-p9",
+      "sphere": "siin",
+      "name": "Influencers",
+      "tag": "Influencers",
+      "tagColor": "indigo",
+      "status": "on-track",
+      "milestone": "In progress",
+      "tagId": "tag-influencers",
+      "tagIds": [
+        "tag-influencers"
+      ]
+    },
+    {
+      "emoji": "📁",
+      "sphere": "vibing",
+      "name": "Dashboard",
+      "tag": "Dashboard",
+      "tagColor": "amber",
+      "status": "on-track",
+      "milestone": "In progress",
+      "id": "p-1780261126764-f89",
+      "tagId": "tag-home",
+      "tagIds": [
+        "tag-home"
+      ]
+    },
+    {
+      "emoji": "📁",
+      "sphere": "iowa",
+      "name": "Random",
+      "tagIds": [
+        "tag-home"
+      ],
+      "status": "on-track",
+      "milestone": "In progress",
+      "id": "p-1780317627094-eq6"
+    },
+    {
+      "sphere": "vibing",
+      "name": "No Project",
+      "emoji": "📁",
+      "tagIds": [
+        "tag-home",
+        "tag-website",
+        "tag-clients"
+      ],
+      "status": "on-track",
+      "milestone": "In progress",
+      "id": "p-1780345811685-ro5"
+    }
+  ],
+  "recurringTasks": [
+    {
+      "id": "rec-1",
+      "title": "Buy Vitamins",
+      "notes": "Nordic Naturals Omega-3 + Vitamin D3.",
+      "intervalDays": 30,
+      "intervalLabel": "Every 30 Days",
+      "sphere": "iowa",
+      "lastDoneDate": "2026-06-01T14:04:04.432Z",
+      "completionCount": 8,
+      "history": [
+        {
+          "id": "1780322644432-n81xo",
+          "completedAt": "June 1, 2026 at 17:04"
+        },
+        {
+          "id": "1780322642308-puw1c",
+          "completedAt": "June 1, 2026 at 17:04"
+        }
+      ]
+    },
+    {
+      "id": "rec-2",
+      "title": "Teeth Cleaning",
+      "notes": "Book at Helsinki Dental Centre.",
+      "intervalDays": 180,
+      "intervalLabel": "Every 6 Months",
+      "sphere": "iowa",
+      "lastDoneDate": "2026-01-11T20:48:26.115Z",
+      "completionCount": 3,
+      "history": []
+    },
+    {
+      "id": "rec-3",
+      "title": "Car Service",
+      "notes": "Full service + tyre rotation.",
+      "intervalDays": 90,
+      "intervalLabel": "Every 3 Months",
+      "sphere": "iowa",
+      "lastDoneDate": "2026-06-01T05:45:57.564Z",
+      "completionCount": 5,
+      "history": [
+        {
+          "id": "1780292757564-rvggc",
+          "completedAt": "June 1, 2026 at 08:45"
+        }
+      ]
+    },
+    {
+      "id": "rec-4",
+      "title": "Review Finances",
+      "notes": "Check budget vs actuals in YNAB.",
+      "intervalDays": 30,
+      "intervalLabel": "Every Month",
+      "sphere": "iowa",
+      "lastDoneDate": "2026-05-26T20:48:26.115Z",
+      "completionCount": 8,
+      "history": []
+    },
+    {
+      "id": "rec-5",
+      "title": "Team 1:1 Catchup",
+      "notes": "30 min sync — blockers + next sprint.",
+      "intervalDays": 14,
+      "intervalLabel": "Every 2 Weeks",
+      "sphere": "iowa",
+      "lastDoneDate": "2026-05-21T20:48:26.115Z",
+      "completionCount": 12,
+      "history": []
+    },
+    {
+      "id": "rec-6",
+      "title": "Invoice Clients",
+      "notes": "Send via Holvi. Net-14 terms.",
+      "intervalDays": 30,
+      "intervalLabel": "Every Month",
+      "sphere": "iowa",
+      "lastDoneDate": "2026-05-03T20:48:26.115Z",
+      "completionCount": 5,
+      "history": []
+    }
+  ],
+  "quickNotes": [
+    {
+      "text": "IT WORKS!",
+      "sphere": "siin",
+      "createdAt": "2026-06-01 23:27",
+      "id": "note-1780345673846-phyp"
+    },
+    {
+      "text": "hi here test",
+      "sphere": "iowa",
+      "createdAt": "2026-06-01 23:24",
+      "id": "note-1780345481846-1xie"
+    },
+    {
+      "text": "whatsaaap",
+      "sphere": "iowa",
+      "createdAt": "2026-06-01 23:23",
+      "id": "note-1780345439846-twav"
+    },
+    {
+      "text": "have fun!",
+      "sphere": "iowa",
+      "createdAt": "2026-06-01 23:22",
+      "id": "note-1780345380151-vsjs"
+    },
+    {
+      "text": "buy peanuts",
+      "sphere": "Private",
+      "createdAt": "2026-06-01 23:07",
+      "id": "note-1780344447843-lyea"
+    },
+    {
+      "text": "a new habit to build, i want to wash face in the evening, every day",
+      "sphere": "Private",
+      "createdAt": "2026-06-01 22:40",
+      "id": "note-1780342859014-sybl"
+    },
+    {
+      "text": "a task to iowa to buy milk tomorrow",
+      "sphere": "Private",
+      "createdAt": "2026-06-01 22:39",
+      "id": "note-1780342772641-loi0"
+    },
+    {
+      "text": "to buy milk to siin sphere",
+      "sphere": "Private",
+      "createdAt": "2026-06-01 22:38",
+      "id": "note-1780342704320-ioau"
+    },
+    {
+      "text": "so iowa sphere: here i am",
+      "sphere": "Private",
+      "createdAt": "2026-06-01 22:36",
+      "id": "note-1780342638415-b3bb"
+    },
+    {
+      "text": "khjlkl",
+      "sphere": "👨🏻‍💻 vibing",
+      "createdAt": "2026-06-01 17:42",
+      "id": "note-1780324958914-t7qg"
+    },
+    {
+      "text": "sdfdsf",
+      "sphere": "🥷🏽 iowa",
+      "createdAt": "2026-06-01 17:41",
+      "id": "note-1780324905025-8fue"
+    },
+    {
+      "text": "efsdf",
+      "sphere": "🥷🏽 iowa",
+      "createdAt": "2026-06-01 17:41",
+      "id": "note-1780324903059-3t0i"
+    },
+    {
+      "text": "its works!",
+      "sphere": "📚 education",
+      "createdAt": "2026-06-01 17:33",
+      "id": "note-1780324402284-qjtq"
+    }
+  ],
+  "currentTrackingDate": "2026-06-01"
+}

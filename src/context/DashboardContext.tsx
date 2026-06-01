@@ -969,6 +969,53 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
   }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate, state.quickNotes]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync a lightweight snapshot to agent-server for Benicio's live context.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    fetch("/api/agent-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tasks:               state.tasks,
+        habits:              state.habits,
+        projects:            state.projects,
+        recurringTasks:      state.recurringTasks,
+        quickNotes:          state.quickNotes,
+        currentTrackingDate: state.currentTrackingDate,
+      }),
+    }).catch(() => {}); // fire-and-forget — never block the UI
+  }, [state.tasks, state.habits, state.projects, state.recurringTasks, state.quickNotes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll for pending actions written by the agent-server and apply them to state.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    async function poll() {
+      try {
+        const res = await fetch("/api/agent-pending");
+        if (!res.ok) return;
+        const actions: Array<{ type: string; payload: Record<string, unknown> }> = await res.json();
+        if (!actions.length) return;
+        for (const action of actions) {
+          if (action.type === "ADD_QUICK_NOTE") {
+            dispatch({ type: "ADD_QUICK_NOTE", note: action.payload as Omit<QuickNote, "id"> });
+          } else if (action.type === "ADD_HABIT") {
+            dispatch({ type: "ADD_HABIT", habit: action.payload as Omit<Habit, "id" | "history"> });
+          } else if (action.type === "ADD_TASK") {
+            dispatch({ type: "ADD_TASK", task: action.payload as Omit<Task, "id"> });
+          } else if (action.type === "UPDATE_TASK") {
+            dispatch({ type: "UPDATE_TASK", id: action.payload.id as string, fields: action.payload.fields as Partial<Task> });
+          }
+        }
+        // Clear the queue once processed
+        await fetch("/api/agent-pending", { method: "DELETE" });
+      } catch {
+        // silent — never interrupt the UI
+      }
+    }
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <DashboardContext.Provider
       value={{
