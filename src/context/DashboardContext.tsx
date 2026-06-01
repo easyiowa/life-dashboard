@@ -90,6 +90,14 @@ export interface Habit {
   history: Record<string, boolean>;              // { "YYYY-MM-DD": true }
 }
 
+export interface QuickNote {
+  id: string;
+  text: string;
+  sphere: string;
+  projectId?: string;    // optional project assignment
+  createdAt: string;     // "YYYY-MM-DD HH:MM"
+}
+
 export interface RecurringHistoryEntry {
   id: string;
   completedAt: string; // "Month DD, YYYY, HH:MM"
@@ -302,6 +310,7 @@ interface State {
   elapsed: number;
   sessions: FocusSession[];
   recurringTasks: RecurringTask[];
+  quickNotes: QuickNote[];
   currentTrackingDate: string;  // "YYYY-MM-DD" — operational date of the dashboard
   showNightlyReview: boolean;   // gate shown when tracking date lags real date
 }
@@ -339,7 +348,9 @@ type Action =
   | { type: "TOGGLE_HABIT_DATE"; id: string; dateString: string }
   | { type: "UPDATE_HABIT"; id: string; fields: Partial<Omit<Habit, "id" | "history">> }
   | { type: "DELETE_HABIT"; id: string }
-  | { type: "DELETE_TASK"; id: string };
+  | { type: "DELETE_TASK"; id: string }
+  | { type: "ADD_QUICK_NOTE"; note: Omit<QuickNote, "id"> }
+  | { type: "DELETE_QUICK_NOTE"; id: string };
 
 function mkDateString(d: Date): string {
   return d.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local time
@@ -687,6 +698,17 @@ function reducer(state: State, action: Action): State {
     case "DELETE_HABIT":
       return { ...state, habits: state.habits.filter((h) => h.id !== action.id) };
 
+    case "ADD_QUICK_NOTE": {
+      const note: QuickNote = {
+        ...action.note,
+        id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      };
+      return { ...state, quickNotes: [note, ...state.quickNotes] };
+    }
+
+    case "DELETE_QUICK_NOTE":
+      return { ...state, quickNotes: state.quickNotes.filter((n) => n.id !== action.id) };
+
     default:
       return state;
   }
@@ -742,12 +764,15 @@ function reviveState(raw: Record<string, unknown>): State {
   const savedTrackingDate  = (raw.currentTrackingDate as string) ?? today;
   const showNightlyReview  = savedTrackingDate !== today;
 
+  const quickNotes = ((raw.quickNotes as QuickNote[]) ?? []);
+
   return {
     ...(raw as unknown as State),
     tags: liveTags,
     habits,
     sessions,
     recurringTasks,
+    quickNotes,
     projects,
     currentTrackingDate: savedTrackingDate,
     showNightlyReview,
@@ -779,6 +804,7 @@ function buildInitialState(): State {
     tasks: INITIAL_TASKS,
     projects: INITIAL_PROJECTS,
     recurringTasks: INITIAL_RECURRING,
+    quickNotes: [],
     activeTask: null,
     running: false,
     elapsed: 0,
@@ -873,6 +899,9 @@ interface DashboardContextType {
   elapsed: number;
   sessions: FocusSession[];
   recurringTasks: RecurringTask[];
+  quickNotes: QuickNote[];
+  addQuickNote: (text: string, sphere: string, projectId?: string) => void;
+  deleteQuickNote: (id: string) => void;
   addTag: (tag: Omit<Tag, "id">) => void;
   updateTag: (id: string, fields: Partial<Omit<Tag, "id">>) => void;
   deleteTag: (id: string) => void;
@@ -938,7 +967,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } catch {
       // Quota exceeded or private-browsing restriction — silently ignore.
     }
-  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate, state.quickNotes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <DashboardContext.Provider
@@ -960,6 +989,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         elapsed: state.elapsed,
         sessions: state.sessions,
         recurringTasks: state.recurringTasks,
+        quickNotes:     state.quickNotes,
+        addQuickNote:   (text, sphere, projectId) => {
+          const now = new Date();
+          const h = String(now.getHours()).padStart(2, "0");
+          const m = String(now.getMinutes()).padStart(2, "0");
+          const createdAt = `${now.toLocaleDateString("en-CA")} ${h}:${m}`;
+          dispatch({ type: "ADD_QUICK_NOTE", note: { text, sphere, projectId, createdAt } });
+        },
+        deleteQuickNote: (id) => dispatch({ type: "DELETE_QUICK_NOTE", id }),
         addTag:    (tag)          => dispatch({ type: "ADD_TAG", tag }),
         updateTag: (id, fields)   => dispatch({ type: "UPDATE_TAG", id, fields }),
         deleteTag: (id)           => dispatch({ type: "DELETE_TAG", id }),

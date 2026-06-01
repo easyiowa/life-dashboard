@@ -596,7 +596,7 @@ export default function ProjectsCard() {
 
   return (
     <>
-      <TaskModal open={showModal} onClose={() => setShowModal(false)} />
+      <TaskModal open={showModal} onClose={() => setShowModal(false)} defaultSphere={activeSphere} />
       <TaskInspectModal task={inspectTask} onClose={() => setInspectTask(null)} />
       {showManageSpheres && <ManageSpheresModal onClose={() => setShowManageSpheres(false)} />}
       <ProjectEditModal

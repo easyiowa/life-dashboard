@@ -6,6 +6,7 @@ import ProjectsCard from "@/components/widgets/ProjectsCard";
 import ActivityLogCard from "@/components/widgets/ActivityLogCard";
 import RecurringCard from "@/components/widgets/RecurringCard";
 import HabitTrackerCard from "@/components/widgets/HabitTrackerCard";
+import QuickNotesCard from "@/components/widgets/QuickNotesCard";
 import NightlyReviewModal from "@/components/NightlyReviewModal";
 import { DashboardProvider } from "@/context/DashboardContext";
 
@@ -84,9 +85,14 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* ── Daily Focus Queue ───────────────────────────────────── */}
-        <div className="mb-4">
-          <DailyFocusQueueCard />
+        {/* ── Quick Notes (1/3) + Daily Focus Queue (2/3) ─────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full mb-4">
+          <div className="lg:col-span-1 w-full flex">
+            <QuickNotesCard />
+          </div>
+          <div className="lg:col-span-2 w-full">
+            <DailyFocusQueueCard />
+          </div>
         </div>
 
         {/* ── Primary grid: 3 cols ────────────────────────────────

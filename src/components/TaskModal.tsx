@@ -15,6 +15,7 @@ import EmojiPickerButton from "@/components/EmojiPickerButton";
 interface Props {
   open: boolean;
   onClose: () => void;
+  defaultSphere?: string;
 }
 
 type FormData = Omit<Task, "id" | "done">;
@@ -60,15 +61,15 @@ function ToggleGroup<T extends string>({
   );
 }
 
-export default function TaskModal({ open, onClose }: Props) {
-  const { spheres, projects, tags, addTask, addProject } = useDashboard();
+export default function TaskModal({ open, onClose, defaultSphere }: Props) {
+  const { spheres, projects, tags, tasks, addTask, addProject } = useDashboard();
 
-  const defaultSphere = spheres[0]?.name ?? "";
-  const defaultProject = projects.find((p) => p.sphere === defaultSphere)?.name ?? "";
+  const fallbackSphere  = spheres[0]?.name ?? "";
+  const fallbackProject = projects.find((p) => p.sphere === fallbackSphere)?.name ?? "";
 
   const blank = (): FormData => ({
-    sphere: defaultSphere,
-    project: defaultProject,
+    sphere: fallbackSphere,
+    project: fallbackProject,
     title: "",
     priority: "Med",
     energy: "Easy",
@@ -85,19 +86,30 @@ export default function TaskModal({ open, onClose }: Props) {
   const [newProjectName,       setNewProjectName]       = useState("");
   const [newProjectEmoji,      setNewProjectEmoji]      = useState("📁");
   const [newProjectEmojiLocked,setNewProjectEmojiLocked]= useState(false);
-  const [newProjectSphere,     setNewProjectSphere]     = useState(defaultSphere);
+  const [newProjectSphere,     setNewProjectSphere]     = useState(fallbackSphere);
   const [newProjectTagIds, setNewProjectTagIds] = useState<string[]>(() => tags[0] ? [tags[0].id] : []);
   const [newProjectError,  setNewProjectError]  = useState(false);
 
   useEffect(() => {
     if (open) {
-      setForm(blank());
+      // Pre-select the sphere the user is currently browsing
+      const targetSphere = defaultSphere ?? fallbackSphere;
+
+      // Most recently added task in that sphere → use its project as the default
+      const sphereTasks  = tasks.filter((t) => t.sphere === targetSphere);
+      const lastTask     = sphereTasks[sphereTasks.length - 1];
+      const targetProject =
+        lastTask?.project ??
+        projects.find((p) => p.sphere === targetSphere)?.name ??
+        fallbackProject;
+
+      setForm({ ...blank(), sphere: targetSphere, project: targetProject });
       setTitleError(false);
       setShowNewProject(false);
       setNewProjectName("");
       setNewProjectEmoji("📁");
       setNewProjectEmojiLocked(false);
-      setNewProjectSphere(spheres[0]?.name ?? "");
+      setNewProjectSphere(targetSphere);
       setNewProjectTagIds(tags[0] ? [tags[0].id] : []);
       setNewProjectError(false);
     }
