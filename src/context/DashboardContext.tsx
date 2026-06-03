@@ -98,6 +98,14 @@ export interface QuickNote {
   createdAt: string;     // "YYYY-MM-DD HH:MM"
 }
 
+export interface HistoricalLog {
+  date: string;
+  dayVelocity: number;
+  recap: string;
+  completedTasks: string[];
+  rolledOverTasks: string[];
+}
+
 export interface RecurringHistoryEntry {
   id: string;
   completedAt: string; // "Month DD, YYYY, HH:MM"
@@ -313,6 +321,8 @@ interface State {
   quickNotes: QuickNote[];
   currentTrackingDate: string;  // "YYYY-MM-DD" — operational date of the dashboard
   showNightlyReview: boolean;   // gate shown when tracking date lags real date
+  historicalLogs: HistoricalLog[];
+  yesterdayRecap: string;
 }
 
 type Action =
@@ -350,7 +360,9 @@ type Action =
   | { type: "DELETE_HABIT"; id: string }
   | { type: "DELETE_TASK"; id: string }
   | { type: "ADD_QUICK_NOTE"; note: Omit<QuickNote, "id"> }
-  | { type: "DELETE_QUICK_NOTE"; id: string };
+  | { type: "DELETE_QUICK_NOTE"; id: string }
+  | { type: "RENAME_TASK_REFS"; taskId: string; oldTitle: string; newTitle: string }
+  | { type: "LOCK_DAY"; date: string; dayVelocity: number; recap: string; completedTasks: string[]; rolledOverTasks: string[] };
 
 function mkDateString(d: Date): string {
   return d.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local time
@@ -437,6 +449,17 @@ function reducer(state: State, action: Action): State {
         ...state,
         tasks: state.tasks.map((t) => (t.id === action.id ? { ...t, ...action.fields } : t)),
       };
+
+    case "RENAME_TASK_REFS": {
+      const updatedActiveTask =
+        state.activeTask?.id === action.taskId
+          ? { ...state.activeTask, title: action.newTitle }
+          : state.activeTask;
+      const updatedSessions = state.sessions.map((s) =>
+        s.taskName === action.oldTitle ? { ...s, taskName: action.newTitle } : s
+      );
+      return { ...state, activeTask: updatedActiveTask, sessions: updatedSessions };
+    }
 
     case "DELETE_TASK": {
       const target = state.tasks.find((t) => t.id === action.id);
@@ -566,6 +589,35 @@ function reducer(state: State, action: Action): State {
           if (t.done) return { ...t, queuedDate: null };
           if ((t.intent ?? "finish") === "maybe") return { ...t, queuedDate: null };
           // Incomplete commitment → increment rollover, remove from queue
+          return { ...t, queuedDate: null, rolloverCount: (t.rolloverCount ?? 0) + 1 };
+        }),
+      };
+    }
+
+    case "LOCK_DAY": {
+      const newDate = new Date().toLocaleDateString("en-CA");
+      const logEntry: HistoricalLog = {
+        date:            action.date,
+        dayVelocity:     action.dayVelocity,
+        recap:           action.recap,
+        completedTasks:  action.completedTasks,
+        rolledOverTasks: action.rolledOverTasks,
+      };
+      const existingIndex = state.historicalLogs.findIndex((l) => l.date === action.date);
+      const updatedLogs = existingIndex !== -1
+        ? state.historicalLogs.map((l, i) => (i === existingIndex ? logEntry : l))
+        : [logEntry, ...state.historicalLogs];
+
+      return {
+        ...state,
+        currentTrackingDate: newDate,
+        showNightlyReview:   false,
+        yesterdayRecap:      action.recap,
+        historicalLogs:      updatedLogs,
+        tasks: state.tasks.map((t) => {
+          if ((t.queuedDate ?? null) !== state.currentTrackingDate) return t;
+          if (t.done) return { ...t, queuedDate: null };
+          if ((t.intent ?? "finish") === "maybe") return { ...t, queuedDate: null };
           return { ...t, queuedDate: null, rolloverCount: (t.rolloverCount ?? 0) + 1 };
         }),
       };
@@ -776,6 +828,8 @@ function reviveState(raw: Record<string, unknown>): State {
     projects,
     currentTrackingDate: savedTrackingDate,
     showNightlyReview,
+    historicalLogs: ((raw.historicalLogs as HistoricalLog[]) ?? []),
+    yesterdayRecap:  (raw.yesterdayRecap  as string)           ?? "",
     running: false,
     elapsed: (raw.elapsed as number) ?? 0,
   };
@@ -798,6 +852,8 @@ function buildInitialState(): State {
   return {
     currentTrackingDate: new Date().toLocaleDateString("en-CA"),
     showNightlyReview:   false,
+    historicalLogs:      [],
+    yesterdayRecap:      "",
     tags: INITIAL_TAGS,
     spheres: INITIAL_SPHERES,
     habits: INITIAL_HABITS,
@@ -884,6 +940,9 @@ function buildInitialState(): State {
 interface DashboardContextType {
   currentTrackingDate: string;
   showNightlyReview: boolean;
+  historicalLogs: HistoricalLog[];
+  yesterdayRecap: string;
+  lockDay: (date: string, dayVelocity: number, recap: string, completedTasks: string[], rolledOverTasks: string[]) => void;
   toggleTaskForToday: (id: string, dateString: string, intent: Task["intent"], targetMinutes: number | null) => void;
   updateTaskTimeSpent: (id: string, minutes: number) => void;
   transitionToNextDay: () => void;
@@ -967,7 +1026,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } catch {
       // Quota exceeded or private-browsing restriction — silently ignore.
     }
-  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate, state.quickNotes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate, state.quickNotes, state.historicalLogs, state.yesterdayRecap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync a lightweight snapshot to agent-server for Benicio's live context.
   useEffect(() => {
@@ -1011,6 +1070,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             dispatch({ type: "ADD_TASK", task: action.payload as Omit<Task, "id"> });
           } else if (action.type === "UPDATE_TASK") {
             dispatch({ type: "UPDATE_TASK", id: action.payload.id as string, fields: action.payload.fields as Partial<Task> });
+          } else if (action.type === "RENAME_TASK_REFS") {
+            dispatch({ type: "RENAME_TASK_REFS", taskId: action.payload.taskId as string, oldTitle: action.payload.oldTitle as string, newTitle: action.payload.newTitle as string });
           } else if (action.type === "DELETE_TASK") {
             dispatch({ type: "DELETE_TASK", id: action.payload.id as string });
           } else if (action.type === "ADD_PROJECT") {
@@ -1027,6 +1088,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             dispatch({ type: "START_TASK", task: action.payload as unknown as ActiveTask });
           } else if (action.type === "PAUSE_SESSION") {
             dispatch({ type: "PAUSE_SESSION" });
+          } else if (action.type === "LOCK_DAY") {
+            dispatch({
+              type:            "LOCK_DAY",
+              date:            action.payload.date as string,
+              dayVelocity:     action.payload.dayVelocity as number,
+              recap:           action.payload.recap as string,
+              completedTasks:  action.payload.completedTasks as string[],
+              rolledOverTasks: action.payload.rolledOverTasks as string[],
+            });
           }
         }
         // Clear the queue once processed
@@ -1044,11 +1114,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       value={{
         currentTrackingDate:  state.currentTrackingDate,
         showNightlyReview:    state.showNightlyReview,
+        historicalLogs:       state.historicalLogs,
+        yesterdayRecap:       state.yesterdayRecap,
         toggleTaskForToday:   (id, dateString, intent, targetMinutes) => dispatch({ type: "TOGGLE_TASK_FOR_TODAY", id, dateString, intent: intent ?? "finish", targetMinutes }),
         updateTaskTimeSpent:  (id, minutes)    => dispatch({ type: "UPDATE_TASK_TIME_SPENT", id, minutes }),
         transitionToNextDay:  ()               => dispatch({ type: "TRANSITION_TO_NEXT_DAY" }),
         requestNightlyReview: ()               => dispatch({ type: "REQUEST_NIGHTLY_REVIEW" }),
         dismissNightlyReview: ()               => dispatch({ type: "DISMISS_NIGHTLY_REVIEW" }),
+        lockDay:              (date, dayVelocity, recap, completedTasks, rolledOverTasks) =>
+          dispatch({ type: "LOCK_DAY", date, dayVelocity, recap, completedTasks, rolledOverTasks }),
         tags: state.tags,
         spheres: state.spheres,
         habits: state.habits,

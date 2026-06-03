@@ -74,6 +74,54 @@ function findByTitle(arr, title) {
   return (arr || []).find(x => x.title?.toLowerCase() === title?.toLowerCase());
 }
 
+// Rewrite every stale title reference in dashboard-snapshot.json immediately,
+// so Benicio's next read and the Next.js sync route both see correct data
+// before the browser's own UPDATE_TASK action even lands.
+function patchSnapshotForRename(taskId, oldTitle, newTitle) {
+  const snap = readSnapshot();
+  if (!snap) return;
+  let dirty = false;
+
+  // Tasks array — overwrite the canonical title by ID
+  if (Array.isArray(snap.tasks)) {
+    snap.tasks = snap.tasks.map(t => {
+      if (t.id !== taskId) return t;
+      dirty = true;
+      return { ...t, title: newTitle };
+    });
+  }
+
+  // Active timer block — either stored as snap.activeTask or snap.timer
+  for (const key of ['activeTask', 'timer']) {
+    if (snap[key]?.title === oldTitle) {
+      snap[key] = { ...snap[key], title: newTitle };
+      dirty = true;
+    }
+  }
+
+  // Log / history arrays — any entry that carries taskName or title matching the old string
+  for (const key of ['sessions', 'timerLog', 'focusSessions', 'history']) {
+    if (!Array.isArray(snap[key])) continue;
+    snap[key] = snap[key].map(entry => {
+      const needsPatch =
+        entry.taskName === oldTitle ||
+        entry.title    === oldTitle;
+      if (!needsPatch) return entry;
+      dirty = true;
+      return {
+        ...entry,
+        ...(entry.taskName === oldTitle && { taskName: newTitle }),
+        ...(entry.title    === oldTitle && { title:    newTitle }),
+      };
+    });
+  }
+
+  if (dirty) {
+    fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(snap, null, 2), 'utf8');
+    console.log(`Snapshot patched: "${oldTitle}" → "${newTitle}"`);
+  }
+}
+
 // ── Tool definitions ──────────────────────────────────────────────────────────
 const TOOLS = [
   {
@@ -83,7 +131,7 @@ const TOOLS = [
       type: "object",
       properties: {
         itemType:  { type: "string", enum: ["task", "habit", "note", "recurring", "timer"] },
-        action:    { type: "string", enum: ["create", "update", "delete", "complete", "start_timer", "pause_timer", "complete_recurring", "log_status"] },
+        action:    { type: "string", enum: ["create", "update", "delete", "complete", "start_timer", "pause_timer", "complete_recurring", "log_status", "lock_day"] },
         title:     { type: "string", description: "Item title (task, habit, or recurring name)." },
         sphere:    { type: "string", enum: ["iowa", "siin", "vibing", "education"] },
         project:   { type: "string", description: "Exact project name for tasks." },
@@ -95,6 +143,7 @@ const TOOLS = [
         routine:   { type: "string", enum: ["morning", "day", "evening"] },
         habitType: { type: "string", enum: ["building", "breaking"] },
         text:      { type: "string", description: "Raw note content." },
+        newTitle:  { type: "string", description: "New title when renaming a task." },
       },
       required: ["itemType", "action"],
     },
@@ -122,8 +171,8 @@ const TOOLS = [
 ];
 
 // ── manage_dashboard_item executor ───────────────────────────────────────────
-function executeItem(input, snap) {
-  const { itemType, action, title, sphere, project, priority, urgency, energy, timeGoal, interval, routine, habitType, text } = input;
+async function executeItem(input, snap) {
+  const { itemType, action, title, sphere, project, priority, urgency, energy, timeGoal, interval, routine, habitType, text, newTitle } = input;
   const ts    = mkTimestamp();
   const today = new Date().toLocaleDateString('en-CA');
 
@@ -143,15 +192,116 @@ function executeItem(input, snap) {
       if (!task) return `Task not found: "${title}"`;
       const fields = action === "complete"
         ? { done: true }
-        : { ...(priority && { priority }), ...(urgency && { urgency }), ...(energy && { energy }) };
+        : {
+            ...(newTitle   && { title: newTitle }),
+            ...(priority   && { priority }),
+            ...(urgency    && { urgency }),
+            ...(energy     && { energy }),
+          };
       queueAction("UPDATE_TASK", { id: task.id, fields });
-      return `Task ${action}: "${task.title}"`;
+      if (action === "update" && newTitle) {
+        // 1. Queue browser dispatch to patch activeTask + session history in React state
+        queueAction("RENAME_TASK_REFS", { taskId: task.id, oldTitle: task.title, newTitle });
+        // 2. Patch snapshot on disk immediately — same execution pass
+        patchSnapshotForRename(task.id, task.title, newTitle);
+      }
+      return newTitle
+        ? `Task renamed: "${task.title}" → "${newTitle}"`
+        : `Task ${action}: "${task.title}"`;
     }
     if (action === "delete") {
       const task = findByTitle(snap?.tasks, title);
       if (!task) return `Task not found: "${title}"`;
       queueAction("DELETE_TASK", { id: task.id });
       return `Task deleted: "${task.title}"`;
+    }
+    if (action === "lock_day") {
+      if (!snap) return 'No snapshot — open the dashboard in your browser first.';
+      const yesterday = snap.currentTrackingDate || '';
+
+      // ── Core focus queue metrics ─────────────────────────────────────────────
+      const queued            = (snap.tasks || []).filter(t => t.queuedDate === yesterday);
+      const queuedCommitments = queued.filter(t => (t.intent ?? 'finish') !== 'maybe');
+      const wins              = queuedCommitments.filter(t => t.done);
+      const rolledOver        = queuedCommitments.filter(t => !t.done);
+      const habitsHit         = (snap.habits || []).filter(h => h.history?.[yesterday] === true);
+      const velocity          = queuedCommitments.length > 0
+        ? Math.round(wins.length / queuedCommitments.length * 100)
+        : 100;
+
+      // ── Missed calendar items ────────────────────────────────────────────────
+      // Any task whose deadline falls on the tracking date and is still undone —
+      // whether it was queued or not. No queuedDate guard: a deadline miss is a miss.
+      const missedCalendar = (snap.tasks || [])
+        .filter(t => t.deadline === yesterday && !t.done)
+        .map(t => t.title);
+
+      // ── Overdue recurring responsibilities ──────────────────────────────────
+      // Convert due date to a YYYY-MM-DD string for clean lexicographic comparison,
+      // avoiding millisecond/timezone drift from raw .getTime() arithmetic.
+      const overdueRecurring = (snap.recurringTasks || [])
+        .filter(r => {
+          if (!r.lastDoneDate) return true; // never completed — always overdue
+          const dueDateStr = new Date(
+            new Date(r.lastDoneDate).getTime() + r.intervalDays * 86_400_000
+          ).toLocaleDateString('en-CA'); // "YYYY-MM-DD"
+          return dueDateStr <= yesterday;  // ISO strings sort correctly as strings
+        })
+        .map(r => `${r.title} (${r.intervalLabel})`);
+
+      // ── Prompt payload ───────────────────────────────────────────────────────
+      // Bullet-point each section so the model cannot scan past them as inline noise.
+      const calendarLines  = missedCalendar.length
+        ? missedCalendar.map(t  => `  • ${t}`).join('\n')
+        : '  • None';
+      const recurringLines = overdueRecurring.length
+        ? overdueRecurring.map(r => `  • ${r}`).join('\n')
+        : '  • None';
+
+      const metrics = [
+        `Date locked: ${yesterday}`,
+        `Focus Queue: ${queuedCommitments.length} queued | ${wins.length} done | ${rolledOver.length} rolled over | ${velocity}% velocity`,
+        rolledOver.length ? `Stalled tasks: ${rolledOver.map(t => `"${t.title}"`).join(', ')}` : 'No rollovers.',
+        `Habits hit: ${habitsHit.length}/${(snap.habits || []).length}`,
+        `Total open tasks: ${(snap.tasks || []).filter(t => !t.done).length}`,
+        '',
+        '--- MISSED CALENDAR ITEMS (deadline was today, left undone) ---',
+        calendarLines,
+        '',
+        '--- OVERDUE RECURRING RESPONSIBILITIES (past their due date) ---',
+        recurringLines,
+      ].join('\n');
+
+      const recapRes = await anthropic.messages.create({
+        model:      'claude-haiku-4-5-20251001',
+        max_tokens: 80,
+        system: [
+          'You are Benicio, Olaf\'s direct peer and accountability partner.',
+          'Write a crisp 1-2 sentence recap of his previous day based on the data below.',
+          '',
+          'STRICT RULES:',
+          '1. ABSOLUTELY FORBID generic motivational fluff, filler words, or empty clichés.',
+          '2. Be human and direct, not robotic. High-density — just say what stalled or succeeded plainly.',
+          '3. If there are items listed under MISSED CALENDAR ITEMS or OVERDUE RECURRING RESPONSIBILITIES',
+          '   (i.e. anything other than "None"), you MUST integrate them into the 1-2 sentence friendly',
+          '   summary recap so the user is held accountable for leaving them behind.',
+          '4. Keep it crisp, direct, no-fluff, human, and strictly under 25-30 words total.',
+        ].join('\n'),
+        messages: [{ role: 'user', content: metrics }],
+      });
+
+      const recap = recapRes.content.find(b => b.type === 'text')?.text?.trim() || '';
+
+      // Queue LOCK_DAY so the frontend saves the historical log and recap banner
+      queueAction("LOCK_DAY", {
+        date:            yesterday,
+        dayVelocity:     velocity,
+        recap,
+        completedTasks:  wins.map(t => t.title),
+        rolledOverTasks: rolledOver.map(t => t.title),
+      });
+      console.log(`Day locked. Velocity: ${velocity}%. Recap: "${recap}"`);
+      return recap;
     }
   }
 
@@ -288,10 +438,10 @@ function executeFetchSnapshot(snap) {
 }
 
 // ── Tool dispatcher ───────────────────────────────────────────────────────────
-function dispatchTool(block, snap) {
+async function dispatchTool(block, snap) {
   const { name, input } = block;
-  if (name === 'manage_dashboard_item')       return executeItem(input, snap);
-  if (name === 'manage_dashboard_structure')  return executeStructure(input, snap);
+  if (name === 'manage_dashboard_item')         return executeItem(input, snap);
+  if (name === 'manage_dashboard_structure')    return executeStructure(input, snap);
   if (name === 'fetch_full_dashboard_snapshot') return executeFetchSnapshot(snap);
   return `Unknown tool: ${name}`;
 }
@@ -360,12 +510,12 @@ bot.on('message', async (msg) => {
 
     if (toolBlocks.length > 0) {
       // Execute every triggered tool and collect all results into one array
-      const toolResults = toolBlocks.map(block => {
+      const toolResults = await Promise.all(toolBlocks.map(async block => {
         console.log(`Tool: ${block.name}`, JSON.stringify(block.input));
-        const result = dispatchTool(block, snap);
+        const result = await dispatchTool(block, snap);
         console.log(`Result [${block.name}]: ${result}`);
         return { type: 'tool_result', tool_use_id: block.id, content: result };
-      });
+      }));
 
       // Push assistant message (contains all tool_use blocks) then all results in one user turn
       pushMsg(allowedUserId, { role: 'assistant', content: res1.content });

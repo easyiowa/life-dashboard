@@ -8,6 +8,7 @@ import RecurringCard from "@/components/widgets/RecurringCard";
 import HabitTrackerCard from "@/components/widgets/HabitTrackerCard";
 import QuickNotesCard from "@/components/widgets/QuickNotesCard";
 import NightlyReviewModal from "@/components/NightlyReviewModal";
+import MorningRecapBanner from "@/components/MorningRecapBanner";
 import { DashboardProvider } from "@/context/DashboardContext";
 
 function getGreeting() {
@@ -59,6 +60,8 @@ export default function DashboardPage() {
     <main className="min-h-screen p-4 md:p-6 lg:p-8">
       <DashboardProvider>
       <div className="max-w-7xl mx-auto">
+
+        <MorningRecapBanner />
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <div className="relative min-h-[160px] pb-12 mb-0">

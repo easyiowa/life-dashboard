@@ -406,11 +406,13 @@ function TaskRow({
           >
             {task.done
               ? <CheckCircle2 className="w-4 h-4 text-violet-500" />
-              : <Circle className="w-4 h-4 text-slate-600 hover:text-slate-400 transition-colors" />}
+              : isQueued
+                ? <Circle className="w-4 h-4 text-violet-500" style={{ fill: "rgba(168,85,247,0.12)" }} />
+                : <Circle className="w-4 h-4 text-slate-600 hover:text-slate-400 transition-colors" />}
           </button>
 
           <div className="flex flex-col gap-1 min-w-0">
-            <p className={`text-sm text-white leading-none truncate ${task.done ? "line-through text-slate-500" : ""}`}>
+            <p className={`text-sm leading-none truncate ${task.done ? "line-through text-slate-500" : isQueued ? "text-slate-400" : "text-white"}`}>
               {task.title}
             </p>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -453,14 +455,12 @@ function TaskRow({
             </div>
           )}
 
-          {/* Queue to Today */}
-          {!task.done && (
+          {/* Queue to Today — hidden when already queued to prevent double-entry */}
+          {!task.done && !isQueued && (
             <button
               onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, "finish", null); }}
-              title={isQueued ? "Queued for today" : "Queue for today"}
-              className={`flex-shrink-0 p-1 rounded transition-colors opacity-0 group-hover:opacity-100 ${
-                isQueued ? "text-purple-400" : "text-slate-500 hover:text-purple-400"
-              }`}
+              title="Queue for today"
+              className="flex-shrink-0 p-1 rounded transition-colors opacity-0 group-hover:opacity-100 text-slate-500 hover:text-purple-400"
             >
               <Target className="w-3.5 h-3.5" />
             </button>

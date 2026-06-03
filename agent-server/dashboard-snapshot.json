@@ -23,9 +23,11 @@
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
-      "queuedDate": "2026-06-01",
-      "intent": "finish",
-      "dailyTargetMinutes": null
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 120,
+      "rolloverCount": 2,
+      "timeSpentMinutes": 1
     },
     {
       "id": "siin-t3",
@@ -34,24 +36,32 @@
       "title": "Google maps",
       "priority": "Med",
       "energy": "Quick",
-      "done": false,
+      "done": true,
       "deadline": null,
       "notes": "hui",
       "manualMinutes": 0,
-      "urgency": "not-urgent"
+      "urgency": "not-urgent",
+      "timeSpentMinutes": 20,
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null
     },
     {
       "id": "siin-t4",
       "sphere": "siin",
       "project": "Product",
-      "title": "Reports Loyalty Program",
+      "title": "Reports Loyalty Program jgyd,ydf,yfi.uf.ulg",
       "priority": "High",
       "energy": "Flow",
       "done": false,
       "deadline": null,
       "notes": "this is the way to do!",
       "manualMinutes": 0,
-      "urgency": "urgent"
+      "urgency": "urgent",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1
     },
     {
       "id": "siin-t5",
@@ -60,11 +70,14 @@
       "title": "In-app copy (Discount)",
       "priority": "Med",
       "energy": "Easy",
-      "done": false,
+      "done": true,
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
-      "urgency": "urgent"
+      "urgency": "urgent",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null
     },
     {
       "id": "siin-t6",
@@ -88,7 +101,10 @@
       "done": false,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null
     },
     {
       "id": "siin-t8",
@@ -174,7 +190,7 @@
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
-      "urgency": "urgent"
+      "urgency": "not-urgent"
     },
     {
       "id": "siin-t15",
@@ -270,7 +286,10 @@
       "done": false,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "intent": "maybe",
+      "dailyTargetMinutes": null
     },
     {
       "id": "siin-t23",
@@ -279,10 +298,13 @@
       "title": "Alexandr Zdank",
       "priority": "Med",
       "energy": "Quick",
-      "done": false,
+      "done": true,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null
     },
     {
       "sphere": "vibing",
@@ -295,10 +317,11 @@
       "manualMinutes": 0,
       "done": false,
       "id": "t-1780261239765-gd5",
-      "queuedDate": "2026-06-01",
-      "intent": "time",
-      "dailyTargetMinutes": 20,
-      "timeSpentMinutes": 24
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "timeSpentMinutes": 24,
+      "rolloverCount": 2
     },
     {
       "sphere": "iowa",
@@ -309,28 +332,12 @@
       "deadline": "2026-06-01",
       "notes": "",
       "manualMinutes": 0,
-      "done": false,
+      "done": true,
       "id": "t-1780317638245-tiq",
-      "queuedDate": "2026-06-01",
+      "queuedDate": null,
       "intent": "finish",
       "dailyTargetMinutes": null,
       "timeSpentMinutes": 21
-    },
-    {
-      "sphere": "iowa",
-      "project": "Random",
-      "title": "Window decor",
-      "priority": "High",
-      "energy": "Quick",
-      "urgency": "urgent",
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "done": false,
-      "id": "t-1780326027230-vtd",
-      "queuedDate": "2026-06-01",
-      "intent": "finish",
-      "dailyTargetMinutes": null
     },
     {
       "title": "Buy milk tomorrow",
@@ -370,6 +377,210 @@
       "notes": "",
       "manualMinutes": 0,
       "id": "t-1780345715849-4c9"
+    },
+    {
+      "title": "FOLLOW",
+      "sphere": "iowa",
+      "project": "Random",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": true,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780347083116-ioa",
+      "queuedDate": null,
+      "intent": "maybe",
+      "dailyTargetMinutes": null
+    },
+    {
+      "title": "follow",
+      "sphere": "education",
+      "project": "TEST PROJECT",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780347182188-20i"
+    },
+    {
+      "title": "Make dinner",
+      "sphere": "iowa",
+      "project": "Random",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": true,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780347863171-ds1",
+      "queuedDate": null,
+      "intent": "maybe",
+      "dailyTargetMinutes": null
+    },
+    {
+      "title": "Worked out",
+      "sphere": "iowa",
+      "project": "Random",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": true,
+      "deadline": "2026-06-03",
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780375579096-lhe",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1
+    },
+    {
+      "title": "Make an invoice to Alexei",
+      "sphere": "iowa",
+      "project": "Random",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780377012930-ttm",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1
+    },
+    {
+      "title": "Make a Sammal post",
+      "sphere": "iowa",
+      "project": "Random",
+      "priority": "High",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "done": true,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780377012930-8gq",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null
+    },
+    {
+      "title": "Make a Synlab appointment",
+      "sphere": "iowa",
+      "project": "Random",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780377012930-pdv",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1
+    },
+    {
+      "title": "Wash the faceedwefwefwefewfw",
+      "sphere": "iowa",
+      "project": "Random",
+      "priority": "High",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780377226052-tf0",
+      "queuedDate": "2026-06-03",
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 3,
+      "timeSpentMinutes": 9
+    },
+    {
+      "sphere": "iowa",
+      "project": "Random",
+      "title": "Make breakfast",
+      "priority": "Low",
+      "energy": "Quick",
+      "urgency": "urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": true,
+      "id": "t-1780378316960-bxa",
+      "timeSpentMinutes": 2
+    },
+    {
+      "title": "Sammal post MORE",
+      "sphere": "iowa",
+      "project": "Random",
+      "priority": "High",
+      "energy": "Quick",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "id": "t-1780386025042-dnf",
+      "queuedDate": null,
+      "intent": "maybe",
+      "dailyTargetMinutes": null,
+      "timeSpentMinutes": 9,
+      "rolloverCount": 2
+    },
+    {
+      "sphere": "iowa",
+      "project": "Sammal",
+      "title": "Final Posts",
+      "priority": "High",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "deadline": null,
+      "notes": "- how to come (map image)\n- food/bar menu\n- casual pics/videos\n- area plan\n- line up",
+      "manualMinutes": 0,
+      "done": true,
+      "id": "t-1780389543648-6q6",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null
+    },
+    {
+      "sphere": "siin",
+      "project": "Meetings",
+      "title": "fghuio",
+      "priority": "High",
+      "energy": "Quick",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1780418625293-zb6"
+    },
+    {
+      "sphere": "siin",
+      "project": "Product",
+      "title": "rtyuiop",
+      "priority": "High",
+      "energy": "Quick",
+      "urgency": "urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1780418636193-z9r"
     }
   ],
   "habits": [
@@ -389,8 +600,8 @@
         "2026-06-03": true,
         "2026-06-01": true,
         "2026-06-02": true,
-        "2026-06-04": true,
-        "2026-06-05": true
+        "2026-06-04": false,
+        "2026-06-05": false
       },
       "routine": "day"
     },
@@ -448,7 +659,14 @@
       "emoji": "💧",
       "notes": "",
       "id": "habit-1780316678026-4f5",
-      "history": {}
+      "history": {
+        "2026-06-02": true,
+        "2026-06-03": true,
+        "2026-06-05": true,
+        "2026-06-01": true,
+        "2026-06-04": true,
+        "2026-06-06": true
+      }
     },
     {
       "title": "Phone",
@@ -459,7 +677,11 @@
       "emoji": "📵",
       "notes": "",
       "id": "habit-1780316695237-823",
-      "history": {}
+      "history": {
+        "2026-06-02": true,
+        "2026-06-01": true,
+        "2026-06-03": true
+      }
     },
     {
       "title": "laptop",
@@ -471,6 +693,22 @@
       "notes": "",
       "id": "habit-1780320570102-ai6",
       "history": {}
+    },
+    {
+      "title": "Wash face in the evening",
+      "type": "start",
+      "routine": "evening",
+      "frequency": "daily",
+      "targetCount": 5,
+      "emoji": "⭐",
+      "notes": "",
+      "id": "habit-1780347597954-gs2",
+      "history": {
+        "2026-06-02": true,
+        "2026-06-03": false,
+        "2026-06-04": false,
+        "2026-06-05": false
+      }
     }
   ],
   "projects": [
@@ -626,9 +864,9 @@
       "id": "p-1780317627094-eq6"
     },
     {
+      "emoji": "📁",
       "sphere": "vibing",
       "name": "No Project",
-      "emoji": "📁",
       "tagIds": [
         "tag-home",
         "tag-website",
@@ -637,6 +875,48 @@
       "status": "on-track",
       "milestone": "In progress",
       "id": "p-1780345811685-ro5"
+    },
+    {
+      "emoji": "🎶",
+      "sphere": "iowa",
+      "name": "Sammal",
+      "tagIds": [
+        "tag-home",
+        "tag-1780389575658-465"
+      ],
+      "status": "on-track",
+      "milestone": "In progress",
+      "id": "p-1780389530002-zmq"
+    }
+  ],
+  "spheres": [
+    {
+      "id": "sphere-private",
+      "name": "iowa",
+      "labelColor": "emerald",
+      "description": "Personal things to do"
+    },
+    {
+      "id": "sphere-siin",
+      "name": "siin",
+      "labelColor": "sky",
+      "description": "Launch it!"
+    },
+    {
+      "id": "sphere-1780261096548-bk2",
+      "name": "vibing",
+      "labelColor": "amber"
+    },
+    {
+      "id": "sphere-1780317125924-gyb",
+      "name": "education",
+      "labelColor": "indigo",
+      "description": "Learn stuff consistently!"
+    },
+    {
+      "id": "sphere-1780324925800-wmk",
+      "name": "testkkkkkk",
+      "labelColor": "blue"
     }
   ],
   "recurringTasks": [
@@ -716,12 +996,74 @@
       "intervalDays": 30,
       "intervalLabel": "Every Month",
       "sphere": "iowa",
-      "lastDoneDate": "2026-05-03T20:48:26.115Z",
-      "completionCount": 5,
+      "lastDoneDate": "2026-06-03T13:22:55.706Z",
+      "completionCount": 6,
+      "history": [
+        {
+          "id": "1780492975706-rpeol",
+          "completedAt": "June 3, 2026 at 16:22"
+        }
+      ]
+    },
+    {
+      "title": "kjhlkj",
+      "notes": "hijlkl",
+      "intervalDays": 30,
+      "intervalLabel": "Every Month",
+      "sphere": "iowa",
+      "lastDoneDate": "2026-06-02T16:52:50.129Z",
+      "id": "rec-1780419164432-egt",
+      "completionCount": 1,
+      "history": [
+        {
+          "id": "1780419170129-lsh66",
+          "completedAt": "June 2, 2026 at 19:52"
+        }
+      ]
+    },
+    {
+      "title": "Pills forn",
+      "notes": "eioprgjpweiojgf",
+      "intervalDays": 90,
+      "intervalLabel": "Every 3 Months",
+      "sphere": "iowa",
+      "lastDoneDate": null,
+      "id": "rec-1780492961199-0a2",
+      "completionCount": 0,
       "history": []
     }
   ],
   "quickNotes": [
+    {
+      "text": "jytujgluköhijäpk'l",
+      "sphere": "iowa",
+      "createdAt": "2026-06-03 16:31",
+      "id": "note-1780493500238-1ax4"
+    },
+    {
+      "text": "Meet Ernest",
+      "sphere": "iowa",
+      "createdAt": "2026-06-02 19:56",
+      "id": "note-1780419362664-1jaw"
+    },
+    {
+      "text": "ufhoaeihfeqfqwef",
+      "sphere": "siin",
+      "createdAt": "2026-06-02 19:49",
+      "id": "note-1780418971247-ufnj"
+    },
+    {
+      "text": "I need to work out right now",
+      "sphere": "iowa",
+      "createdAt": "2026-06-02 07:47",
+      "id": "note-1780375660092-lasz"
+    },
+    {
+      "text": "i need a watch",
+      "sphere": "iowa",
+      "createdAt": "2026-06-02 00:31",
+      "id": "note-1780349533089-4oxz"
+    },
     {
       "text": "IT WORKS!",
       "sphere": "siin",
@@ -801,5 +1143,5 @@
       "id": "note-1780324402284-qjtq"
     }
   ],
-  "currentTrackingDate": "2026-06-01"
+  "currentTrackingDate": "2026-06-03"
 }

@@ -99,10 +99,28 @@ function VelocityGauge({ score }: { score: number }) {
   );
 }
 
+// ── Recap generator ───────────────────────────────────────────────────────────
+
+function generateRecap(velocity: number, wins: number, total: number, rollovers: number): string {
+  if (total === 0) return "No tasks queued — free day.";
+  const frac = `${wins}/${total}`;
+  if (velocity >= 80) {
+    return `Nailed it — ${frac} goals finished. ${rollovers === 0 ? "Clean sweep." : `${rollovers} rolled forward.`}`;
+  }
+  if (velocity >= 50) {
+    const tail = rollovers > 0 ? ` ${rollovers} carrying over.` : "";
+    return `Solid day — ${frac} goals hit.${tail}`;
+  }
+  if (velocity >= 25) {
+    return `Partial progress — ${frac} done. ${rollovers} still in play.`;
+  }
+  return `Tough session — ${frac} goals met. ${rollovers > 0 ? `Carrying ${rollovers} forward.` : "Starting fresh."}`;
+}
+
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export default function NightlyReviewModal() {
-  const { tasks, currentTrackingDate, showNightlyReview, transitionToNextDay, dismissNightlyReview } =
+  const { tasks, currentTrackingDate, showNightlyReview, transitionToNextDay, dismissNightlyReview, lockDay } =
     useDashboard();
 
   if (!showNightlyReview) return null;
@@ -231,7 +249,10 @@ export default function NightlyReviewModal() {
                 Review Later
               </button>
               <button
-                onClick={transitionToNextDay}
+                onClick={() => {
+                  const recap = generateRecap(velocity, wins.length, commitments.length, activeRollovers.length);
+                  lockDay(reviewDate, velocity, recap, accomplished.map((t) => t.title), activeRollovers.map((t) => t.title));
+                }}
                 className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.4)] flex items-center justify-center gap-2"
               >
                 <Flame className="w-4 h-4" />
