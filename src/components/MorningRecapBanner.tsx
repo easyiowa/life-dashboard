@@ -60,10 +60,12 @@ export default function MorningRecapBanner() {
     <div className="mb-4 rounded-xl border border-violet-500/25 bg-violet-600/[0.06] backdrop-blur-xl overflow-hidden">
 
       {/* Main row — clickable to expand */}
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors duration-150"
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded((v) => !v); }}
+        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors duration-150 cursor-pointer"
       >
         <span className="text-lg leading-none flex-shrink-0 mt-0.5">{emoji}</span>
         <p className="text-sm text-violet-200 flex-1 leading-relaxed">{message}</p>
@@ -80,7 +82,7 @@ export default function MorningRecapBanner() {
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-      </button>
+      </div>
 
       {/* Expandable details panel */}
       <div
@@ -162,6 +164,42 @@ export default function MorningRecapBanner() {
             </div>
 
           </div>
+
+          {/* Mind State Recap */}
+          {log.mindStateClosure && (() => {
+            const ms = log.mindStateClosure;
+            const deltaLabel = ms.endDelta === "better" ? "📈 Better"
+                             : ms.endDelta === "worse"  ? "📉 Worse"
+                             :                            "⚖️ Same";
+            const deltaClass = ms.endDelta === "better" ? "text-emerald-400"
+                             : ms.endDelta === "worse"  ? "text-rose-400"
+                             :                            "text-slate-400";
+            const tagStr = ms.morningTags.length > 0
+              ? ` (${ms.morningTags.join(", ")})`
+              : "";
+            return (
+              <div className="flex flex-col gap-2 border-t border-white/[0.05] pt-3">
+                <p className="text-[9px] font-bold text-violet-400/70 uppercase tracking-widest">🧠 Mind State Recap</p>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[9px] text-slate-600 flex-shrink-0">Started day:</span>
+                    <span className="text-[10px] text-slate-300">{ms.morningMood}</span>
+                    {tagStr && <span className="text-[10px] text-slate-500">{tagStr}</span>}
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[9px] text-slate-600 flex-shrink-0">Ended day:</span>
+                    <span className={`text-[10px] font-medium ${deltaClass}`}>{deltaLabel}</span>
+                  </div>
+                </div>
+                {ms.closureNote && (
+                  <p className="text-[10px] text-slate-500 italic border-l-2 border-violet-500/20 pl-2 leading-relaxed">
+                    &ldquo;{ms.closureNote}&rdquo;
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
         </div>
       </div>
     </div>

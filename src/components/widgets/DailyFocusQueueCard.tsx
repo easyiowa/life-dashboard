@@ -141,6 +141,7 @@ function QueueRow({ task }: { task: Task }) {
               min={1}
               value={localMins}
               onChange={(e) => setLocalMins(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
               onBlur={handleTargetBlur}
               placeholder="min"
               className="w-14 h-5 px-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-white outline-none focus:border-blue-500/60 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -320,6 +321,39 @@ function ArchiveDayRow({ log }: { log: HistoricalLog }) {
               )}
             </div>
           </div>
+
+          {/* Mind-state snapshot — rendered when the day had a check-in */}
+          {log.mindStateClosure && (
+            <div className="flex flex-col gap-1.5 pt-2 border-t border-white/[0.04]">
+              <p className="text-[9px] font-bold text-violet-400/70 uppercase tracking-widest">🧠 Mind State</p>
+              <div className="flex items-start gap-2 flex-wrap">
+                <span className="text-[10px] text-violet-300">{log.mindStateClosure.morningMood}</span>
+                {log.mindStateClosure.morningTags.length > 0 && (
+                  <span className="text-[10px] text-slate-500">{log.mindStateClosure.morningTags.join(" ")}</span>
+                )}
+                <span className="text-[10px] text-slate-600">→</span>
+                <span className={`text-[10px] font-medium ${
+                  log.mindStateClosure.endDelta === "better" ? "text-emerald-400"
+                  : log.mindStateClosure.endDelta === "worse" ? "text-rose-400"
+                  : "text-slate-400"
+                }`}>
+                  {log.mindStateClosure.endDelta === "better" ? "📈 Better"
+                   : log.mindStateClosure.endDelta === "worse"  ? "📉 Worse"
+                   : "⚖️ Same"}
+                </span>
+              </div>
+              {(log.mindStateClosure.morningNote || log.mindStateClosure.closureNote) && (
+                <div className="flex flex-col gap-0.5">
+                  {log.mindStateClosure.morningNote && (
+                    <p className="text-[9px] text-slate-600 italic">AM: &ldquo;{log.mindStateClosure.morningNote}&rdquo;</p>
+                  )}
+                  {log.mindStateClosure.closureNote && (
+                    <p className="text-[9px] text-slate-600 italic">PM: &ldquo;{log.mindStateClosure.closureNote}&rdquo;</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

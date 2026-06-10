@@ -1,7 +1,8 @@
 "use client";
 
-import { X, CheckCircle2, Flame, Clock, AlertTriangle, Rocket, TrendingUp, Moon } from "lucide-react";
-import { useDashboard, type Task, type TaskArchiveMeta } from "@/context/DashboardContext";
+import { useState } from "react";
+import { X, CheckCircle2, Flame, Clock, AlertTriangle, Rocket, TrendingUp, Moon, Brain } from "lucide-react";
+import { useDashboard, type Task, type TaskArchiveMeta, type MindStateClosure } from "@/context/DashboardContext";
 
 // ── Velocity helpers ──────────────────────────────────────────────────────────
 
@@ -139,8 +140,11 @@ function generateRecap(velocity: number, wins: number, total: number, rollovers:
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export default function NightlyReviewModal() {
-  const { tasks, currentTrackingDate, showNightlyReview, transitionToNextDay, dismissNightlyReview, lockDay } =
+  const { tasks, currentTrackingDate, showNightlyReview, transitionToNextDay, dismissNightlyReview, lockDay, dailyCheckIn } =
     useDashboard();
+
+  const [endDelta,    setEndDelta]    = useState<"better" | "same" | "worse" | null>(null);
+  const [closureNote, setClosureNote] = useState("");
 
   if (!showNightlyReview) return null;
 
@@ -254,6 +258,66 @@ export default function NightlyReviewModal() {
             />
           )}
 
+          {/* Mind State Closure — only when a check-in exists for today */}
+          {dailyCheckIn?.date === reviewDate && (
+            <div className="flex flex-col gap-3 pt-2 border-t border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <Brain className="w-3.5 h-3.5 text-violet-400" />
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+                  Mind State Closure
+                </span>
+              </div>
+
+              {/* Morning snapshot recap */}
+              <div className="px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                <p className="text-[10px] text-slate-500 mb-1">You started the day as:</p>
+                <p className="text-xs text-slate-300">
+                  {dailyCheckIn.mood}
+                  {dailyCheckIn.tags.length > 0 && (
+                    <span className="text-slate-500"> · {dailyCheckIn.tags.join(" ")}</span>
+                  )}
+                  {dailyCheckIn.note && (
+                    <span className="text-slate-400 italic"> — {dailyCheckIn.note}</span>
+                  )}
+                </p>
+              </div>
+
+              {/* Emotional delta */}
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[10px] text-slate-500">How do you feel compared to this morning?</p>
+                <div className="flex gap-2">
+                  {(["better", "same", "worse"] as const).map((delta) => (
+                    <button
+                      key={delta}
+                      type="button"
+                      onClick={() => setEndDelta(delta)}
+                      className={`flex-1 h-8 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                        endDelta === delta
+                          ? delta === "better"
+                            ? "bg-emerald-500 border-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.35)]"
+                            : delta === "same"
+                              ? "bg-violet-500 border-violet-500 text-white shadow-[0_0_10px_rgba(139,92,246,0.35)]"
+                              : "bg-rose-500 border-rose-500 text-white shadow-[0_0_10px_rgba(244,63,94,0.35)]"
+                          : "bg-white/[0.03] border-white/[0.07] text-slate-400 hover:bg-white/[0.07] hover:text-white"
+                      }`}
+                    >
+                      {delta === "better" ? "📈 Better" : delta === "same" ? "⚖️ Same" : "📉 Worse"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Closure note */}
+              <input
+                type="text"
+                value={closureNote}
+                onChange={(e) => setClosureNote(e.target.value)}
+                placeholder="Day wrap-up thought…"
+                className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50 transition-colors"
+              />
+            </div>
+          )}
+
           {/* CTA */}
           <div className="flex flex-col gap-3 pt-2 border-t border-white/[0.06]">
             <p className="text-[10px] text-slate-500 text-center leading-relaxed">
@@ -270,9 +334,7 @@ export default function NightlyReviewModal() {
               <button
                 onClick={() => {
                   const recap = generateRecap(velocity, wins.length, commitments.length, activeRollovers.length);
-                  // Deep work tasks (time goal met, not marked done) count as completed goals
                   const goalsAchieved = [...accomplished, ...deepWork];
-                  // Snapshot each task's intent, target, and time worked for the archive
                   const taskMeta: Record<string, TaskArchiveMeta> = {};
                   for (const t of reviewTasks) {
                     taskMeta[t.title] = {
@@ -282,7 +344,18 @@ export default function NightlyReviewModal() {
                       goalMet: isWin(t),
                     };
                   }
-                  lockDay(reviewDate, velocity, recap, goalsAchieved.map((t) => t.title), activeRollovers.map((t) => t.title), taskMeta);
+                  const mindStateClosure: MindStateClosure | undefined =
+                    dailyCheckIn?.date === reviewDate && endDelta
+                      ? {
+                          morningMoodKey: dailyCheckIn.moodKey,
+                          morningMood:    dailyCheckIn.mood,
+                          morningTags:    dailyCheckIn.tags,
+                          morningNote:    dailyCheckIn.note,
+                          endDelta,
+                          closureNote: closureNote.trim(),
+                        }
+                      : undefined;
+                  lockDay(reviewDate, velocity, recap, goalsAchieved.map((t) => t.title), activeRollovers.map((t) => t.title), taskMeta, mindStateClosure);
                 }}
                 className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.4)] flex items-center justify-center gap-2"
               >

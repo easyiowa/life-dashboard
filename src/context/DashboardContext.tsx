@@ -106,6 +106,23 @@ export interface TaskArchiveMeta {
   goalMet: boolean;
 }
 
+export interface DailyCheckIn {
+  date: string;     // YYYY-MM-DD — the tracking date this belongs to
+  moodKey: string;  // "energized" | "calm" | "tired" | "stressed"
+  mood: string;     // display string, e.g. "⚡ Energized"
+  tags: string[];   // e.g. ["#motivated", "#focused"]
+  note: string;
+}
+
+export interface MindStateClosure {
+  morningMoodKey: string;   // "energized" | "calm" | "tired" | "stressed"
+  morningMood: string;      // display string e.g. "⚡ Energized"
+  morningTags: string[];
+  morningNote: string;
+  endDelta: "better" | "same" | "worse";
+  closureNote: string;
+}
+
 export interface HistoricalLog {
   date: string;
   dayVelocity: number;
@@ -113,6 +130,7 @@ export interface HistoricalLog {
   completedTasks: string[];
   rolledOverTasks: string[];
   taskMeta?: Record<string, TaskArchiveMeta>;
+  mindStateClosure?: MindStateClosure;
 }
 
 export interface RecurringHistoryEntry {
@@ -333,6 +351,7 @@ interface State {
   showNightlyReview: boolean;   // gate shown when tracking date lags real date
   historicalLogs: HistoricalLog[];
   yesterdayRecap: string;
+  dailyCheckIn: DailyCheckIn | null;
 }
 
 type Action =
@@ -372,7 +391,8 @@ type Action =
   | { type: "ADD_QUICK_NOTE"; note: Omit<QuickNote, "id"> }
   | { type: "DELETE_QUICK_NOTE"; id: string }
   | { type: "RENAME_TASK_REFS"; taskId: string; oldTitle: string; newTitle: string }
-  | { type: "LOCK_DAY"; date: string; dayVelocity: number; recap: string; completedTasks: string[]; rolledOverTasks: string[]; taskMeta?: Record<string, TaskArchiveMeta> };
+  | { type: "LOCK_DAY"; date: string; dayVelocity: number; recap: string; completedTasks: string[]; rolledOverTasks: string[]; taskMeta?: Record<string, TaskArchiveMeta>; mindStateClosure?: MindStateClosure }
+  | { type: "SAVE_CHECK_IN"; checkIn: DailyCheckIn };
 
 function mkDateString(d: Date): string {
   return d.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local time
@@ -613,15 +633,19 @@ function reducer(state: State, action: Action): State {
       };
     }
 
+    case "SAVE_CHECK_IN":
+      return { ...state, dailyCheckIn: action.checkIn };
+
     case "LOCK_DAY": {
       const newDate = new Date().toLocaleDateString("en-CA");
       const logEntry: HistoricalLog = {
-        date:            action.date,
-        dayVelocity:     action.dayVelocity,
-        recap:           action.recap,
-        completedTasks:  action.completedTasks,
-        rolledOverTasks: action.rolledOverTasks,
-        taskMeta:        action.taskMeta,
+        date:              action.date,
+        dayVelocity:       action.dayVelocity,
+        recap:             action.recap,
+        completedTasks:    action.completedTasks,
+        rolledOverTasks:   action.rolledOverTasks,
+        taskMeta:          action.taskMeta,
+        mindStateClosure:  action.mindStateClosure,
       };
       const existingIndex = state.historicalLogs.findIndex((l) => l.date === action.date);
       const updatedLogs = existingIndex !== -1
@@ -634,6 +658,7 @@ function reducer(state: State, action: Action): State {
         showNightlyReview:   false,
         yesterdayRecap:      action.recap,
         historicalLogs:      updatedLogs,
+        dailyCheckIn:        null,
         tasks: state.tasks.map((t) => {
           if ((t.queuedDate ?? null) !== state.currentTrackingDate) return t;
           if (t.done) return { ...t, queuedDate: null };
@@ -852,6 +877,7 @@ function reviveState(raw: Record<string, unknown>): State {
     showNightlyReview,
     historicalLogs: ((raw.historicalLogs as HistoricalLog[]) ?? []),
     yesterdayRecap:  (raw.yesterdayRecap  as string)           ?? "",
+    dailyCheckIn:    (raw.dailyCheckIn    as DailyCheckIn | null) ?? null,
     running: false,
     elapsed: (raw.elapsed as number) ?? 0,
   };
@@ -876,6 +902,7 @@ function buildInitialState(): State {
     showNightlyReview:   false,
     historicalLogs:      [],
     yesterdayRecap:      "",
+    dailyCheckIn:        null,
     tags: INITIAL_TAGS,
     spheres: INITIAL_SPHERES,
     habits: INITIAL_HABITS,
@@ -964,7 +991,9 @@ interface DashboardContextType {
   showNightlyReview: boolean;
   historicalLogs: HistoricalLog[];
   yesterdayRecap: string;
-  lockDay: (date: string, dayVelocity: number, recap: string, completedTasks: string[], rolledOverTasks: string[], taskMeta?: Record<string, TaskArchiveMeta>) => void;
+  lockDay: (date: string, dayVelocity: number, recap: string, completedTasks: string[], rolledOverTasks: string[], taskMeta?: Record<string, TaskArchiveMeta>, mindStateClosure?: MindStateClosure) => void;
+  dailyCheckIn: DailyCheckIn | null;
+  saveDailyCheckIn: (checkIn: DailyCheckIn) => void;
   toggleTaskForToday: (id: string, dateString: string, intent: Task["intent"], targetMinutes: number | null) => void;
   updateTaskTimeSpent: (id: string, minutes: number) => void;
   transitionToNextDay: () => void;
@@ -1048,7 +1077,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } catch {
       // Quota exceeded or private-browsing restriction — silently ignore.
     }
-  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate, state.quickNotes, state.historicalLogs, state.yesterdayRecap]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate, state.quickNotes, state.historicalLogs, state.yesterdayRecap, state.dailyCheckIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync a lightweight snapshot to agent-server for Benicio's live context.
   useEffect(() => {
@@ -1143,8 +1172,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         transitionToNextDay:  ()               => dispatch({ type: "TRANSITION_TO_NEXT_DAY" }),
         requestNightlyReview: ()               => dispatch({ type: "REQUEST_NIGHTLY_REVIEW" }),
         dismissNightlyReview: ()               => dispatch({ type: "DISMISS_NIGHTLY_REVIEW" }),
-        lockDay:              (date, dayVelocity, recap, completedTasks, rolledOverTasks, taskMeta) =>
-          dispatch({ type: "LOCK_DAY", date, dayVelocity, recap, completedTasks, rolledOverTasks, taskMeta }),
+        lockDay:              (date, dayVelocity, recap, completedTasks, rolledOverTasks, taskMeta, mindStateClosure) =>
+          dispatch({ type: "LOCK_DAY", date, dayVelocity, recap, completedTasks, rolledOverTasks, taskMeta, mindStateClosure }),
+        dailyCheckIn:         state.dailyCheckIn,
+        saveDailyCheckIn:     (checkIn) => dispatch({ type: "SAVE_CHECK_IN", checkIn }),
         tags: state.tags,
         spheres: state.spheres,
         habits: state.habits,

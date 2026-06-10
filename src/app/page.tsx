@@ -9,6 +9,7 @@ import HabitTrackerCard from "@/components/widgets/HabitTrackerCard";
 import QuickNotesCard from "@/components/widgets/QuickNotesCard";
 import NightlyReviewModal from "@/components/NightlyReviewModal";
 import MorningRecapBanner from "@/components/MorningRecapBanner";
+import MindfulCheckIn from "@/components/MindfulCheckIn";
 import { DashboardProvider } from "@/context/DashboardContext";
 
 function getGreeting() {
@@ -87,6 +88,8 @@ export default function DashboardPage() {
             className="absolute top-4 right-4 w-36 h-36 z-0 object-contain opacity-70 hover:opacity-95 transition-opacity duration-300 pointer-events-none select-none"
           />
         </div>
+
+        <MindfulCheckIn />
 
         {/* ── Quick Notes (1/3) + Daily Focus Queue (2/3) ─────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full mb-4">
