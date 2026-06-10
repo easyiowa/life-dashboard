@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { secsToMins } from "@/lib/time";
+import { areaColor } from "@/lib/areaColors";
 import { X, Clock, CheckCircle2, Circle } from "lucide-react";
 import {
   useDashboard,
@@ -80,6 +81,7 @@ export default function TaskInspectModal({ task, onClose }: Props) {
   if (!task || !form) return null;
 
   const sphereProjects = projects.filter((p) => p.sphere === form.sphere);
+  const ac = areaColor(spheres.find((s) => s.name === form.sphere)?.labelColor);
 
   const timerSeconds = sessions
     .filter((s) => !s.isManual && s.project === task.project &&
@@ -150,7 +152,7 @@ export default function TaskInspectModal({ task, onClose }: Props) {
               <select
                 value={form.sphere}
                 onChange={(e) => handleSphereChange(e.target.value)}
-                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors appearance-none cursor-pointer"
+                className={`h-10 px-3 rounded-xl border text-sm text-white outline-none transition-colors appearance-none cursor-pointer ${ac.bgTint} ${ac.border}`}
               >
                 {spheres.map((s) => (
                   <option key={s.id} value={s.name} className="bg-[#0F1629]">{s.name}</option>

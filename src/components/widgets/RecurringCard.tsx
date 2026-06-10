@@ -4,6 +4,7 @@ import { useState } from "react";
 import { RefreshCw, CheckCircle2, Trash2, Plus, X, AlertTriangle } from "lucide-react";
 import { useDashboard, type RecurringTask } from "@/context/DashboardContext";
 import RecurringResponsibilityModal from "@/components/RecurringResponsibilityModal";
+import { areaColor } from "@/lib/areaColors";
 
 // ── Countdown helpers ─────────────────────────────────────────────────────────
 
@@ -443,19 +444,20 @@ export default function RecurringCard() {
 
         {/* Sphere tabs */}
         <div className="flex flex-wrap gap-2">
-          {spheres.map((sphere) => (
-            <button
-              key={sphere.id}
-              onClick={() => setActiveSphereId(sphere.id)}
-              className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-                activeSphereObj?.id === sphere.id
-                  ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-                  : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
-              }`}
-            >
-              {sphere.name}
-            </button>
-          ))}
+          {spheres.map((sphere) => {
+            const pill = areaColor(sphere.labelColor);
+            return (
+              <button
+                key={sphere.id}
+                onClick={() => setActiveSphereId(sphere.id)}
+                className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                  activeSphereObj?.id === sphere.id ? pill.pillActive : pill.pillInactive
+                }`}
+              >
+                {sphere.name}
+              </button>
+            );
+          })}
           <span className="ml-auto text-xs self-center text-slate-500">
             {visible.length} task{visible.length !== 1 ? "s" : ""}
           </span>

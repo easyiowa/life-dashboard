@@ -10,6 +10,7 @@ import {
   type Task,
 } from "@/context/DashboardContext";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
+import { areaColor } from "@/lib/areaColors";
 
 
 interface Props {
@@ -116,7 +117,11 @@ export default function TaskModal({ open, onClose, defaultSphere }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const sphereProjects = projects.filter((p) => p.sphere === form.sphere);
+  const sphereProjects  = projects.filter((p) => p.sphere === form.sphere);
+  const selectedSphereColor    = spheres.find((s) => s.name === form.sphere)?.labelColor;
+  const ac                     = areaColor(selectedSphereColor);
+  const newProjectSphereColor  = spheres.find((s) => s.name === newProjectSphere)?.labelColor;
+  const acNewProject           = areaColor(newProjectSphereColor);
 
   function handleSphereChange(name: string) {
     const firstProject = projects.find((p) => p.sphere === name)?.name ?? "";
@@ -190,7 +195,7 @@ export default function TaskModal({ open, onClose, defaultSphere }: Props) {
                 <select
                   value={form.sphere}
                   onChange={(e) => handleSphereChange(e.target.value)}
-                  className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors appearance-none cursor-pointer"
+                  className={`h-10 px-3 rounded-xl border text-sm text-white outline-none transition-colors appearance-none cursor-pointer ${ac.bgTint} ${ac.border}`}
                 >
                   {spheres.map((s) => (
                     <option key={s.id} value={s.name} className="bg-[#0F1629]">{s.name}</option>
@@ -275,7 +280,7 @@ export default function TaskModal({ open, onClose, defaultSphere }: Props) {
                   <select
                     value={newProjectSphere}
                     onChange={(e) => setNewProjectSphere(e.target.value)}
-                    className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors appearance-none cursor-pointer"
+                    className={`h-9 px-3 rounded-lg border text-sm text-white outline-none transition-colors appearance-none cursor-pointer ${acNewProject.bgTint} ${acNewProject.border}`}
                   >
                     {spheres.map((s) => (
                       <option key={s.id} value={s.name} className="bg-[#0F1629]">{s.name}</option>

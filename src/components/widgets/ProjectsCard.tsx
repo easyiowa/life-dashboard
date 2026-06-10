@@ -50,6 +50,7 @@ import TaskModal from "@/components/TaskModal";
 import TaskInspectModal from "@/components/TaskInspectModal";
 import ProjectEditModal from "@/components/ProjectEditModal";
 import { fmtSecs } from "@/lib/time";
+import { areaColor } from "@/lib/areaColors";
 
 // ── Style maps ────────────────────────────────────────────────────────────────
 
@@ -118,6 +119,8 @@ const COLOR_PALETTE: { value: string; dot: string }[] = [
   { value: "orange",  dot: "bg-orange-500"  },
   { value: "indigo",  dot: "bg-indigo-500"  },
 ];
+
+// Full class strings must be explicit for Tailwind JIT — no dynamic interpolation
 
 // ── Sortable sphere row ───────────────────────────────────────────────────────
 
@@ -620,19 +623,21 @@ export default function ProjectsCard() {
 
         {/* Sphere tabs + manage button */}
         <div className="flex items-center gap-2 flex-wrap">
-          {spheres.map((sphere) => (
-            <button
-              key={sphere.id}
-              onClick={() => setActiveSphereId(sphere.id)}
-              className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-                activeSphereObj?.id === sphere.id
-                  ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-                  : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
-              }`}
-            >
-              {sphere.name}
-            </button>
-          ))}
+          {spheres.map((sphere) => {
+            const isActive = activeSphereObj?.id === sphere.id;
+            const pill     = areaColor(sphere.labelColor);
+            return (
+              <button
+                key={sphere.id}
+                onClick={() => setActiveSphereId(sphere.id)}
+                className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                  isActive ? pill.pillActive : pill.pillInactive
+                }`}
+              >
+                {sphere.name}
+              </button>
+            );
+          })}
           <div className="ml-auto flex items-center gap-2 flex-shrink-0">
             {/* Expand / Collapse All */}
             {sphereProjects.length > 0 && (
@@ -660,7 +665,9 @@ export default function ProjectsCard() {
         <div className="flex items-center justify-between -mt-1 pb-1 border-b border-white/[0.05]">
           <div>
             {activeSphereObj?.description && (
-              <p className="text-xs text-slate-400 font-sans">{activeSphereObj.description}</p>
+              <p className={`text-xs text-slate-400 font-sans border-l-2 pl-2 ${areaColor(activeSphereObj.labelColor).borderAccent}`}>
+                {activeSphereObj.description}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-1.5">

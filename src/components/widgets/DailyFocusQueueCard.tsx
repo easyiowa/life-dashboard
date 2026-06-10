@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { useDashboard, type Task, type HistoricalLog } from "@/context/DashboardContext";
+import { areaColor } from "@/lib/areaColors";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -30,7 +31,8 @@ const INACTIVE_PILL = "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:
 // ── Queue row ─────────────────────────────────────────────────────────────────
 
 function QueueRow({ task }: { task: Task }) {
-  const { updateTask, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, currentTrackingDate } = useDashboard();
+  const { updateTask, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, currentTrackingDate, spheres } = useDashboard();
+  const ac = areaColor(spheres.find((s) => s.name === task.sphere)?.labelColor);
   const intent             = task.intent ?? "finish";
   const totalFocusMinutes  = (task.timeSpentMinutes ?? 0) + (task.manualMinutes ?? 0);
   const isThisTaskActive   = activeTaskId === task.id && timerIsRunning;
@@ -117,7 +119,9 @@ function QueueRow({ task }: { task: Task }) {
 
       {/* Meta + intent selector */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[10px] text-slate-600 flex-shrink-0">{task.project}</span>
+        <span className={`text-[10px] font-medium flex-shrink-0 ${ac.text}`}>{task.sphere}</span>
+        <span className="text-slate-700 text-[10px]">·</span>
+        <span className="text-[10px] text-slate-500 flex-shrink-0">{task.project}</span>
         <span className="text-slate-700 text-[10px]">·</span>
         {INTENT_OPTIONS.map((opt) => (
           <button
@@ -260,12 +264,29 @@ function ArchiveDayRow({ log }: { log: HistoricalLog }) {
               {log.completedTasks.length === 0 ? (
                 <p className="text-[10px] text-slate-700">—</p>
               ) : (
-                log.completedTasks.map((title, i) => (
-                  <div key={i} className="flex items-start gap-1.5">
-                    <span className="text-emerald-400 text-[10px] flex-shrink-0 mt-px">✓</span>
-                    <span className="text-[10px] text-slate-400 leading-snug">{title}</span>
-                  </div>
-                ))
+                log.completedTasks.map((title, i) => {
+                  const meta = log.taskMeta?.[title];
+                  return (
+                    <div key={i} className="flex items-start gap-1.5">
+                      <span className="text-emerald-400 text-[10px] flex-shrink-0 mt-0.5">✓</span>
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="text-[10px] text-slate-400 leading-snug truncate">{title}</span>
+                        {meta && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[9px] text-slate-600">
+                              {meta.intent === "time" && meta.target
+                                ? `⏱️ ${meta.target}m goal`
+                                : meta.intent === "maybe" ? "🎲 Maybe" : "🎯 Finish"}
+                            </span>
+                            <span className="text-[9px] text-slate-600">
+                              {meta.minutes > 0 ? `Worked: ${meta.minutes}m` : "Worked: 0m"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
             <div className="flex flex-col gap-1.5">
@@ -273,12 +294,29 @@ function ArchiveDayRow({ log }: { log: HistoricalLog }) {
               {log.rolledOverTasks.length === 0 ? (
                 <p className="text-[10px] text-slate-700">—</p>
               ) : (
-                log.rolledOverTasks.map((title, i) => (
-                  <div key={i} className="flex items-start gap-1.5">
-                    <span className="text-slate-500 text-[10px] flex-shrink-0 mt-px">↩</span>
-                    <span className="text-[10px] text-slate-500 leading-snug">{title}</span>
-                  </div>
-                ))
+                log.rolledOverTasks.map((title, i) => {
+                  const meta = log.taskMeta?.[title];
+                  return (
+                    <div key={i} className="flex items-start gap-1.5">
+                      <span className="text-slate-500 text-[10px] flex-shrink-0 mt-0.5">↩</span>
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="text-[10px] text-slate-500 leading-snug truncate">{title}</span>
+                        {meta && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[9px] text-slate-700">
+                              {meta.intent === "time" && meta.target
+                                ? `⏱️ ${meta.target}m goal`
+                                : meta.intent === "maybe" ? "🎲 Maybe" : "🎯 Finish"}
+                            </span>
+                            <span className="text-[9px] text-slate-700">
+                              {meta.minutes > 0 ? `Worked: ${meta.minutes}m` : "Worked: 0m"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
@@ -316,12 +354,93 @@ function PerformanceArchive({ logs }: { logs: HistoricalLog[] }) {
   );
 }
 
+// ── Rollover suggestion widget ────────────────────────────────────────────────
+
+function RolloverWidget({ log, onDismiss }: { log: HistoricalLog; onDismiss: () => void }) {
+  const { tasks, currentTrackingDate, toggleTaskForToday } = useDashboard();
+
+  const pendingTasks = log.rolledOverTasks
+    .map((title) => tasks.find((t) => t.title === title))
+    .filter((t): t is Task =>
+      t !== undefined && !t.done && (t.queuedDate ?? null) !== currentTrackingDate
+    );
+
+  if (pendingTasks.length === 0) return null;
+
+  function addAll() {
+    for (const t of pendingTasks) {
+      toggleTaskForToday(t.id, currentTrackingDate, t.intent ?? "finish", t.dailyTargetMinutes ?? null);
+    }
+    onDismiss();
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm leading-none">↩</span>
+          <span className="text-[10px] font-semibold text-amber-300 uppercase tracking-widest">
+            {pendingTasks.length} unfinished from yesterday
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="text-slate-600 hover:text-slate-400 transition-colors"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        {pendingTasks.map((t) => {
+          const meta = log.taskMeta?.[t.title];
+          return (
+            <div key={t.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/[0.02]">
+              <span className="text-amber-500/50 text-[10px] flex-shrink-0">↩</span>
+              <span className="text-xs text-slate-400 flex-1 leading-none truncate">{t.title}</span>
+              {meta && (
+                <span className="text-[9px] text-slate-600 flex-shrink-0 tabular-nums">
+                  {meta.intent === "time" && meta.target
+                    ? `${meta.target}m goal`
+                    : meta.intent === "maybe" ? "Maybe" : "Finish"}
+                  {meta.minutes > 0 && ` · ${meta.minutes}m done`}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={addAll}
+          className="flex-1 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 text-xs text-amber-300 font-medium hover:bg-amber-500/30 transition-all"
+        >
+          Add to Today&apos;s Queue
+        </button>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="flex-1 h-8 rounded-lg bg-white/[0.03] border border-white/[0.07] text-xs text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+        >
+          Keep in Backlog
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Card ──────────────────────────────────────────────────────────────────────
 
 export default function DailyFocusQueueCard() {
   const { tasks, currentTrackingDate, requestNightlyReview, historicalLogs } = useDashboard();
-  const [showPicker, setShowPicker] = useState(false);
-  const [collapsed,  setCollapsed]  = useState(false);
+  const [showPicker,         setShowPicker]         = useState(false);
+  const [collapsed,          setCollapsed]          = useState(false);
+  const [rolloverDismissed,  setRolloverDismissed]  = useState(false);
+
+  const yesterdayLog = historicalLogs[0] ?? null;
 
   const queuedTasks   = tasks.filter((t) => (t.queuedDate ?? null) === currentTrackingDate);
   const commitments   = queuedTasks.filter((t) => (t.intent ?? "finish") !== "maybe");
@@ -387,6 +506,14 @@ export default function DailyFocusQueueCard() {
                 </>
               )}
             </div>
+          )}
+
+          {/* Rollover suggestion */}
+          {!rolloverDismissed && yesterdayLog && yesterdayLog.rolledOverTasks.length > 0 && (
+            <RolloverWidget
+              log={yesterdayLog}
+              onDismiss={() => setRolloverDismissed(true)}
+            />
           )}
 
           {/* Picker + Add button */}

@@ -99,12 +99,20 @@ export interface QuickNote {
   createdAt: string;     // "YYYY-MM-DD HH:MM"
 }
 
+export interface TaskArchiveMeta {
+  intent: string;
+  target: number | null;   // dailyTargetMinutes for "time" intent
+  minutes: number;         // sessions + manual at lock time
+  goalMet: boolean;
+}
+
 export interface HistoricalLog {
   date: string;
   dayVelocity: number;
   recap: string;
   completedTasks: string[];
   rolledOverTasks: string[];
+  taskMeta?: Record<string, TaskArchiveMeta>;
 }
 
 export interface RecurringHistoryEntry {
@@ -364,7 +372,7 @@ type Action =
   | { type: "ADD_QUICK_NOTE"; note: Omit<QuickNote, "id"> }
   | { type: "DELETE_QUICK_NOTE"; id: string }
   | { type: "RENAME_TASK_REFS"; taskId: string; oldTitle: string; newTitle: string }
-  | { type: "LOCK_DAY"; date: string; dayVelocity: number; recap: string; completedTasks: string[]; rolledOverTasks: string[] };
+  | { type: "LOCK_DAY"; date: string; dayVelocity: number; recap: string; completedTasks: string[]; rolledOverTasks: string[]; taskMeta?: Record<string, TaskArchiveMeta> };
 
 function mkDateString(d: Date): string {
   return d.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local time
@@ -390,7 +398,16 @@ function reducer(state: State, action: Action): State {
         state.activeTask && state.elapsed > 0
           ? [...state.sessions, mkSession(state.activeTask, state.elapsed)]
           : state.sessions;
-      return { ...state, activeTask: action.task, running: true, elapsed: 0, sessions };
+      // Commit elapsed minutes to the interrupted task's total, same as FINISH_SESSION does
+      const interruptedMinutes = state.activeTask && state.elapsed > 0 ? secsToMins(state.elapsed) : 0;
+      const tasks = interruptedMinutes > 0
+        ? state.tasks.map((t) =>
+            t.id === state.activeTask!.id
+              ? { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + interruptedMinutes }
+              : t
+          )
+        : state.tasks;
+      return { ...state, activeTask: action.task, running: true, elapsed: 0, sessions, tasks };
     }
     case "START_FREE":
       return { ...state, running: true };
@@ -604,6 +621,7 @@ function reducer(state: State, action: Action): State {
         recap:           action.recap,
         completedTasks:  action.completedTasks,
         rolledOverTasks: action.rolledOverTasks,
+        taskMeta:        action.taskMeta,
       };
       const existingIndex = state.historicalLogs.findIndex((l) => l.date === action.date);
       const updatedLogs = existingIndex !== -1
@@ -946,7 +964,7 @@ interface DashboardContextType {
   showNightlyReview: boolean;
   historicalLogs: HistoricalLog[];
   yesterdayRecap: string;
-  lockDay: (date: string, dayVelocity: number, recap: string, completedTasks: string[], rolledOverTasks: string[]) => void;
+  lockDay: (date: string, dayVelocity: number, recap: string, completedTasks: string[], rolledOverTasks: string[], taskMeta?: Record<string, TaskArchiveMeta>) => void;
   toggleTaskForToday: (id: string, dateString: string, intent: Task["intent"], targetMinutes: number | null) => void;
   updateTaskTimeSpent: (id: string, minutes: number) => void;
   transitionToNextDay: () => void;
@@ -1125,8 +1143,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         transitionToNextDay:  ()               => dispatch({ type: "TRANSITION_TO_NEXT_DAY" }),
         requestNightlyReview: ()               => dispatch({ type: "REQUEST_NIGHTLY_REVIEW" }),
         dismissNightlyReview: ()               => dispatch({ type: "DISMISS_NIGHTLY_REVIEW" }),
-        lockDay:              (date, dayVelocity, recap, completedTasks, rolledOverTasks) =>
-          dispatch({ type: "LOCK_DAY", date, dayVelocity, recap, completedTasks, rolledOverTasks }),
+        lockDay:              (date, dayVelocity, recap, completedTasks, rolledOverTasks, taskMeta) =>
+          dispatch({ type: "LOCK_DAY", date, dayVelocity, recap, completedTasks, rolledOverTasks, taskMeta }),
         tags: state.tags,
         spheres: state.spheres,
         habits: state.habits,

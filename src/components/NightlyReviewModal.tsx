@@ -1,14 +1,15 @@
 "use client";
 
 import { X, CheckCircle2, Flame, Clock, AlertTriangle, Rocket, TrendingUp, Moon } from "lucide-react";
-import { useDashboard, type Task } from "@/context/DashboardContext";
+import { useDashboard, type Task, type TaskArchiveMeta } from "@/context/DashboardContext";
 
 // ── Velocity helpers ──────────────────────────────────────────────────────────
 
 function isWin(t: Task): boolean {
   const intent = t.intent ?? "finish";
   if (intent === "finish") return t.done;
-  if (intent === "time")   return (t.timeSpentMinutes ?? 0) >= (t.dailyTargetMinutes ?? 1);
+  // Include manual minutes so manually-logged time counts toward the goal
+  if (intent === "time")   return (t.timeSpentMinutes ?? 0) + (t.manualMinutes ?? 0) >= (t.dailyTargetMinutes ?? 1);
   return false;
 }
 
@@ -46,24 +47,42 @@ function Section({
         <p className="text-[10px] text-slate-700 px-2">{emptyText}</p>
       ) : (
         <div className="flex flex-col gap-1">
-          {tasks.map((t) => (
-            <div key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-              <span className="text-xs text-slate-300 flex-1 leading-none truncate">{t.title}</span>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {(t.timeSpentMinutes ?? 0) > 0 && (
-                  <span className="text-[10px] font-mono text-slate-500 flex items-center gap-0.5">
-                    <Clock className="w-2.5 h-2.5" />
-                    {fmtMins(t.timeSpentMinutes!)}
-                  </span>
-                )}
-                {(t.rolloverCount ?? 0) > 0 && (
-                  <span className="text-[10px] text-amber-600 tabular-nums">
-                    ×{t.rolloverCount}
-                  </span>
-                )}
+          {tasks.map((t) => {
+            const intent    = t.intent ?? "finish";
+            const totalMins = (t.timeSpentMinutes ?? 0) + (t.manualMinutes ?? 0);
+            const target    = t.dailyTargetMinutes ?? 0;
+            return (
+              <div key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                <span className="text-xs text-slate-300 flex-1 leading-none truncate">{t.title}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {intent === "time" && target > 0 ? (
+                    // "1m / 9m goal" — shows both progress and target in one badge
+                    <span className="text-[10px] font-mono text-slate-500 flex items-center gap-0.5">
+                      <Clock className="w-2.5 h-2.5" />
+                      {totalMins > 0 ? `${totalMins}m` : "0m"} / {target}m goal
+                    </span>
+                  ) : (
+                    <>
+                      {totalMins > 0 && (
+                        <span className="text-[10px] font-mono text-slate-500 flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          {fmtMins(totalMins)}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-slate-600">
+                        {intent === "maybe" ? "🎲 Maybe" : "🎯 Finish Today"}
+                      </span>
+                    </>
+                  )}
+                  {(t.rolloverCount ?? 0) > 0 && (
+                    <span className="text-[10px] text-amber-600 tabular-nums">
+                      ×{t.rolloverCount}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -251,7 +270,19 @@ export default function NightlyReviewModal() {
               <button
                 onClick={() => {
                   const recap = generateRecap(velocity, wins.length, commitments.length, activeRollovers.length);
-                  lockDay(reviewDate, velocity, recap, accomplished.map((t) => t.title), activeRollovers.map((t) => t.title));
+                  // Deep work tasks (time goal met, not marked done) count as completed goals
+                  const goalsAchieved = [...accomplished, ...deepWork];
+                  // Snapshot each task's intent, target, and time worked for the archive
+                  const taskMeta: Record<string, TaskArchiveMeta> = {};
+                  for (const t of reviewTasks) {
+                    taskMeta[t.title] = {
+                      intent:  t.intent ?? "finish",
+                      target:  t.dailyTargetMinutes ?? null,
+                      minutes: (t.timeSpentMinutes ?? 0) + (t.manualMinutes ?? 0),
+                      goalMet: isWin(t),
+                    };
+                  }
+                  lockDay(reviewDate, velocity, recap, goalsAchieved.map((t) => t.title), activeRollovers.map((t) => t.title), taskMeta);
                 }}
                 className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.4)] flex items-center justify-center gap-2"
               >

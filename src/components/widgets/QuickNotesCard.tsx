@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { NotebookPen, Trash2, X, Search } from "lucide-react";
-import { useDashboard, type QuickNote } from "@/context/DashboardContext";
+import { useDashboard, type QuickNote, type Sphere } from "@/context/DashboardContext";
+import { areaColor } from "@/lib/areaColors";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -26,13 +27,16 @@ function NoteRow({
   note,
   showArea,
   onDelete,
+  sphereColor,
 }: {
   note: QuickNote;
   showArea?: boolean;
   onDelete: () => void;
+  sphereColor?: string;
 }) {
+  const ac = areaColor(sphereColor);
   return (
-    <div className="group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 border-l-purple-500/50 rounded-r-lg w-full transition-all duration-150 hover:bg-white/[0.03]">
+    <div className={`group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg w-full transition-all duration-150 hover:bg-white/[0.03]`}>
       <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
         {note.text}
       </p>
@@ -42,7 +46,7 @@ function NoteRow({
           {showArea && note.sphere && (
             <>
               <span className="text-slate-700 text-[10px]">·</span>
-              <span className="text-[10px] text-violet-400/70">{note.sphere}</span>
+              <span className={`text-[10px] ${ac.text}`}>{note.sphere}</span>
             </>
           )}
           {note.projectId && (
@@ -68,10 +72,12 @@ function NoteRow({
 
 function ArchiveModal({
   notes,
+  spheres,
   onClose,
   onDelete,
 }: {
   notes: QuickNote[];
+  spheres: Sphere[];
   onClose: () => void;
   onDelete: (id: string) => void;
 }) {
@@ -155,36 +161,43 @@ function ArchiveModal({
                 </div>
                 {/* Notes for this date */}
                 <div className="flex flex-col gap-1.5">
-                  {dateNotes.map((note) => (
-                    <div
-                      key={note.id}
-                      className="group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 border-l-purple-500/40 rounded-r-lg transition-all hover:bg-white/[0.03]"
-                    >
-                      <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
-                        {note.text}
-                      </p>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
-                          <span className="text-slate-700 text-[10px]">·</span>
-                          <span className="text-[10px] text-slate-600">{note.sphere}</span>
-                          {note.projectId && (
-                            <>
-                              <span className="text-slate-700 text-[10px]">·</span>
-                              <span className="text-[10px] text-slate-600">{note.projectId}</span>
-                            </>
-                          )}
+                  {dateNotes.map((note) => {
+                    const ac = areaColor(spheres.find((s) => s.name === note.sphere)?.labelColor);
+                    return (
+                      <div
+                        key={note.id}
+                        className={`group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg transition-all hover:bg-white/[0.03]`}
+                      >
+                        <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
+                          {note.text}
+                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
+                            {note.sphere && (
+                              <>
+                                <span className="text-slate-700 text-[10px]">·</span>
+                                <span className={`text-[10px] ${ac.text}`}>{note.sphere}</span>
+                              </>
+                            )}
+                            {note.projectId && (
+                              <>
+                                <span className="text-slate-700 text-[10px]">·</span>
+                                <span className="text-[10px] text-slate-600">{note.projectId}</span>
+                              </>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => onDelete(note.id)}
+                            title="Delete note"
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => onDelete(note.id)}
-                          title="Delete note"
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                        >
-                          <Trash2 className="w-2.5 h-2.5" />
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))
@@ -236,6 +249,7 @@ export default function QuickNotesCard() {
       {showAllNotesModal && (
         <ArchiveModal
           notes={quickNotes}
+          spheres={spheres}
           onClose={() => setShowAllNotesModal(false)}
           onDelete={deleteQuickNote}
         />
@@ -273,20 +287,21 @@ export default function QuickNotesCard() {
           >
             All
           </button>
-          {spheres.map((sphere) => (
-            <button
-              key={sphere.id}
-              type="button"
-              onClick={() => { setActiveSphereId(sphere.id); setProjectId(""); }}
-              className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-                activeSphereObj?.id === sphere.id
-                  ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-                  : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
-              }`}
-            >
-              {sphere.name}
-            </button>
-          ))}
+          {spheres.map((sphere) => {
+            const pill = areaColor(sphere.labelColor);
+            return (
+              <button
+                key={sphere.id}
+                type="button"
+                onClick={() => { setActiveSphereId(sphere.id); setProjectId(""); }}
+                className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                  activeSphereObj?.id === sphere.id ? pill.pillActive : pill.pillInactive
+                }`}
+              >
+                {sphere.name}
+              </button>
+            );
+          })}
         </div>
 
         {/* Capture form — hidden when "All" is active */}
@@ -340,6 +355,7 @@ export default function QuickNotesCard() {
                 note={note}
                 showArea={isAll}
                 onDelete={() => deleteQuickNote(note.id)}
+                sphereColor={spheres.find((s) => s.name === note.sphere)?.labelColor}
               />
             ))
           )}
