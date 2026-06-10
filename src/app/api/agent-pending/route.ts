@@ -6,6 +6,8 @@ const PENDING_PATH = path.join(process.cwd(), "agent-server", "agent-pending.jso
 
 // Browser polls this to pick up agent-originated actions
 export async function GET() {
+  // On Vercel there is no writable agent-server — return an empty queue
+  if (process.env.VERCEL) return NextResponse.json([]);
   if (!fs.existsSync(PENDING_PATH)) return NextResponse.json([]);
   try {
     const data = JSON.parse(fs.readFileSync(PENDING_PATH, "utf8"));
@@ -17,6 +19,8 @@ export async function GET() {
 
 // Browser calls this after processing to clear the queue
 export async function DELETE() {
+  // Nothing to clear on Vercel — acknowledge silently
+  if (process.env.VERCEL) return NextResponse.json({ ok: true, serverless: true });
   try {
     fs.writeFileSync(PENDING_PATH, "[]", "utf8");
     return NextResponse.json({ ok: true });
