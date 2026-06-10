@@ -68,7 +68,7 @@ export default function SpheresRoadmapCard() {
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-violet-400" />
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-            Spheres &amp; Roadmap
+            Areas &amp; Roadmap
           </h2>
         </div>
         <div className="flex items-center gap-3 text-xs text-slate-500">

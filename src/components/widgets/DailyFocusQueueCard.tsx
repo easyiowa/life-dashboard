@@ -31,10 +31,14 @@ const INACTIVE_PILL = "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:
 
 function QueueRow({ task }: { task: Task }) {
   const { updateTask, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, currentTrackingDate } = useDashboard();
-  const intent           = task.intent ?? "finish";
-  const timeSpent        = task.timeSpentMinutes ?? 0;
-  const isThisTaskActive = activeTaskId === task.id && timerIsRunning;
-  const isMaybe          = intent === "maybe";
+  const intent             = task.intent ?? "finish";
+  const totalFocusMinutes  = (task.timeSpentMinutes ?? 0) + (task.manualMinutes ?? 0);
+  const isThisTaskActive   = activeTaskId === task.id && timerIsRunning;
+  const isMaybe            = intent === "maybe";
+  const goalMinutes        = task.dailyTargetMinutes ?? 0;
+  const isTimeGoal         = intent === "time" && goalMinutes > 0;
+  const pct                = isTimeGoal ? Math.min(Math.round((totalFocusMinutes / goalMinutes) * 100), 100) : 0;
+  const goalAchieved       = isTimeGoal && totalFocusMinutes >= goalMinutes;
   const [localMins, setLocalMins] = useState<string>(task.dailyTargetMinutes?.toString() ?? "");
 
   function handleIntentChange(val: Task["intent"]) {
@@ -55,10 +59,12 @@ function QueueRow({ task }: { task: Task }) {
   }
 
   return (
-    <div className={`flex flex-col gap-2 p-2.5 rounded-xl border transition-all duration-200 ${
+    <div className={`flex flex-col gap-2 p-2.5 rounded-xl border transition-all duration-200 overflow-hidden ${
       isMaybe
         ? "border-dashed border-white/[0.07] bg-white/[0.01] opacity-70"
-        : "border-white/[0.05] bg-white/[0.02]"
+        : goalAchieved
+          ? "border-emerald-500/25 bg-emerald-500/[0.03]"
+          : "border-white/[0.05] bg-white/[0.02]"
     }`}>
       {/* Title row */}
       <div className="flex items-center gap-2">
@@ -78,10 +84,10 @@ function QueueRow({ task }: { task: Task }) {
         <span className={`text-sm flex-1 leading-none truncate ${task.done ? "line-through text-slate-500 opacity-60" : "text-white font-medium"}`}>
           {task.title}
         </span>
-        {timeSpent > 0 && (
-          <span className="flex items-center gap-1 text-[10px] font-mono text-slate-500 flex-shrink-0">
+        {totalFocusMinutes > 0 && (
+          <span className={`flex items-center gap-1 text-[10px] font-mono flex-shrink-0 ${goalAchieved ? "text-emerald-400" : "text-slate-500"}`}>
             <Clock className="w-2.5 h-2.5" />
-            {timeSpent}m
+            {totalFocusMinutes}m
           </span>
         )}
         {!task.done && (
@@ -133,10 +139,22 @@ function QueueRow({ task }: { task: Task }) {
               placeholder="min"
               className="w-14 h-5 px-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-white outline-none focus:border-blue-500/60 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
-            <span className="text-[10px] text-slate-600">min goal</span>
+            <span className={`text-[10px] ${goalAchieved ? "text-emerald-400 font-medium" : "text-slate-600"}`}>
+              {goalAchieved ? "✓ goal reached" : "min goal"}
+            </span>
           </div>
         )}
       </div>
+
+      {/* Time goal progress bar — flush to card bottom */}
+      {isTimeGoal && (
+        <div className="-mx-2.5 -mb-2.5 h-1 bg-white/[0.04]">
+          <div
+            className={`h-full transition-all duration-500 ease-out ${goalAchieved ? "bg-emerald-500" : "bg-violet-500/50"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }

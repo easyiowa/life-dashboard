@@ -7,12 +7,62 @@ import RecurringResponsibilityModal from "@/components/RecurringResponsibilityMo
 
 // ── Countdown helpers ─────────────────────────────────────────────────────────
 
+// Clamp to actual last day of the given month so e.g. day=31 in February is safe.
+function anchorInMonth(year: number, month: number, day: number): Date {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(day, lastDay));
+}
+
 export function computeCountdown(task: RecurringTask): {
   daysLeft: number;
   progress: number;
   label: string;
   urgency: "fresh" | "mid" | "due" | "overdue";
 } {
+  // ── Calendar-anchored monthly countdown ──────────────────────────────────
+  if (task.anchorDay && task.intervalDays === 30) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
+
+    const thisMonthAnchor = anchorInMonth(today.getFullYear(), today.getMonth(), task.anchorDay);
+
+    // Has the user already completed this month's cycle?
+    const lastDone = task.lastDoneDate ? new Date(task.lastDoneDate) : null;
+    if (lastDone) lastDone.setHours(0, 0, 0, 0);
+    const doneThisCycle = lastDone !== null && lastDone >= thisMonthAnchor;
+
+    const nextDue   = doneThisCycle
+      ? anchorInMonth(today.getFullYear(), today.getMonth() + 1, task.anchorDay)
+      : thisMonthAnchor;
+    const prevAnchor = doneThisCycle
+      ? thisMonthAnchor
+      : anchorInMonth(today.getFullYear(), today.getMonth() - 1, task.anchorDay);
+
+    const msLeft  = nextDue.getTime() - todayMs;
+    const daysLeft = Math.ceil(msLeft / 86_400_000);
+
+    const cycleMs  = nextDue.getTime() - prevAnchor.getTime();
+    const elapsed  = todayMs - prevAnchor.getTime();
+    const progress = Math.min(Math.max(elapsed / cycleMs, 0), 1);
+
+    let label: string;
+    if (daysLeft <= 0)       label = "Overdue";
+    else if (daysLeft === 1) label = "1 day left";
+    else if (daysLeft < 14)  label = `${daysLeft} days left`;
+    else if (daysLeft < 60)  label = `${Math.ceil(daysLeft / 7)} wks left`;
+    else                     label = `${Math.ceil(daysLeft / 30)} mo left`;
+
+    const urgency =
+      daysLeft <= 0      ? "overdue"
+      : progress >= 0.80 ? "due"
+      : progress >= 0.50 ? "mid"
+      : "fresh";
+
+    return { daysLeft, progress, label, urgency };
+  }
+
+  // ── Generic interval-based countdown ─────────────────────────────────────
   if (!task.lastDoneDate) {
     return { daysLeft: 0, progress: 1, label: "Due now", urgency: "overdue" };
   }
@@ -135,13 +185,22 @@ function AddForm({ onClose }: { onClose: () => void }) {
   const [notes, setNotes]               = useState("");
   const [intervalDays, setIntervalDays] = useState(30);
   const [intervalLabel, setIntervalLabel] = useState("Every Month");
+  const [anchorDay, setAnchorDay]       = useState<number | "">("");
   const [sphere, setSphere]             = useState<string>(() => spheres[0]?.name ?? "");
   const [err, setErr]                   = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setErr(true); return; }
-    addRecurringTask({ title: title.trim(), notes, intervalDays, intervalLabel, sphere, lastDoneDate: null });
+    addRecurringTask({
+      title: title.trim(),
+      notes,
+      intervalDays,
+      intervalLabel,
+      sphere,
+      lastDoneDate: null,
+      ...(intervalDays === 30 && anchorDay !== "" ? { anchorDay } : {}),
+    });
     onClose();
   }
 
@@ -189,6 +248,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
               const preset = INTERVAL_PRESETS.find((p) => p.days === days);
               setIntervalDays(days);
               setIntervalLabel(preset?.label ?? `Every ${days} days`);
+              if (days !== 30) setAnchorDay("");
             }}
             className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors appearance-none cursor-pointer"
           >
@@ -198,7 +258,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Sphere</label>
+          <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Area</label>
           <select
             value={sphere}
             onChange={(e) => setSphere(e.target.value)}
@@ -210,6 +270,32 @@ function AddForm({ onClose }: { onClose: () => void }) {
           </select>
         </div>
       </div>
+
+      {/* Day of Month Anchor — only for "Every Month" */}
+      {intervalDays === 30 && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+            Day of Month Anchor <span className="text-slate-600 normal-case font-normal">(optional)</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              max={28}
+              value={anchorDay}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "") { setAnchorDay(""); return; }
+                const n = Math.min(28, Math.max(1, parseInt(v, 10)));
+                if (!isNaN(n)) setAnchorDay(n);
+              }}
+              placeholder="e.g. 1, 15…"
+              className="w-28 h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            <span className="text-[10px] text-slate-600">1 = start of month · 15 = mid-month</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2 pt-0.5">
         <button type="button" onClick={onClose} className="flex-1 h-8 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-slate-400 hover:text-white transition-all">

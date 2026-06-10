@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Activity, ChevronDown } from "lucide-react";
 import { useDashboard, type FocusSession, type Sphere } from "@/context/DashboardContext";
+import { fmtSecs } from "@/lib/time";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -12,13 +13,7 @@ const RING_C = 2 * Math.PI * RING_R;
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
-function fmt(s: number): string {
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (h > 0 && m > 0) return `${h}h ${m}m`;
-  if (h > 0) return `${h}h`;
-  return `${m}m`;
-}
+const fmt = fmtSecs;
 
 function fmtTime(date: Date): string {
   return new Date(date).toLocaleTimeString("en-US", {
@@ -288,9 +283,10 @@ export default function ActivityLogCard() {
   const todaySeconds     = todaySessions.reduce((sum, s) => sum + s.durationSeconds, 0);
   const progress         = Math.min(todaySeconds / GOAL_SECONDS, 1);
   const strokeDashoffset = RING_C * (1 - progress);
-  const totalH           = Math.floor(todaySeconds / 3600);
-  const totalM           = Math.floor((todaySeconds % 3600) / 60);
-  const totalLabel       = totalH > 0 ? `${totalH}h ${totalM}m` : `${totalM}m`;
+  const totalLabel       = fmtSecs(todaySeconds);
+  const _totalMins       = Math.floor((todaySeconds + 29) / 60);
+  const totalH           = Math.floor(_totalMins / 60);
+  const totalM           = _totalMins % 60;
   const goalPct          = Math.round(progress * 100);
 
   return (

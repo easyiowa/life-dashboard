@@ -8,6 +8,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { secsToMins } from "@/lib/time";
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -117,6 +118,7 @@ export interface RecurringTask {
   notes: string;
   intervalDays: number;
   intervalLabel: string;
+  anchorDay?: number;        // 1–28: calendar day of month when intervalDays === 30
   sphere: SphereId;
   lastDoneDate: Date | null;
   completionCount: number;
@@ -343,7 +345,7 @@ type Action =
   | { type: "ADD_PROJECT"; project: Omit<Project, "id"> }
   | { type: "ADD_MANUAL_TIME"; projectId: string; minutes: number }
   | { type: "ADD_RECURRING_TASK"; task: Omit<RecurringTask, "id" | "completionCount" | "history"> }
-  | { type: "UPDATE_RECURRING_TASK"; id: string; fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel">> }
+  | { type: "UPDATE_RECURRING_TASK"; id: string; fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel" | "anchorDay">> }
   | { type: "DELETE_RECURRING_TASK"; id: string }
   | { type: "COMPLETE_RECURRING_TASK"; id: string }
   | { type: "ADD_SPHERE"; name: string; labelColor: string }
@@ -407,7 +409,7 @@ function reducer(state: State, action: Action): State {
           ? [...state.sessions, mkSession(state.activeTask, state.elapsed)]
           : state.sessions;
       // Auto-accumulate focus minutes on the task being worked on
-      const elapsedMinutes = Math.round(state.elapsed / 60);
+      const elapsedMinutes = secsToMins(state.elapsed);
       const tasks = state.activeTask && elapsedMinutes > 0
         ? state.tasks.map((t) =>
             t.id === state.activeTask!.id
@@ -811,10 +813,12 @@ function reviveState(raw: Record<string, unknown>): State {
     routine: h.routine ?? "day",
   })) as Habit[];
 
-  // If the stored tracking date is behind today, surface the nightly review gate.
+  // If the stored tracking date is behind today AND it's evening (≥20:00), surface the nightly review gate.
+  // During daytime logins the modal would aggressively interrupt the initial daily flow.
   const today              = new Date().toLocaleDateString("en-CA");
   const savedTrackingDate  = (raw.currentTrackingDate as string) ?? today;
-  const showNightlyReview  = savedTrackingDate !== today;
+  const isEvening          = new Date().getHours() >= 20;
+  const showNightlyReview  = savedTrackingDate !== today && isEvening;
 
   const quickNotes = ((raw.quickNotes as QuickNote[]) ?? []);
 
@@ -990,7 +994,7 @@ interface DashboardContextType {
   startGlobalTimer: (taskId: string) => void;
   pauseGlobalTimer: () => void;
   addRecurringTask: (task: Omit<RecurringTask, "id" | "completionCount" | "history">) => void;
-  updateRecurringTask: (id: string, fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel">>) => void;
+  updateRecurringTask: (id: string, fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel" | "anchorDay">>) => void;
   deleteRecurringTask: (id: string) => void;
   completeRecurringTask: (id: string) => void;
 }

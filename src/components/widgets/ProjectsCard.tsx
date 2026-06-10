@@ -49,6 +49,7 @@ import {
 import TaskModal from "@/components/TaskModal";
 import TaskInspectModal from "@/components/TaskInspectModal";
 import ProjectEditModal from "@/components/ProjectEditModal";
+import { fmtSecs } from "@/lib/time";
 
 // ── Style maps ────────────────────────────────────────────────────────────────
 
@@ -92,11 +93,7 @@ function barGradient(pct: number) {
 
 function fmtDuration(s: number): string {
   if (s <= 0) return "";
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (h > 0 && m > 0) return `${h}h ${m}m`;
-  if (h > 0) return `${h}h`;
-  return `${m}m`;
+  return fmtSecs(s);
 }
 
 function Pill({ label, className }: { label: string; className: string }) {
@@ -167,7 +164,7 @@ function SortableSphereItem({ sphere, canDelete }: { sphere: Sphere; canDelete: 
       {confirm ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-slate-300">
-            Delete <span className="text-white font-medium">"{sphere.name}"</span>? All tasks will be reassigned to the first sphere.
+            Delete <span className="text-white font-medium">"{sphere.name}"</span>? All tasks will be reassigned to the first area.
           </p>
           <div className="flex gap-2">
             <button
@@ -219,7 +216,7 @@ function SortableSphereItem({ sphere, canDelete }: { sphere: Sphere; canDelete: 
               onClick={() => setConfirm(true)}
               disabled={!canDelete}
               className="w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              title={!canDelete ? "Cannot delete last sphere" : "Delete sphere"}
+              title={!canDelete ? "Cannot delete last area" : "Delete area"}
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -292,7 +289,7 @@ function ManageSpheresModal({ onClose }: { onClose: () => void }) {
         <div className="bg-[#0F1629] border-b border-white/[0.06] px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Settings2 className="w-4 h-4 text-violet-400" />
-            <h2 className="text-sm font-semibold text-white">Manage Spheres</h2>
+            <h2 className="text-sm font-semibold text-white">Manage Areas</h2>
           </div>
           <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all">
             <X className="w-4 h-4" />
@@ -317,14 +314,14 @@ function ManageSpheresModal({ onClose }: { onClose: () => void }) {
 
           {/* Add new sphere */}
           <div className="flex flex-col gap-3">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">New Sphere</p>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">New Area</p>
             <div className="flex items-center gap-2">
               <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${COLOR_PALETTE.find(c => c.value === newColor)?.dot ?? "bg-slate-500"}`} />
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => { setNewName(e.target.value); setNewErr(false); }}
-                placeholder="Sphere name…"
+                placeholder="Area name…"
                 className={`flex-1 h-9 px-3 rounded-xl bg-white/[0.04] border text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors ${
                   newErr ? "border-red-500/60" : "border-white/[0.07]"
                 }`}
@@ -539,10 +536,9 @@ export default function ProjectsCard() {
           .reduce((sum, s) => sum + s.durationSeconds, 0);
       }
 
-      const firstTagId  = project.tagIds?.[0];
-      const tagObj      = (firstTagId ? tags.find((t) => t.id === firstTagId) : null)
-        ?? { id: "", label: "—", color: "violet" };
-      const extraTagCount = Math.max(0, (project.tagIds?.length ?? 0) - 1);
+      const allTagObjs = (project.tagIds ?? []).length > 0
+        ? (project.tagIds ?? []).map((id) => tags.find((t) => t.id === id) ?? { id, label: "—", color: "violet" })
+        : [{ id: "", label: "—", color: "violet" }];
 
       // Composite urgency rank: urgent×high=10, urgent×med=5, urgent×low=2, else 0
       const openTasks    = projectTasks.filter((t) => !t.done);
@@ -562,8 +558,7 @@ export default function ProjectsCard() {
         projectLoggedSecs,
         projectSessionCount,
         taskLoggedSecsMap,
-        tagObj,
-        extraTagCount,
+        allTagObjs,
         urgencyScore,
         openTaskCount: openTasks.length,
         index: 0, // re-assigned after sort
@@ -653,7 +648,7 @@ export default function ProjectsCard() {
             {/* Manage spheres */}
             <button
               onClick={() => setShowManageSpheres(true)}
-              title="Manage spheres"
+              title="Manage areas"
               className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 border border-white/[0.05] hover:text-violet-400 hover:border-violet-500/30 hover:bg-violet-500/10 transition-all duration-150"
             >
               <Settings2 className="w-3.5 h-3.5" />
@@ -682,7 +677,7 @@ export default function ProjectsCard() {
         {/* Project list */}
         <div className="flex flex-col gap-4">
           {sphereProjects.length === 0 && (
-            <p className="text-xs text-slate-600 text-center py-4">No projects in this sphere yet.</p>
+            <p className="text-xs text-slate-600 text-center py-4">No projects in this area yet.</p>
           )}
 
           {sphereProjects.map((project) => {
@@ -706,13 +701,33 @@ export default function ProjectsCard() {
                       {project.emoji && <span className="text-base leading-none flex-shrink-0">{project.emoji}</span>}
                       {project.name}
                     </span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLORS[project.tagObj.color] ?? TAG_COLORS.violet}`}>
-                      {project.tagObj.label}
-                    </span>
-                    {project.extraTagCount > 0 && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-white/[0.06] text-slate-500 border border-white/[0.08]">
-                        +{project.extraTagCount}
+                    {/* Visible tags — up to 3, then overflow tooltip */}
+                    {project.allTagObjs.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag.id}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${TAG_COLORS[tag.color] ?? TAG_COLORS.violet}`}
+                      >
+                        {tag.label}
                       </span>
+                    ))}
+                    {project.allTagObjs.length > 3 && (
+                      <div className="relative group/overflow flex-shrink-0">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-white/[0.06] text-slate-400 border border-white/[0.08] cursor-default select-none">
+                          +{project.allTagObjs.length - 3}
+                        </span>
+                        {/* Hover tooltip listing the hidden tags */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/overflow:flex flex-col gap-1 bg-[#0d1426] border border-white/[0.14] rounded-xl px-3 py-2.5 shadow-2xl z-[60] min-w-max pointer-events-none">
+                          <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-widest mb-0.5">More tags</p>
+                          {project.allTagObjs.slice(3).map((tag) => (
+                            <span
+                              key={tag.id}
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLORS[tag.color] ?? TAG_COLORS.violet}`}
+                            >
+                              {tag.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     )}
                     <span className="text-sm font-semibold text-white w-10 text-right tabular-nums">{project.progress}%</span>
                     {/* Edit button */}
@@ -785,7 +800,7 @@ export default function ProjectsCard() {
                       ) : (
                         <div className="flex flex-col gap-0.5 pt-1 pl-2 pr-0.5">
                           {activeTasks.map((task) => (
-                            <TaskRow key={task.id} task={task} onInspect={setInspectTask} loggedSeconds={project.taskLoggedSecsMap[task.id] ?? 0} />
+                            <TaskRow key={task.id} task={task} onInspect={setInspectTask} loggedSeconds={(project.taskLoggedSecsMap[task.id] ?? 0) + (task.manualMinutes ?? 0) * 60} />
                           ))}
                           {completedTasks.length > 0 && (
                             <>
@@ -802,7 +817,7 @@ export default function ProjectsCard() {
                                 style={{ maxHeight: showCompleted ? `${completedTasks.length * 80}px` : "0px" }}
                               >
                                 {completedTasks.map((task) => (
-                                  <TaskRow key={task.id} task={task} onInspect={setInspectTask} loggedSeconds={project.taskLoggedSecsMap[task.id] ?? 0} />
+                                  <TaskRow key={task.id} task={task} onInspect={setInspectTask} loggedSeconds={(project.taskLoggedSecsMap[task.id] ?? 0) + (task.manualMinutes ?? 0) * 60} />
                                 ))}
                               </div>
                             </>

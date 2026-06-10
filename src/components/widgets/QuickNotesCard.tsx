@@ -7,6 +7,7 @@ import { useDashboard, type QuickNote } from "@/context/DashboardContext";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const TODAY = new Date().toLocaleDateString("en-CA");
+const ALL_TAB = "__all__";
 
 function fmtTime(createdAt: string): string {
   return createdAt.split(" ")[1] ?? "";
@@ -21,7 +22,15 @@ function fmtDateHeader(datePart: string): string {
 
 // ── Note row (today feed) ─────────────────────────────────────────────────────
 
-function NoteRow({ note, onDelete }: { note: QuickNote; onDelete: () => void }) {
+function NoteRow({
+  note,
+  showArea,
+  onDelete,
+}: {
+  note: QuickNote;
+  showArea?: boolean;
+  onDelete: () => void;
+}) {
   return (
     <div className="group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 border-l-purple-500/50 rounded-r-lg w-full transition-all duration-150 hover:bg-white/[0.03]">
       <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
@@ -30,6 +39,12 @@ function NoteRow({ note, onDelete }: { note: QuickNote; onDelete: () => void }) 
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
+          {showArea && note.sphere && (
+            <>
+              <span className="text-slate-700 text-[10px]">·</span>
+              <span className="text-[10px] text-violet-400/70">{note.sphere}</span>
+            </>
+          )}
           {note.projectId && (
             <>
               <span className="text-slate-700 text-[10px]">·</span>
@@ -185,24 +200,25 @@ function ArchiveModal({
 export default function QuickNotesCard() {
   const { spheres, projects, quickNotes, addQuickNote, deleteQuickNote } = useDashboard();
 
-  const [activeSphereId,    setActiveSphereId]    = useState<string>(() => spheres[0]?.id ?? "");
+  const [activeSphereId,    setActiveSphereId]    = useState<string>(ALL_TAB);
   const [text,              setText]              = useState("");
   const [projectId,         setProjectId]         = useState("");
   const [showAllNotesModal, setShowAllNotesModal] = useState(false);
 
-  const activeSphereObj = spheres.find((s) => s.id === activeSphereId) ?? spheres[0];
+  const isAll           = activeSphereId === ALL_TAB;
+  const activeSphereObj = isAll ? undefined : (spheres.find((s) => s.id === activeSphereId) ?? spheres[0]);
   const activeSphere    = activeSphereObj?.name ?? "";
-  const sphereProjects  = projects.filter((p) => p.sphere === activeSphere);
+  const sphereProjects  = isAll ? [] : projects.filter((p) => p.sphere === activeSphere);
 
-  // Feed: today's notes for the active sphere only
-  const todayNotes: QuickNote[] = quickNotes.filter(
-    (n) => n.sphere === activeSphere && n.createdAt.startsWith(TODAY)
-  );
+  // Today's notes: all areas when "All" tab is active, otherwise filtered by area
+  const todayNotes: QuickNote[] = isAll
+    ? quickNotes.filter((n) => n.createdAt.startsWith(TODAY))
+    : quickNotes.filter((n) => n.sphere === activeSphere && n.createdAt.startsWith(TODAY));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || isAll) return;
     addQuickNote(trimmed, activeSphere, projectId || undefined);
     setText("");
     setProjectId("");
@@ -243,8 +259,20 @@ export default function QuickNotesCard() {
           </button>
         </div>
 
-        {/* Sphere tabs */}
+        {/* Area tabs */}
         <div className="flex items-center gap-2 flex-wrap mt-4 flex-shrink-0">
+          {/* All tab */}
+          <button
+            type="button"
+            onClick={() => { setActiveSphereId(ALL_TAB); setProjectId(""); }}
+            className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+              isAll
+                ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
+                : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
+            }`}
+          >
+            All
+          </button>
           {spheres.map((sphere) => (
             <button
               key={sphere.id}
@@ -261,49 +289,56 @@ export default function QuickNotesCard() {
           ))}
         </div>
 
-        {/* Capture form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4 flex-shrink-0">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Capture an idea before it slips away…"
-            rows={2}
-            className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-purple-500/50 focus:bg-white/[0.06] transition-colors resize-none"
-          />
-          <div className="flex items-center gap-2">
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-400 outline-none focus:border-purple-500/40 transition-colors appearance-none cursor-pointer"
-            >
-              <option value="" className="bg-[#0F1629]">No project</option>
-              {sphereProjects.map((p) => (
-                <option key={p.id} value={p.name} className="bg-[#0F1629]">{p.name}</option>
-              ))}
-            </select>
-            <button
-              type="submit"
-              disabled={!text.trim()}
-              className="px-4 h-8 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-medium transition-all flex-shrink-0"
-            >
-              Save
-            </button>
-          </div>
-          <p className="text-[10px] text-slate-700">⌘ + Enter to save quickly</p>
-        </form>
+        {/* Capture form — hidden when "All" is active */}
+        {isAll ? (
+          <p className="mt-4 text-[11px] text-slate-600 flex-shrink-0">
+            Select an area above to add a note.
+          </p>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4 flex-shrink-0">
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Capture an idea before it slips away…"
+              rows={2}
+              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-purple-500/50 focus:bg-white/[0.06] transition-colors resize-none"
+            />
+            <div className="flex items-center gap-2">
+              <select
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+                className="flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-400 outline-none focus:border-purple-500/40 transition-colors appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-[#0F1629]">No project</option>
+                {sphereProjects.map((p) => (
+                  <option key={p.id} value={p.name} className="bg-[#0F1629]">{p.name}</option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                disabled={!text.trim()}
+                className="px-4 h-8 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-medium transition-all flex-shrink-0"
+              >
+                Save
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-700">⌘ + Enter to save quickly</p>
+          </form>
+        )}
 
         {/* Today's notes feed — scrollable, fills remaining height */}
         <div className="flex-1 overflow-y-auto mt-3 flex flex-col gap-1.5 pr-1 min-h-0">
           {todayNotes.length === 0 ? (
             <p className="text-xs text-slate-700 text-center py-4">
-              No notes today for {activeSphere}.
+              {isAll ? "No notes today across any area." : `No notes today for ${activeSphere}.`}
             </p>
           ) : (
             todayNotes.map((note) => (
               <NoteRow
                 key={note.id}
                 note={note}
+                showArea={isAll}
                 onDelete={() => deleteQuickNote(note.id)}
               />
             ))

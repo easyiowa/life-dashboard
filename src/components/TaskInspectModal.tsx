@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { secsToMins } from "@/lib/time";
 import { X, Clock, CheckCircle2, Circle } from "lucide-react";
 import {
   useDashboard,
@@ -67,9 +68,13 @@ function formatMinutes(m: number): string {
 export default function TaskInspectModal({ task, onClose }: Props) {
   const { spheres, projects, sessions, updateTask } = useDashboard();
   const [form, setForm] = useState<Task | null>(null);
+  const [rawManualMins, setRawManualMins] = useState<string>("0");
 
   useEffect(() => {
-    if (task) setForm({ ...task });
+    if (task) {
+      setForm({ ...task });
+      setRawManualMins(String(task.manualMinutes));
+    }
   }, [task]);
 
   if (!task || !form) return null;
@@ -80,7 +85,7 @@ export default function TaskInspectModal({ task, onClose }: Props) {
     .filter((s) => !s.isManual && s.project === task.project &&
       (s.taskName === task.title || s.taskName.startsWith(task.title)))
     .reduce((sum, s) => sum + s.durationSeconds, 0);
-  const timerMinutes = Math.round(timerSeconds / 60);
+  const timerMinutes = secsToMins(timerSeconds);
   const totalLogged  = form.manualMinutes + timerMinutes;
 
   function handleSphereChange(name: string) {
@@ -100,7 +105,7 @@ export default function TaskInspectModal({ task, onClose }: Props) {
       done:          form.done,
       deadline:      form.deadline,
       notes:         form.notes,
-      manualMinutes: form.manualMinutes,
+      manualMinutes: Math.max(0, parseInt(rawManualMins, 10) || 0),
     } satisfies Partial<Task>);
     onClose();
   }
@@ -141,7 +146,7 @@ export default function TaskInspectModal({ task, onClose }: Props) {
           {/* Sphere + Project */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Sphere</label>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Area</label>
               <select
                 value={form.sphere}
                 onChange={(e) => handleSphereChange(e.target.value)}
@@ -230,8 +235,13 @@ export default function TaskInspectModal({ task, onClose }: Props) {
               <input
                 type="number"
                 min={0}
-                value={form.manualMinutes}
-                onChange={(e) => setForm((f) => f ? { ...f, manualMinutes: Math.max(0, Number(e.target.value)) } : f)}
+                value={rawManualMins}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setRawManualMins(raw);
+                  const parsed = parseInt(raw, 10);
+                  setForm((f) => f ? { ...f, manualMinutes: (!isNaN(parsed) && parsed >= 0) ? parsed : 0 } : f);
+                }}
                 className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>

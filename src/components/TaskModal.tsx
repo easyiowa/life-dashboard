@@ -186,7 +186,7 @@ export default function TaskModal({ open, onClose, defaultSphere }: Props) {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Sphere</label>
+                <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Area</label>
                 <select
                   value={form.sphere}
                   onChange={(e) => handleSphereChange(e.target.value)}
@@ -271,7 +271,7 @@ export default function TaskModal({ open, onClose, defaultSphere }: Props) {
 
                 {/* Sphere — full width */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Sphere</label>
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Area</label>
                   <select
                     value={newProjectSphere}
                     onChange={(e) => setNewProjectSphere(e.target.value)}
