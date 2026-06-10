@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Play, Pause, RotateCcw, Timer, Zap, CheckCircle2, Minus, Plus } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
 
@@ -29,6 +30,9 @@ export default function TimeTrackerCard() {
     finishSession,
     setEstimate,
   } = useDashboard();
+
+  const [editingEstimate, setEditingEstimate] = useState(false);
+  const [rawEstimate,     setRawEstimate]     = useState("");
 
   const estimatedMinutes = activeTask?.estimatedMinutes ?? 25;
   const targetSeconds    = estimatedMinutes * 60;
@@ -99,9 +103,43 @@ export default function TimeTrackerCard() {
                 >
                   <Minus className="w-3 h-3" />
                 </button>
-                <span className="text-sm font-semibold text-white tabular-nums w-12 text-center">
-                  {estimatedMinutes}m
-                </span>
+
+                {editingEstimate ? (
+                  <input
+                    autoFocus
+                    type="number"
+                    min={1}
+                    step={5}
+                    value={rawEstimate}
+                    onChange={(e) => {
+                      setRawEstimate(e.target.value);
+                      const n = parseInt(e.target.value, 10);
+                      if (!isNaN(n) && n > 0) setEstimate(n);
+                    }}
+                    onBlur={() => {
+                      const n = parseInt(rawEstimate, 10);
+                      if (!isNaN(n) && n > 0) setEstimate(Math.max(1, n));
+                      setEditingEstimate(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === "Escape") {
+                        const n = parseInt(rawEstimate, 10);
+                        if (!isNaN(n) && n > 0) setEstimate(Math.max(1, n));
+                        setEditingEstimate(false);
+                      }
+                    }}
+                    className="text-sm font-semibold text-white tabular-nums w-14 text-center bg-white/[0.06] border border-violet-500/50 rounded-md outline-none focus:border-violet-400 px-1 py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                ) : (
+                  <span
+                    onClick={() => { setRawEstimate(String(estimatedMinutes)); setEditingEstimate(true); }}
+                    title="Click to edit"
+                    className="text-sm font-semibold text-white tabular-nums w-12 text-center cursor-pointer hover:text-violet-300 transition-colors select-none"
+                  >
+                    {estimatedMinutes}m
+                  </span>
+                )}
+
                 <button
                   onClick={() => setEstimate(estimatedMinutes + 5)}
                   className="w-5 h-5 rounded-md flex items-center justify-center bg-white/[0.05] border border-white/[0.07] text-slate-400 hover:text-white hover:bg-white/[0.10] transition-all"

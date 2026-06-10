@@ -58,12 +58,14 @@ function QueueRow({ task }: { task: Task }) {
     }
   }
 
+  const isComplete = task.done;
+
   return (
     <div className={`flex flex-col gap-2 p-2.5 rounded-xl border transition-all duration-200 overflow-hidden ${
-      isMaybe
-        ? "border-dashed border-white/[0.07] bg-white/[0.01] opacity-70"
-        : goalAchieved
-          ? "border-emerald-500/25 bg-emerald-500/[0.03]"
+      (isComplete || goalAchieved)
+        ? "border-emerald-500/25 bg-emerald-500/[0.03]"
+        : isMaybe
+          ? "border-dashed border-white/[0.07] bg-white/[0.01] opacity-70"
           : "border-white/[0.05] bg-white/[0.02]"
     }`}>
       {/* Title row */}
@@ -73,19 +75,19 @@ function QueueRow({ task }: { task: Task }) {
           onClick={() => toggleTaskComplete(task.id)}
           aria-label={task.done ? "Mark incomplete" : "Mark complete"}
           className={`flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer transition-all duration-150 ${
-            task.done
-              ? "bg-violet-500/30 border-violet-400/60 shadow-[0_0_8px_rgba(139,92,246,0.35)]"
+            isComplete
+              ? "bg-emerald-500/25 border-emerald-400/60 shadow-[0_0_8px_rgba(52,211,153,0.35)]"
               : "border-slate-600 hover:border-purple-400"
           }`}
         >
-          {task.done && <Check className="w-2.5 h-2.5 text-violet-300" />}
+          {isComplete && <Check className="w-2.5 h-2.5 text-emerald-300" />}
         </button>
         {isThisTaskActive && <Zap className="w-3 h-3 text-violet-400 flex-shrink-0" />}
-        <span className={`text-sm flex-1 leading-none truncate ${task.done ? "line-through text-slate-500 opacity-60" : "text-white font-medium"}`}>
+        <span className={`text-sm flex-1 leading-none truncate ${isComplete ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
           {task.title}
         </span>
         {totalFocusMinutes > 0 && (
-          <span className={`flex items-center gap-1 text-[10px] font-mono flex-shrink-0 ${goalAchieved ? "text-emerald-400" : "text-slate-500"}`}>
+          <span className={`flex items-center gap-1 text-[10px] font-mono flex-shrink-0 ${isComplete || goalAchieved ? "text-emerald-400" : "text-slate-500"}`}>
             <Clock className="w-2.5 h-2.5" />
             {totalFocusMinutes}m
           </span>
@@ -146,12 +148,12 @@ function QueueRow({ task }: { task: Task }) {
         )}
       </div>
 
-      {/* Time goal progress bar — flush to card bottom */}
-      {isTimeGoal && (
+      {/* Progress bar — flush to card bottom; always shown when done or time goal active */}
+      {(isTimeGoal || isComplete) && (
         <div className="-mx-2.5 -mb-2.5 h-1 bg-white/[0.04]">
           <div
-            className={`h-full transition-all duration-500 ease-out ${goalAchieved ? "bg-emerald-500" : "bg-violet-500/50"}`}
-            style={{ width: `${pct}%` }}
+            className={`h-full transition-all duration-500 ease-out ${isComplete || goalAchieved ? "bg-emerald-500" : "bg-violet-500/50"}`}
+            style={{ width: `${isComplete ? 100 : pct}%` }}
           />
         </div>
       )}
@@ -350,7 +352,7 @@ export default function DailyFocusQueueCard() {
           )}
           <button
             onClick={() => requestNightlyReview()}
-            className="flex items-center gap-1.5 px-3 h-7 rounded-lg bg-slate-800/80 border border-white/[0.08] text-slate-300 text-[11px] font-medium hover:bg-slate-700/80 hover:text-white transition-all duration-150"
+            className="flex items-center gap-1.5 px-3 h-7 rounded-lg bg-violet-600 text-white text-[11px] font-semibold hover:bg-violet-500 transition-all duration-150 shadow-[0_0_14px_rgba(124,58,237,0.45)] hover:shadow-[0_0_20px_rgba(124,58,237,0.6)]"
             title="Open nightly review"
           >
             <Moon className="w-3 h-3" />
