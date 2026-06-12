@@ -33,10 +33,14 @@ export function computeCountdown(task: RecurringTask): {
     if (lastDone) lastDone.setHours(0, 0, 0, 0);
     const doneThisCycle = lastDone !== null && lastDone >= thisMonthAnchor;
 
-    const nextDue   = doneThisCycle
+    // Brand-new tasks (no history) whose anchor day already passed this month should
+    // target next month's anchor — not spawn as immediately overdue.
+    const pushToNextMonth = lastDone === null && thisMonthAnchor.getTime() < todayMs;
+
+    const nextDue   = (doneThisCycle || pushToNextMonth)
       ? anchorInMonth(today.getFullYear(), today.getMonth() + 1, task.anchorDay)
       : thisMonthAnchor;
-    const prevAnchor = doneThisCycle
+    const prevAnchor = (doneThisCycle || pushToNextMonth)
       ? thisMonthAnchor
       : anchorInMonth(today.getFullYear(), today.getMonth() - 1, task.anchorDay);
 
@@ -106,6 +110,11 @@ const URGENCY_BADGE: Record<string, string> = {
   due:     "bg-orange-500/10 border-orange-500/20 text-orange-400",
   overdue: "bg-red-500/10  border-red-500/20  text-red-400",
 };
+
+// Tier weights for the sort: overdue → due → mid → fresh
+const URGENCY_RANK: Record<string, number> = { overdue: 0, due: 1, mid: 2, fresh: 3 };
+
+const NOW_FILTER = "__now__";
 
 
 // ── Delete confirmation modal ─────────────────────────────────────────────────
@@ -394,10 +403,33 @@ export default function RecurringCard() {
   const [inspectTask,    setInspectTask]    = useState<RecurringTask | null>(null);
   const [deleteTarget,   setDeleteTarget]   = useState<RecurringTask | null>(null);
 
-  const activeSphereObj = spheres.find((s) => s.id === activeSphereId) ?? spheres[0];
+  const isNowFilter     = activeSphereId === NOW_FILTER;
+  const activeSphereObj = isNowFilter ? undefined : (spheres.find((s) => s.id === activeSphereId) ?? spheres[0]);
   const activeSphere    = activeSphereObj?.name ?? "";
-  const visible         = recurringTasks.filter((r) => r.sphere === activeSphere);
-  const overdueCount    = visible.filter((r) => computeCountdown(r).urgency === "overdue").length;
+
+  const visible = isNowFilter
+    ? recurringTasks.filter((r) => computeCountdown(r).urgency === "overdue")
+    : recurringTasks.filter((r) => r.sphere === activeSphere);
+
+  // Tiered sort: overdue → due → mid → fresh; within each tier, fewest days remaining first
+  const sorted = [...visible].sort((a, b) => {
+    const pa = computeCountdown(a);
+    const pb = computeCountdown(b);
+    const rankDiff = (URGENCY_RANK[pa.urgency] ?? 9) - (URGENCY_RANK[pb.urgency] ?? 9);
+    if (rankDiff !== 0) return rankDiff;
+    return pa.daysLeft - pb.daysLeft;
+  });
+
+  // Per-sphere count of tasks that are "due" or "overdue" (for red dots + "🔴 Now" badge)
+  const sphereAlertCounts: Record<string, number> = {};
+  for (const s of spheres) {
+    sphereAlertCounts[s.id] = recurringTasks.filter((r) => {
+      if (r.sphere !== s.name) return false;
+      const u = computeCountdown(r).urgency;
+      return u === "due" || u === "overdue";
+    }).length;
+  }
+  const nowCount = recurringTasks.filter((r) => computeCountdown(r).urgency === "overdue").length;
 
   function confirmDelete() {
     if (deleteTarget) deleteRecurringTask(deleteTarget.id);
@@ -427,11 +459,6 @@ export default function RecurringCard() {
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
               Recurring Responsibilities
             </h2>
-            {overdueCount > 0 && (
-              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500/20 border border-red-500/30 text-[9px] font-bold text-red-400">
-                {overdueCount}
-              </span>
-            )}
           </div>
           <button
             onClick={() => setShowAdd((v) => !v)}
@@ -444,17 +471,37 @@ export default function RecurringCard() {
 
         {/* Sphere tabs */}
         <div className="flex flex-wrap gap-2">
+
+          {/* Global overdue/due-now quick filter */}
+          {nowCount > 0 && (
+            <button
+              onClick={() => setActiveSphereId(NOW_FILTER)}
+              className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                isNowFilter
+                  ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                  : "bg-red-500/8 border-red-500/20 text-red-400/80 hover:bg-red-500/15 hover:border-red-500/35"
+              }`}
+            >
+              Now
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 flex-shrink-0 animate-pulse" />
+            </button>
+          )}
+
           {spheres.map((sphere) => {
-            const pill = areaColor(sphere.labelColor);
+            const pill       = areaColor(sphere.labelColor);
+            const alertCount = sphereAlertCounts[sphere.id] ?? 0;
             return (
               <button
                 key={sphere.id}
                 onClick={() => setActiveSphereId(sphere.id)}
-                className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
                   activeSphereObj?.id === sphere.id ? pill.pillActive : pill.pillInactive
                 }`}
               >
                 {sphere.name}
+                {alertCount > 0 && (
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 flex-shrink-0 animate-pulse" />
+                )}
               </button>
             );
           })}
@@ -470,10 +517,10 @@ export default function RecurringCard() {
         <div className="flex flex-col gap-1">
           {visible.length === 0 ? (
             <p className="text-sm text-slate-600 text-center py-6">
-              No recurring tasks for {activeSphere}.
+              {isNowFilter ? "All clear — nothing overdue." : `No recurring tasks for ${activeSphere}.`}
             </p>
           ) : (
-            visible.map((task) => (
+            sorted.map((task) => (
               <RecurringRow
                 key={task.id}
                 task={task}

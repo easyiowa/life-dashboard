@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap, Plus } from "lucide-react";
 import { useDashboard, type Task, type HistoricalLog } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
 
@@ -31,16 +31,20 @@ const INACTIVE_PILL = "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:
 // ── Queue row ─────────────────────────────────────────────────────────────────
 
 function QueueRow({ task }: { task: Task }) {
-  const { updateTask, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, currentTrackingDate, spheres } = useDashboard();
+  const { updateTask, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, elapsed, committedSecs, currentTrackingDate, spheres } = useDashboard();
   const ac = areaColor(spheres.find((s) => s.name === task.sphere)?.labelColor);
   const intent             = task.intent ?? "finish";
-  const totalFocusMinutes  = (task.timeSpentMinutes ?? 0) + (task.manualMinutes ?? 0);
+  const committedFocusMins = (task.timeSpentMinutes ?? 0) + (task.manualMinutes ?? 0);
   const isThisTaskActive   = activeTaskId === task.id && timerIsRunning;
   const isMaybe            = intent === "maybe";
   const goalMinutes        = task.dailyTargetMinutes ?? 0;
   const isTimeGoal         = intent === "time" && goalMinutes > 0;
-  const pct                = isTimeGoal ? Math.min(Math.round((totalFocusMinutes / goalMinutes) * 100), 100) : 0;
-  const goalAchieved       = isTimeGoal && totalFocusMinutes >= goalMinutes;
+  // Second-precision calculation so the bar moves every tick, not once per minute.
+  const goalSecs           = goalMinutes * 60;
+  const liveTotalSecs      = (committedFocusMins * 60) + (isThisTaskActive ? (elapsed - committedSecs) : 0);
+  const pct                = isTimeGoal && goalSecs > 0 ? Math.min((liveTotalSecs / goalSecs) * 100, 100) : 0;
+  const totalFocusMinutes  = Math.floor(liveTotalSecs / 60);
+  const goalAchieved       = isTimeGoal && liveTotalSecs >= goalSecs;
   const [localMins, setLocalMins] = useState<string>(task.dailyTargetMinutes?.toString() ?? "");
 
   function handleIntentChange(val: Task["intent"]) {
@@ -157,7 +161,7 @@ function QueueRow({ task }: { task: Task }) {
       {(isTimeGoal || isComplete) && (
         <div className="-mx-2.5 -mb-2.5 h-1 bg-white/[0.04]">
           <div
-            className={`h-full transition-all duration-500 ease-out ${isComplete || goalAchieved ? "bg-emerald-500" : "bg-violet-500/50"}`}
+            className={`h-full transition-all duration-1000 ease-linear ${isComplete || goalAchieved ? "bg-emerald-500" : "bg-violet-500/50"}`}
             style={{ width: `${isComplete ? 100 : pct}%` }}
           />
         </div>
@@ -392,24 +396,30 @@ function PerformanceArchive({ logs }: { logs: HistoricalLog[] }) {
 
 function RolloverWidget({ log, onDismiss }: { log: HistoricalLog; onDismiss: () => void }) {
   const { tasks, currentTrackingDate, toggleTaskForToday } = useDashboard();
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
   const pendingTasks = log.rolledOverTasks
     .map((title) => tasks.find((t) => t.title === title))
     .filter((t): t is Task =>
-      t !== undefined && !t.done && (t.queuedDate ?? null) !== currentTrackingDate
+      t !== undefined &&
+      !t.done &&
+      (t.queuedDate ?? null) !== currentTrackingDate &&
+      !dismissedIds.has(t.id)
     );
 
+  // Auto-close when every item has been individually actioned
   if (pendingTasks.length === 0) return null;
 
-  function addAll() {
-    for (const t of pendingTasks) {
-      toggleTaskForToday(t.id, currentTrackingDate, t.intent ?? "finish", t.dailyTargetMinutes ?? null);
-    }
-    onDismiss();
+  function addOne(t: Task) {
+    toggleTaskForToday(t.id, currentTrackingDate, t.intent ?? "finish", t.dailyTargetMinutes ?? null);
+  }
+
+  function dismissOne(id: string) {
+    setDismissedIds((prev) => new Set([...prev, id]));
   }
 
   return (
-    <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 flex flex-col gap-3">
+    <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm leading-none">↩</span>
@@ -430,37 +440,40 @@ function RolloverWidget({ log, onDismiss }: { log: HistoricalLog; onDismiss: () 
         {pendingTasks.map((t) => {
           const meta = log.taskMeta?.[t.title];
           return (
-            <div key={t.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/[0.02]">
-              <span className="text-amber-500/50 text-[10px] flex-shrink-0">↩</span>
-              <span className="text-xs text-slate-400 flex-1 leading-none truncate">{t.title}</span>
+            <div key={t.id} className="flex items-center gap-2 px-2 py-2 rounded-lg bg-white/[0.02] group/row">
+              {/* Title — flex-1 min-w-0 prevents collision with right-side content */}
+              <span className="flex-1 min-w-0 text-xs text-slate-400 leading-normal truncate">{t.title}</span>
+              {/* Meta label */}
               {meta && (
-                <span className="text-[9px] text-slate-600 flex-shrink-0 tabular-nums">
+                <span className="text-[9px] text-slate-600 flex-shrink-0 tabular-nums whitespace-nowrap">
                   {meta.intent === "time" && meta.target
                     ? `${meta.target}m goal`
                     : meta.intent === "maybe" ? "Maybe" : "Finish"}
-                  {meta.minutes > 0 && ` · ${meta.minutes}m done`}
+                  {meta.minutes > 0 && ` · ${meta.minutes}m`}
                 </span>
               )}
+              {/* Per-row actions — always visible */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => addOne(t)}
+                  title="Add to today's queue"
+                  className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => dismissOne(t.id)}
+                  title="Keep in backlog"
+                  className="p-1.5 rounded-lg bg-white/[0.04] text-slate-500 border border-white/[0.06] hover:bg-red-500 hover:text-white hover:border-red-600 transition-all duration-200 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           );
         })}
-      </div>
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={addAll}
-          className="flex-1 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 text-xs text-amber-300 font-medium hover:bg-amber-500/30 transition-all"
-        >
-          Add to Today&apos;s Queue
-        </button>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="flex-1 h-8 rounded-lg bg-white/[0.03] border border-white/[0.07] text-xs text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
-        >
-          Keep in Backlog
-        </button>
       </div>
     </div>
   );

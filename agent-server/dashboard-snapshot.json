@@ -184,8 +184,9 @@
       "manualMinutes": 0,
       "queuedDate": null,
       "intent": "time",
-      "dailyTargetMinutes": 78,
-      "rolloverCount": 2
+      "dailyTargetMinutes": 5,
+      "rolloverCount": 4,
+      "timeSpentMinutes": 5
     },
     {
       "id": "siin-t14",
@@ -243,7 +244,7 @@
       "intent": "time",
       "dailyTargetMinutes": 10,
       "timeSpentMinutes": 61,
-      "rolloverCount": 2,
+      "rolloverCount": 3,
       "urgency": "urgent"
     },
     {
@@ -358,12 +359,13 @@
       "deadline": "2026-06-01",
       "notes": "",
       "manualMinutes": 0,
-      "done": true,
+      "done": false,
       "id": "t-1780317638245-tiq",
-      "queuedDate": null,
+      "queuedDate": "2026-06-12",
       "intent": "finish",
       "dailyTargetMinutes": null,
-      "timeSpentMinutes": 21
+      "timeSpentMinutes": 21,
+      "rolloverCount": 1
     },
     {
       "title": "Buy milk tomorrow",
@@ -660,10 +662,10 @@
       "done": false,
       "id": "t-1781101082172-f1u",
       "queuedDate": null,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 4,
-      "timeSpentMinutes": 1
+      "intent": "time",
+      "dailyTargetMinutes": 3,
+      "rolloverCount": 5,
+      "timeSpentMinutes": 5
     },
     {
       "sphere": "iowa",
@@ -779,6 +781,24 @@
       "intent": "finish",
       "dailyTargetMinutes": null,
       "rolloverCount": 1
+    },
+    {
+      "sphere": "vibing",
+      "project": "Dashboard",
+      "title": "dashboard tweaks",
+      "priority": "High",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1781262973758-z23",
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 2,
+      "rolloverCount": 2,
+      "timeSpentMinutes": 2
     }
   ],
   "habits": [
@@ -799,7 +819,8 @@
         "2026-06-01": true,
         "2026-06-02": true,
         "2026-06-04": false,
-        "2026-06-05": false
+        "2026-06-05": false,
+        "2026-06-12": false
       },
       "routine": "day"
     },
@@ -952,7 +973,10 @@
       "milestone": "In progress",
       "tagId": "tag-product",
       "tagIds": [
-        "tag-product"
+        "tag-product",
+        "tag-analytics",
+        "tag-bizdev",
+        "tag-clients"
       ]
     },
     {
@@ -1174,9 +1198,14 @@
       "intervalDays": 180,
       "intervalLabel": "Every 6 Months",
       "sphere": "iowa",
-      "lastDoneDate": "2026-01-11T20:48:26.115Z",
-      "completionCount": 3,
-      "history": []
+      "lastDoneDate": "2026-06-12T12:20:32.377Z",
+      "completionCount": 4,
+      "history": [
+        {
+          "id": "1781266832377-fim01",
+          "completedAt": "June 12, 2026 at 15:20"
+        }
+      ]
     },
     {
       "id": "rec-3",
@@ -1271,10 +1300,15 @@
       "intervalDays": 90,
       "intervalLabel": "Every 3 Months",
       "sphere": "iowa",
-      "lastDoneDate": null,
+      "lastDoneDate": "2026-06-12T12:20:23.615Z",
       "id": "rec-1780492961199-0a2",
-      "completionCount": 0,
-      "history": []
+      "completionCount": 1,
+      "history": [
+        {
+          "id": "1781266823615-tw2mi",
+          "completedAt": "June 12, 2026 at 15:20"
+        }
+      ]
     },
     {
       "title": "Pay Invoices",
@@ -1304,9 +1338,40 @@
       "id": "rec-1781193012586-tdz",
       "completionCount": 0,
       "history": []
+    },
+    {
+      "title": "cool stuff",
+      "notes": "",
+      "intervalDays": 30,
+      "intervalLabel": "Every Month",
+      "sphere": "siin",
+      "lastDoneDate": null,
+      "anchorDay": 1,
+      "id": "rec-1781260614625-loj",
+      "completionCount": 0,
+      "history": []
     }
   ],
   "quickNotes": [
+    {
+      "text": "oåjn",
+      "sphere": "vibing",
+      "createdAt": "2026-06-12 18:35",
+      "id": "note-1781278559922-gij7",
+      "isImportant": true
+    },
+    {
+      "text": "åojxpk¨pxk",
+      "sphere": "iowa",
+      "createdAt": "2026-06-12 18:35",
+      "id": "note-1781278555531-78ug"
+    },
+    {
+      "text": "pk",
+      "sphere": "iowa",
+      "createdAt": "2026-06-12 18:35",
+      "id": "note-1781278552905-gcfw"
+    },
     {
       "text": "jhvkbln",
       "sphere": "siin",
@@ -1458,5 +1523,5 @@
       "id": "note-1780324402284-qjtq"
     }
   ],
-  "currentTrackingDate": "2026-06-11"
+  "currentTrackingDate": "2026-06-12"
 }

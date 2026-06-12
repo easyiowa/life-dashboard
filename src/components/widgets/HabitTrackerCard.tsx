@@ -334,15 +334,17 @@ export default function HabitTrackerCard() {
           </div>
 
           {/* View mode segment control */}
-          <div className="flex items-center bg-white/[0.05] border border-white/[0.07] rounded-lg p-0.5 gap-0.5">
-            {(["check", "analytics"] as const).map((mode) => (
+          <div className="flex rounded-lg border border-white/[0.07] overflow-hidden">
+            {(["check", "analytics"] as const).map((mode, i) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`px-2.5 h-6 rounded-md text-[11px] font-medium transition-all duration-150 ${
+                className={`px-2.5 h-7 text-[11px] font-medium transition-all duration-150 ${
+                  i === 0 ? "border-r border-white/[0.07]" : ""
+                } ${
                   viewMode === mode
-                    ? "bg-violet-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? `bg-purple-600/20 text-purple-400 font-bold ${i === 0 ? "rounded-l-lg rounded-r-none" : "rounded-r-lg rounded-l-none"}`
+                    : "bg-white/[0.02] text-slate-500 hover:text-slate-300 hover:bg-white/[0.05]"
                 }`}
               >
                 {mode === "check" ? "Checklist" : "Analytics"}

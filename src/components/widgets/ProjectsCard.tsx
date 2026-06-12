@@ -394,7 +394,9 @@ function TaskRow({
             ? "border-violet-500/30 bg-violet-600/[0.07]"
             : task.done
               ? "border-transparent opacity-40"
-              : "border-white/[0.04] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.03]"
+              : isQueued
+                ? "border-l-2 border-l-purple-500 border-white/[0.04] bg-purple-950/20"
+                : "border-white/[0.04] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.03]"
         }`}
       >
         {/* ── Left: checkbox + title + taxonomy pills ─────────────────────── */}
@@ -455,12 +457,16 @@ function TaskRow({
             </div>
           )}
 
-          {/* Queue to Today — hidden when already queued to prevent double-entry */}
-          {!task.done && !isQueued && (
+          {/* Queue toggle — always visible when queued, hover-reveal when not */}
+          {!task.done && (
             <button
-              onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, "finish", null); }}
-              title="Queue for today"
-              className="flex-shrink-0 p-1 rounded transition-colors opacity-0 group-hover:opacity-100 text-slate-500 hover:text-purple-400"
+              onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, task.intent ?? "finish", task.dailyTargetMinutes ?? null); }}
+              title={isQueued ? "Remove from today's queue" : "Queue for today"}
+              className={`flex-shrink-0 p-1 rounded transition-all ${
+                isQueued
+                  ? "text-purple-400"
+                  : "opacity-0 group-hover:opacity-100 text-slate-500 hover:text-purple-400"
+              }`}
             >
               <Target className="w-3.5 h-3.5" />
             </button>
@@ -497,7 +503,7 @@ function TaskRow({
 // ── Main card ─────────────────────────────────────────────────────────────────
 
 export default function ProjectsCard() {
-  const { tasks, projects, spheres, sessions, tags } = useDashboard();
+  const { tasks, projects, spheres, sessions, tags, calendarJump, setCalendarJump } = useDashboard();
 
   const [activeSphereId,       setActiveSphereId]       = useState<string>(() => spheres[0]?.id ?? "");
   const [unfoldedProjects,     setUnfoldedProjects]      = useState<Record<string, boolean>>({});
@@ -506,6 +512,12 @@ export default function ProjectsCard() {
   const [inspectTask,          setInspectTask]           = useState<Task | null>(null);
   const [showManageSpheres,    setShowManageSpheres]     = useState(false);
   const [editProjectId,        setEditProjectId]         = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!calendarJump || calendarJump.type !== "task") return;
+    const task = tasks.find((t) => t.id === calendarJump.id);
+    if (task) { setInspectTask(task); setCalendarJump(null); }
+  }, [calendarJump]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleProject   = (id: string) => setUnfoldedProjects((p) => ({ ...p, [id]: !p[id] }));
   const toggleCompleted = (id: string) => setShowCompletedInProject((p) => ({ ...p, [id]: !p[id] }));

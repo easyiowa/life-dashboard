@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Users, Plus, X, Trash2, Pencil, FileText, Settings, Check, Circle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Users, Plus, X, Trash2, Pencil, FileText, Settings, Check, Circle, ChevronDown, CheckCircle2 } from "lucide-react";
 import {
   useDashboard,
   type NetworkContact,
@@ -247,8 +247,9 @@ function ContactModal({
   const [evtNotes, setEvtNotes] = useState("");
 
   // Inline editor state
-  const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const [editDraft,      setEditDraft]      = useState<{ title: string; date: string; notes: string }>({ title: "", date: "", notes: "" });
+  const [editingEventId,   setEditingEventId]   = useState<string | null>(null);
+  const [editDraft,        setEditDraft]        = useState<{ title: string; date: string; notes: string }>({ title: "", date: "", notes: "" });
+  const [isEventsExpanded, setIsEventsExpanded] = useState(false);
 
   function pushEvent() {
     const title = evtTitle.trim();
@@ -374,58 +375,74 @@ function ContactModal({
 
           {/* Event factory */}
           <div className="flex flex-col gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-            <div className="flex items-center justify-between">
+
+            {/* Collapsible header toggle */}
+            <button
+              type="button"
+              onClick={() => setIsEventsExpanded((v) => !v)}
+              className="flex items-center justify-between w-full cursor-pointer select-none"
+            >
               <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
                 Events <span className="normal-case text-slate-700 font-normal tracking-normal">— optional</span>
               </p>
-              {events.length > 0 && (
-                <span className="text-[10px] text-slate-600 tabular-nums">{events.length} added</span>
-              )}
-            </div>
+              <div className="flex items-center gap-2">
+                {events.length > 0 && (
+                  <span className="text-[10px] text-slate-600 tabular-nums">{events.length} added</span>
+                )}
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-600 transition-transform duration-200 ${isEventsExpanded ? "rotate-180" : ""}`}
+                />
+              </div>
+            </button>
 
-            {/* Entry fields — stacked so nothing clips */}
-            <div className="flex flex-col gap-2">
-              <input
-                type="text"
-                value={evtTitle}
-                onChange={(e) => setEvtTitle(e.target.value)}
-                placeholder="Event title…"
-                className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
-              />
-              <input
-                type="date"
-                value={evtDate}
-                onChange={(e) => setEvtDate(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white outline-none focus:border-violet-500/50 transition-colors [color-scheme:dark]"
-              />
-              <textarea
-                value={evtNotes}
-                onChange={(e) => setEvtNotes(e.target.value)}
-                placeholder="Event notes…"
-                rows={2}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors resize-none"
-              />
-            </div>
+            {/* Collapsible form — entry fields + save buttons */}
+            {isEventsExpanded && (
+              <div className="flex flex-col gap-3">
+                {/* Entry fields — stacked so nothing clips */}
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="text"
+                    value={evtTitle}
+                    onChange={(e) => setEvtTitle(e.target.value)}
+                    placeholder="Event title…"
+                    className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
+                  />
+                  <input
+                    type="date"
+                    value={evtDate}
+                    onChange={(e) => setEvtDate(e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white outline-none focus:border-violet-500/50 transition-colors [color-scheme:dark]"
+                  />
+                  <textarea
+                    value={evtNotes}
+                    onChange={(e) => setEvtNotes(e.target.value)}
+                    placeholder="Event notes…"
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors resize-none"
+                  />
+                </div>
 
-            {/* Action buttons */}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={pushEvent}
-                disabled={!canPush}
-                className="flex-1 h-8 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                Save Event
-              </button>
-              <button
-                type="button"
-                onClick={pushEvent}
-                disabled={!canPush}
-                className="flex-1 h-8 rounded-lg bg-white/[0.03] border border-white/[0.07] text-slate-400 text-[11px] font-medium hover:bg-white/[0.06] hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                Add Another
-              </button>
-            </div>
+                {/* Action buttons */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={pushEvent}
+                    disabled={!canPush}
+                    className="flex-1 h-8 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    Save Event
+                  </button>
+                  <button
+                    type="button"
+                    onClick={pushEvent}
+                    disabled={!canPush}
+                    className="flex-1 h-8 rounded-lg bg-white/[0.03] border border-white/[0.07] text-slate-400 text-[11px] font-medium hover:bg-white/[0.06] hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    Add Another
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* History list */}
             {events.length > 0 && (
@@ -557,29 +574,31 @@ function ContactRow({
   const hasNotes = !!(contact.notes || contact.events.length > 0);
 
   return (
-    <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-150">
+    <div
+      onClick={onEdit}
+      className="group flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-150 cursor-pointer"
+    >
 
-      {/* Clean name — left-aligned, no preceding element */}
+      {/* Checkmark circle — left-aligned, matches RecurringCard style */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggleCycle(); }}
+        title={prog === null ? "Reset cycle" : "Mark milestone complete"}
+        className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-150 ${
+          prog === null
+            ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400"
+            : "bg-white/[0.04] border border-white/[0.07] text-slate-500 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400"
+        }`}
+      >
+        <CheckCircle2 className="w-3 h-3" />
+      </button>
+
+      {/* Name */}
       <span className="flex-1 text-sm font-medium text-slate-200 leading-none truncate min-w-0">
         {contact.name}
       </span>
 
-      {/* Fixed-width right cluster: checkmark · milestone label · badge · bar · pct */}
+      {/* Fixed-width right cluster: milestone label · badge · bar · pct */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Checkmark circle — marks current milestone complete / resets when all done */}
-        <button
-          onClick={onToggleCycle}
-          title={prog === null ? "Reset cycle" : "Mark milestone complete"}
-          className="flex-shrink-0 w-5 h-5 flex items-center justify-center transition-all duration-150"
-        >
-          {prog === null ? (
-            <div className="w-5 h-5 rounded-full bg-emerald-500/30 border border-emerald-500/60 flex items-center justify-center">
-              <Check className="w-3 h-3 text-emerald-400" />
-            </div>
-          ) : (
-            <div className="w-5 h-5 rounded-full border border-white/[0.12] hover:border-white/30 transition-colors" />
-          )}
-        </button>
         {prog ? (
           <>
             {/* Milestone label */}
@@ -658,12 +677,13 @@ function ContactRow({
         </div>
       </div>
 
-      {/* Edit / Delete (hover-revealed) */}
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-        <button onClick={onEdit} className="w-6 h-6 rounded-md flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all" title="Edit">
-          <Pencil className="w-3 h-3" />
-        </button>
-        <button onClick={onDelete} className="w-6 h-6 rounded-md flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Delete">
+      {/* Delete (hover-revealed) */}
+      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="w-6 h-6 rounded-md flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          title="Delete"
+        >
           <Trash2 className="w-3 h-3" />
         </button>
       </div>
@@ -677,12 +697,19 @@ export default function NetworkCard() {
   const {
     networkContacts, addNetworkContact, updateNetworkContact, deleteNetworkContact,
     relationshipGroups, addRelationshipGroup, updateRelationshipGroup, deleteRelationshipGroup,
+    calendarJump, setCalendarJump,
   } = useDashboard();
 
   const [activeFilter,  setActiveFilter]  = useState<string>("__all__");
   const [showModal,     setShowModal]      = useState(false);
   const [editing,       setEditing]        = useState<NetworkContact | null>(null);
   const [showGroupMgr,  setShowGroupMgr]   = useState(false);
+
+  useEffect(() => {
+    if (!calendarJump || calendarJump.type !== "contact") return;
+    const contact = networkContacts.find((c) => c.id === calendarJump.id);
+    if (contact) { setEditing(contact); setCalendarJump(null); }
+  }, [calendarJump]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isAll    = activeFilter === "__all__";
   const visible  = isAll

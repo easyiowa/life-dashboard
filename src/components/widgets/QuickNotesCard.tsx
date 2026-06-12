@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { NotebookPen, Trash2, X, Search, Zap } from "lucide-react";
+import { useState, useMemo, type ReactNode } from "react";
+import { NotebookPen, Trash2, X, Search, Zap, ChevronDown } from "lucide-react";
 import { useDashboard, type QuickNote, type Sphere } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
 import TaskModal from "@/components/TaskModal";
@@ -178,6 +178,169 @@ function ArchiveNoteItem({
   );
 }
 
+// ── Archive grouping & accordion ─────────────────────────────────────────────
+
+interface NoteDayGroup {
+  key: string;
+  label: string;
+  notes: QuickNote[];
+}
+
+function getMonday(d: Date): Date {
+  const date = new Date(d);
+  const day  = date.getDay();
+  date.setDate(date.getDate() - day + (day === 0 ? -6 : 1));
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function addDays(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function dk(d: Date): string { return d.toLocaleDateString("en-CA"); }
+
+function fmtMonthKey(monthKey: string): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function groupNotesByDay(notes: QuickNote[]): NoteDayGroup[] {
+  const map = new Map<string, QuickNote[]>();
+  for (const note of notes) {
+    const key = note.createdAt.split(" ")[0];
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(note);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([key, dayNotes]) => ({
+      key,
+      label: key === TODAY ? "Today" : fmtDateHeader(key),
+      notes: dayNotes,
+    }));
+}
+
+interface NoteBucket { id: string; label: string; days: NoteDayGroup[] }
+
+function bucketNotes(notes: QuickNote[]): {
+  currentWeek: NoteBucket;
+  previousWeek: NoteBucket;
+  monthlyArchive: NoteBucket[];
+} {
+  const today      = new Date();
+  const thisMonday = getMonday(today);
+  const thisSunday = addDays(thisMonday, 6);
+  const prevMonday = addDays(thisMonday, -7);
+  const prevSunday = addDays(thisMonday, -1);
+
+  const allDays  = groupNotesByDay(notes);
+  const curDays:  NoteDayGroup[] = [];
+  const prevDays: NoteDayGroup[] = [];
+  const archDays: NoteDayGroup[] = [];
+
+  for (const g of allDays) {
+    if      (g.key >= dk(thisMonday) && g.key <= dk(thisSunday)) curDays.push(g);
+    else if (g.key >= dk(prevMonday) && g.key <= dk(prevSunday)) prevDays.push(g);
+    else archDays.push(g);
+  }
+
+  const monthMap = new Map<string, NoteDayGroup[]>();
+  for (const g of archDays) {
+    const mk = g.key.slice(0, 7);
+    if (!monthMap.has(mk)) monthMap.set(mk, []);
+    monthMap.get(mk)!.push(g);
+  }
+
+  return {
+    currentWeek:  { id: "cur",  label: "Current Week",  days: curDays },
+    previousWeek: { id: "prev", label: "Previous Week", days: prevDays },
+    monthlyArchive: Array.from(monthMap.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([mk, days]) => ({ id: mk, label: fmtMonthKey(mk), days })),
+  };
+}
+
+function NoteSectionNode({
+  label, sublabel, isOpen, onToggle, children, accent = false,
+}: {
+  label: string; sublabel?: string; isOpen: boolean; onToggle: () => void;
+  children: ReactNode; accent?: boolean;
+}) {
+  return (
+    <div className={`rounded-xl border overflow-hidden ${
+      accent ? "border-violet-500/20 bg-violet-600/[0.03]" : "border-white/[0.06] bg-white/[0.01]"
+    }`}>
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center gap-2 px-4 py-2.5 transition-colors duration-150 ${
+          accent ? "hover:bg-violet-600/[0.06]" : "hover:bg-white/[0.03]"
+        }`}
+      >
+        <span className={`text-xs font-semibold flex-1 text-left ${accent ? "text-violet-200" : "text-slate-300"}`}>
+          {label}
+        </span>
+        {sublabel && <span className="text-[10px] text-slate-500 tabular-nums">{sublabel}</span>}
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-600 flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: isOpen ? "3000px" : "0px" }}
+      >
+        <div className="px-3 pb-3 pt-1 flex flex-col gap-1.5">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NoteDayAccordion({
+  group, isOpen, onToggle, spheres, onDelete, onToggleImportant, onConvertToTask,
+}: {
+  group: NoteDayGroup;
+  isOpen: boolean;
+  onToggle: () => void;
+  spheres: Sphere[];
+  onDelete: (id: string) => void;
+  onToggleImportant: (id: string) => void;
+  onConvertToTask: (note: QuickNote) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-white/[0.04] overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-2 px-3 py-2 bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-150"
+      >
+        <span className="text-[11px] font-semibold text-white flex-1 text-left">{group.label}</span>
+        <span className="text-[10px] text-slate-500 tabular-nums">
+          {group.notes.length} note{group.notes.length !== 1 ? "s" : ""}
+        </span>
+        <ChevronDown className={`w-3 h-3 text-slate-600 ml-1 flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: isOpen ? `${group.notes.length * 120 + 24}px` : "0px" }}
+      >
+        <div className="px-3 pt-1 pb-2 flex flex-col gap-1.5">
+          {group.notes.map((note) => (
+            <ArchiveNoteItem
+              key={note.id}
+              note={note}
+              spheres={spheres}
+              onDelete={() => onDelete(note.id)}
+              onToggleImportant={() => onToggleImportant(note.id)}
+              onConvertToTask={() => onConvertToTask(note)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Archive modal ─────────────────────────────────────────────────────────────
 
 function ArchiveModal({
@@ -195,8 +358,10 @@ function ArchiveModal({
   onToggleImportant: (id: string) => void;
   onConvertToTask: (note: QuickNote) => void;
 }) {
-  const [query,         setQuery]         = useState("");
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [query,          setQuery]          = useState("");
+  const [favoritesOnly,  setFavoritesOnly]  = useState(false);
+  // Single dictionary for ALL accordion open states: section keys ("cur", "prev", month id) + day keys (date strings)
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ cur: true, [TODAY]: true });
 
   const filtered = useMemo(() => {
     let list = notes;
@@ -206,18 +371,41 @@ function ArchiveModal({
     return list;
   }, [notes, query, favoritesOnly]);
 
-  // Group by date descending
-  const grouped = useMemo(() => {
-    const map = new Map<string, QuickNote[]>();
-    for (const note of filtered) {
-      const date = note.createdAt.split(" ")[0];
-      if (!map.has(date)) map.set(date, []);
-      map.get(date)!.push(note);
-    }
-    return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
-  }, [filtered]);
+  const buckets = useMemo(() => bucketNotes(filtered), [filtered]);
 
   const favoriteCount = notes.filter((n) => n.isImportant).length;
+
+  const totalNotes = buckets.currentWeek.days.reduce((s, g) => s + g.notes.length, 0)
+    + buckets.previousWeek.days.reduce((s, g) => s + g.notes.length, 0)
+    + buckets.monthlyArchive.reduce((s, b) => s + b.days.reduce((ds, g) => ds + g.notes.length, 0), 0);
+
+  // Every unique key that should be open when "Expand All" fires: section node ids + every day date string
+  const allExpandKeys = useMemo(() => {
+    const nodeKeys: string[] = [];
+    if (buckets.currentWeek.days.length)  nodeKeys.push("cur");
+    if (buckets.previousWeek.days.length) nodeKeys.push("prev");
+    buckets.monthlyArchive.forEach((m) => nodeKeys.push(m.id));
+
+    const dayKeys = [
+      ...buckets.currentWeek.days,
+      ...buckets.previousWeek.days,
+      ...buckets.monthlyArchive.flatMap((m) => m.days),
+    ].map((g) => g.key);
+
+    return [...nodeKeys, ...dayKeys];
+  }, [buckets]);
+
+  const isAllExpanded = allExpandKeys.length > 0 && allExpandKeys.every((k) => !!expandedGroups[k]);
+
+  function handleExpandCollapseAll() {
+    if (isAllExpanded) {
+      // Collapse all: wipe every key from the dictionary
+      setExpandedGroups({});
+    } else {
+      // Expand all: mark every section node AND every day key as open
+      setExpandedGroups(Object.fromEntries(allExpandKeys.map((k) => [k, true])));
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -258,52 +446,110 @@ function ArchiveModal({
               </button>
             )}
           </div>
-          {/* Favorites filter */}
-          <button
-            type="button"
-            onClick={() => setFavoritesOnly((v) => !v)}
-            className={`self-start flex items-center gap-1.5 px-3 h-6 rounded-full text-[11px] font-medium border transition-all duration-150 ${
-              favoritesOnly
-                ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                : "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
-            }`}
-          >
-            🔥 Favorites{favoriteCount > 0 && <span className="tabular-nums">({favoriteCount})</span>}
-          </button>
+          {/* Favorites filter + expand/collapse all */}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setFavoritesOnly((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 h-6 rounded-full text-[11px] font-medium border transition-all duration-150 ${
+                favoritesOnly
+                  ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                  : "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
+              }`}
+            >
+              🔥 Favorites{favoriteCount > 0 && <span className="tabular-nums">({favoriteCount})</span>}
+            </button>
+            {totalNotes > 0 && (
+              <button
+                type="button"
+                onClick={handleExpandCollapseAll}
+                className="text-[11px] font-normal text-violet-400/70 hover:text-violet-300 transition-colors"
+              >
+                {isAllExpanded ? "▲ Collapse All" : "▼ Expand All"}
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Grouped notes */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5">
-          {grouped.length === 0 ? (
+        {/* Accordion notes */}
+        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-4 flex flex-col gap-2">
+          {totalNotes === 0 ? (
             <p className="text-xs text-slate-600 text-center py-8">
               {favoritesOnly ? "No favorites yet — mark notes with 🔥 to save them here." : query ? "No notes match your search." : "No notes captured yet."}
             </p>
           ) : (
-            grouped.map(([date, dateNotes]) => (
-              <div key={date} className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0">
-                    {date === TODAY ? "Today" : fmtDateHeader(date)}
-                  </span>
-                  <span className="flex-1 h-px bg-white/[0.05]" />
-                  <span className="text-[10px] text-slate-700 tabular-nums flex-shrink-0">
-                    {dateNotes.length}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {dateNotes.map((note) => (
-                    <ArchiveNoteItem
-                      key={note.id}
-                      note={note}
+            <>
+              {/* Current week */}
+              {buckets.currentWeek.days.length > 0 && (
+                <NoteSectionNode
+                  label={buckets.currentWeek.label}
+                  sublabel={`${buckets.currentWeek.days.reduce((s, g) => s + g.notes.length, 0)} notes`}
+                  isOpen={!!expandedGroups["cur"]}
+                  onToggle={() => setExpandedGroups((p) => ({ ...p, cur: !p["cur"] }))}
+                  accent
+                >
+                  {buckets.currentWeek.days.map((g) => (
+                    <NoteDayAccordion
+                      key={g.key}
+                      group={g}
+                      isOpen={!!expandedGroups[g.key]}
+                      onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
                       spheres={spheres}
-                      onDelete={() => onDelete(note.id)}
-                      onToggleImportant={() => onToggleImportant(note.id)}
-                      onConvertToTask={() => onConvertToTask(note)}
+                      onDelete={onDelete}
+                      onToggleImportant={onToggleImportant}
+                      onConvertToTask={onConvertToTask}
                     />
                   ))}
-                </div>
-              </div>
-            ))
+                </NoteSectionNode>
+              )}
+
+              {/* Previous week */}
+              {buckets.previousWeek.days.length > 0 && (
+                <NoteSectionNode
+                  label={buckets.previousWeek.label}
+                  sublabel={`${buckets.previousWeek.days.reduce((s, g) => s + g.notes.length, 0)} notes`}
+                  isOpen={!!expandedGroups["prev"]}
+                  onToggle={() => setExpandedGroups((p) => ({ ...p, prev: !p["prev"] }))}
+                >
+                  {buckets.previousWeek.days.map((g) => (
+                    <NoteDayAccordion
+                      key={g.key}
+                      group={g}
+                      isOpen={!!expandedGroups[g.key]}
+                      onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
+                      spheres={spheres}
+                      onDelete={onDelete}
+                      onToggleImportant={onToggleImportant}
+                      onConvertToTask={onConvertToTask}
+                    />
+                  ))}
+                </NoteSectionNode>
+              )}
+
+              {/* Monthly archive */}
+              {buckets.monthlyArchive.map((month) => (
+                <NoteSectionNode
+                  key={month.id}
+                  label={month.label}
+                  sublabel={`${month.days.reduce((s, g) => s + g.notes.length, 0)} notes`}
+                  isOpen={!!expandedGroups[month.id]}
+                  onToggle={() => setExpandedGroups((p) => ({ ...p, [month.id]: !p[month.id] }))}
+                >
+                  {month.days.map((g) => (
+                    <NoteDayAccordion
+                      key={g.key}
+                      group={g}
+                      isOpen={!!expandedGroups[g.key]}
+                      onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
+                      spheres={spheres}
+                      onDelete={onDelete}
+                      onToggleImportant={onToggleImportant}
+                      onConvertToTask={onConvertToTask}
+                    />
+                  ))}
+                </NoteSectionNode>
+              ))}
+            </>
           )}
         </div>
       </div>
@@ -402,9 +648,9 @@ export default function QuickNotesCard() {
           </div>
           <button
             onClick={() => setShowAllNotesModal(true)}
-            className="text-[10px] text-purple-400/70 hover:text-purple-300 transition-colors cursor-pointer border border-purple-500/20 bg-purple-500/5 px-2 py-0.5 rounded-full"
+            className="text-[11px] font-normal text-violet-400/70 hover:text-violet-300 hover:underline transition-colors whitespace-nowrap"
           >
-            📂 View All Archive
+            View Archive →
           </button>
         </div>
 

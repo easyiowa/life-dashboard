@@ -116,8 +116,7 @@ export default function MorningRecapBanner() {
                 log.completedTasks.map((title, i) => {
                   const meta = log.taskMeta?.[title];
                   return (
-                    <div key={i} className="flex items-start gap-1.5">
-                      <span className="text-emerald-400 text-[10px] flex-shrink-0 mt-0.5">✓</span>
+                    <div key={i} className="flex items-start">
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="text-[10px] text-slate-300 leading-snug truncate">{title}</span>
                         {meta && (
@@ -144,8 +143,7 @@ export default function MorningRecapBanner() {
                 log.rolledOverTasks.map((title, i) => {
                   const meta = log.taskMeta?.[title];
                   return (
-                    <div key={i} className="flex items-start gap-1.5">
-                      <span className="text-slate-500 text-[10px] flex-shrink-0 mt-0.5">↩</span>
+                    <div key={i} className="flex items-start">
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="text-[10px] text-slate-500 leading-snug truncate">{title}</span>
                         {meta && (

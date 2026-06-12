@@ -2,7 +2,7 @@
 
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { useDashboard } from "@/context/DashboardContext";
+import { useDashboard, type CalendarJump } from "@/context/DashboardContext";
 
 interface Event {
   time: string;
@@ -39,6 +39,14 @@ const DEADLINE_PRIORITY_COLOR: Record<string, string> = {
   Low:   "bg-blue-500/20 border-l-2 border-blue-500 text-blue-300",
 };
 
+const DOT_BG: Record<string, string> = {
+  pink:   "bg-pink-400",
+  violet: "bg-violet-400",
+  red:    "bg-red-400",
+  amber:  "bg-amber-400",
+  blue:   "bg-blue-400",
+};
+
 function getMondayOfWeek(offset: number): Date {
   const today = new Date();
   const dow = today.getDay();
@@ -48,185 +56,316 @@ function getMondayOfWeek(offset: number): Date {
   return monday;
 }
 
-export default function CalendarCard() {
-  const [weekOffset, setWeekOffset] = useState(0);
-  const { tasks, networkContacts } = useDashboard();
+function getMonthGrid(monthOffset: number): (Date | null)[] {
+  const now      = new Date();
+  const year     = now.getFullYear();
+  const month    = now.getMonth() + monthOffset;
+  const first    = new Date(year, month, 1);
+  const last     = new Date(year, month + 1, 0);
+  const startDow = (first.getDay() + 6) % 7; // Mon = 0
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= last.getDate(); d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
 
-  const monday = getMondayOfWeek(weekOffset);
+export default function CalendarCard() {
+  const [weekOffset,   setWeekOffset]   = useState(0);
+  const [monthOffset,  setMonthOffset]  = useState(0);
+  const [calendarView, setCalendarView] = useState<"week" | "month">("week");
+  const { tasks, networkContacts, setCalendarJump } = useDashboard();
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // ── Shared data maps ──────────────────────────────────────────────────────────
+
+  const deadlineMap = new Map<string, typeof tasks>();
+  for (const task of tasks) {
+    if (task.deadline && !task.done) {
+      deadlineMap.set(task.deadline, [...(deadlineMap.get(task.deadline) ?? []), task]);
+    }
+  }
+
+  const birthdayMap = new Map<string, { name: string; contactId: string }[]>();
+  for (const contact of networkContacts) {
+    if (contact.birthday) {
+      const mmdd = contact.birthday.slice(5);
+      birthdayMap.set(mmdd, [...(birthdayMap.get(mmdd) ?? []), { name: contact.name, contactId: contact.id }]);
+    }
+  }
+
+  const contactEventMap = new Map<string, { title: string; contactId: string }[]>();
+  for (const contact of networkContacts) {
+    for (const evt of contact.events) {
+      if (evt.date && !evt.completed) {
+        const title = evt.title || `${contact.name}'s Event`;
+        contactEventMap.set(evt.date, [...(contactEventMap.get(evt.date) ?? []), { title, contactId: contact.id }]);
+      }
+    }
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────────
+
+  function prev()    { calendarView === "week" ? setWeekOffset((o) => o - 1)  : setMonthOffset((o) => o - 1); }
+  function next()    { calendarView === "week" ? setWeekOffset((o) => o + 1)  : setMonthOffset((o) => o + 1); }
+  function goToday() { setWeekOffset(0); setMonthOffset(0); }
+
+  // ── Week view ─────────────────────────────────────────────────────────────────
+
+  const monday   = getMondayOfWeek(weekOffset);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d;
   });
-
   const weekLabel = `${monday.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${weekDays[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 
-  // Build deadline map: "YYYY-MM-DD" → tasks
-  const deadlineMap = new Map<string, typeof tasks>();
-  for (const task of tasks) {
-    if (task.deadline && !task.done) {
-      const existing = deadlineMap.get(task.deadline) ?? [];
-      deadlineMap.set(task.deadline, [...existing, task]);
-    }
-  }
+  // ── Month view ────────────────────────────────────────────────────────────────
 
-  // Build birthday map: "MM-DD" → contact names (year-agnostic, recurs annually)
-  const birthdayMap = new Map<string, string[]>();
-  for (const contact of networkContacts) {
-    if (contact.birthday) {
-      const mmdd = contact.birthday.slice(5); // "MM-DD"
-      birthdayMap.set(mmdd, [...(birthdayMap.get(mmdd) ?? []), contact.name]);
-    }
-  }
+  const monthBaseDate = new Date(new Date().getFullYear(), new Date().getMonth() + monthOffset, 1);
+  const monthLabel    = monthBaseDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const monthCells    = getMonthGrid(monthOffset);
 
-  // Build contact-event map: "YYYY-MM-DD" → event titles (all uncompleted events)
-  const contactEventMap = new Map<string, string[]>();
-  for (const contact of networkContacts) {
-    for (const evt of contact.events) {
-      if (evt.date && !evt.completed) {
-        const title = evt.title || `${contact.name}'s Event`;
-        contactEventMap.set(evt.date, [...(contactEventMap.get(evt.date) ?? []), title]);
-      }
-    }
-  }
+  // ── Display label ─────────────────────────────────────────────────────────────
+
+  const displayLabel = calendarView === "week" ? weekLabel : monthLabel;
 
   return (
     <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col gap-4">
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-violet-400" />
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-            Calendar
-          </h2>
-          <span className="text-xs text-slate-600 ml-1">{weekLabel}</span>
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Calendar</h2>
+          <span className="text-xs text-slate-600 ml-1">{displayLabel}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setWeekOffset((o) => o - 1)}
-            className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center justify-center transition-all duration-150"
-          >
-            <ChevronLeft className="w-3.5 h-3.5 text-slate-400" />
-          </button>
-          <button
-            onClick={() => setWeekOffset(0)}
-            className="px-2.5 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-slate-400 text-xs font-medium transition-all duration-150"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setWeekOffset((o) => o + 1)}
-            className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center justify-center transition-all duration-150"
-          >
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          </button>
-        </div>
-      </div>
+        <div className="flex items-center gap-2">
 
-      {/* Week strip */}
-      <div className="grid grid-cols-7 gap-2 overflow-x-auto">
-        {weekDays.map((day, i) => {
-          const isToday = day.getTime() === today.getTime();
-          const calEvents = (weekOffset === 0 ? WEEK_EVENTS[i] : []) ?? [];
+          {/* Segmented control */}
+          <div className="flex rounded-lg border border-white/[0.07] overflow-hidden">
+            {(["week", "month"] as const).map((v, i) => (
+              <button
+                key={v}
+                onClick={() => setCalendarView(v)}
+                className={`px-3 h-7 text-xs font-medium transition-all duration-150 ${
+                  i === 0 ? "border-r border-white/[0.07]" : ""
+                } ${
+                  calendarView === v
+                    ? "bg-violet-600/25 text-violet-300"
+                    : "bg-white/[0.02] text-slate-500 hover:text-slate-300 hover:bg-white/[0.05]"
+                }`}
+              >
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </button>
+            ))}
+          </div>
 
-          // Format as YYYY-MM-DD for deadline lookup
-          const yyyy = day.getFullYear();
-          const mm   = String(day.getMonth() + 1).padStart(2, "0");
-          const dd   = String(day.getDate()).padStart(2, "0");
-          const dayKey       = `${yyyy}-${mm}-${dd}`;
-          const deadlineTasks    = deadlineMap.get(dayKey) ?? [];
-          const birthdayNames    = birthdayMap.get(`${mm}-${dd}`) ?? [];
-          const contactEvents    = contactEventMap.get(dayKey) ?? [];
-          // Show at most 2 deadline chips; +N overflow otherwise
-          const visibleDeadlines = deadlineTasks.slice(0, 2);
-          const overflow         = deadlineTasks.length - visibleDeadlines.length;
-
-          const hasContent = calEvents.length > 0 || deadlineTasks.length > 0 || birthdayNames.length > 0 || contactEvents.length > 0;
-
-          return (
-            <div
-              key={i}
-              className={`flex flex-col gap-2 rounded-xl p-2.5 border transition-all duration-200 min-w-0 ${
-                isToday
-                  ? "border-violet-500/40 bg-violet-600/10"
-                  : hasContent
-                    ? "border-white/[0.08] bg-white/[0.03]"
-                    : "border-transparent bg-white/[0.02]"
-              }`}
+          {/* Navigation arrows */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={prev}
+              className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center justify-center transition-all duration-150"
             >
-              {/* Day label */}
-              <div className="text-center">
-                <p className={`text-[10px] font-medium uppercase tracking-wider ${isToday ? "text-violet-400" : "text-slate-600"}`}>
-                  {DAYS[i]}
-                </p>
-                <p className={`text-lg font-semibold leading-tight mt-0.5 ${isToday ? "text-white" : "text-slate-400"}`}>
-                  {day.getDate()}
-                </p>
-              </div>
-
-              {/* Today dot */}
-              {isToday && (
-                <div className="flex justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
-                </div>
-              )}
-
-              {/* Birthday chips */}
-              {birthdayNames.map((name) => (
-                <div
-                  key={`bday-${name}`}
-                  className="rounded px-1.5 py-1 text-[9px] font-medium leading-tight bg-pink-500/15 border-l-2 border-pink-400 text-pink-300"
-                  title={`${name}'s Birthday`}
-                >
-                  <div className="truncate">🎂 {name}&apos;s Birthday</div>
-                </div>
-              ))}
-
-              {/* Contact custom events */}
-              {contactEvents.map((title) => (
-                <div
-                  key={`evt-${title}`}
-                  className="rounded px-1.5 py-1 text-[9px] font-medium leading-tight bg-violet-500/15 border-l-2 border-violet-400 text-violet-300"
-                  title={title}
-                >
-                  <div className="truncate">🎯 {title}</div>
-                </div>
-              ))}
-
-              {/* Calendar events */}
-              <div className="flex flex-col gap-1">
-                {calEvents.map((evt, j) => (
-                  <div
-                    key={j}
-                    className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight ${EVENT_COLOR[evt.color]}`}
-                  >
-                    <div className="text-slate-400 text-[8px] mb-0.5">{evt.time}</div>
-                    <div className="truncate">{evt.title}</div>
-                  </div>
-                ))}
-
-                {/* Task deadlines */}
-                {visibleDeadlines.map((task) => (
-                  <div
-                    key={task.id}
-                    className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight ${DEADLINE_PRIORITY_COLOR[task.priority]}`}
-                    title={task.title}
-                  >
-                    <div className="text-[8px] mb-0.5 opacity-60">deadline</div>
-                    <div className="truncate">{task.title}</div>
-                  </div>
-                ))}
-                {overflow > 0 && (
-                  <div className="text-[9px] text-slate-600 pl-1">+{overflow} more</div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+              <ChevronLeft className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+            <button
+              onClick={goToday}
+              className="px-2.5 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-slate-400 text-xs font-medium transition-all duration-150"
+            >
+              Today
+            </button>
+            <button
+              onClick={next}
+              className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center justify-center transition-all duration-150"
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* ── WEEK VIEW ─────────────────────────────────────────────────────────── */}
+      {calendarView === "week" && (
+        <div className="grid grid-cols-7 gap-2 overflow-x-auto">
+          {weekDays.map((day, i) => {
+            const isToday     = day.getTime() === today.getTime();
+            const calEvents   = (weekOffset === 0 ? WEEK_EVENTS[i] : []) ?? [];
+            const yyyy        = day.getFullYear();
+            const mm          = String(day.getMonth() + 1).padStart(2, "0");
+            const dd          = String(day.getDate()).padStart(2, "0");
+            const dayKey      = `${yyyy}-${mm}-${dd}`;
+            const deadlines   = deadlineMap.get(dayKey) ?? [];
+            const birthdays   = birthdayMap.get(`${mm}-${dd}`) ?? [];
+            const contactEvts = contactEventMap.get(dayKey) ?? [];
+            const visible     = deadlines.slice(0, 2);
+            const overflow    = deadlines.length - visible.length;
+            const hasContent  = calEvents.length > 0 || deadlines.length > 0 || birthdays.length > 0 || contactEvts.length > 0;
+
+            return (
+              <div
+                key={i}
+                className={`flex flex-col gap-2 rounded-xl p-2.5 border transition-all duration-200 min-w-0 ${
+                  isToday
+                    ? "border-violet-500/40 bg-violet-600/10"
+                    : hasContent
+                      ? "border-white/[0.08] bg-white/[0.03]"
+                      : "border-transparent bg-white/[0.02]"
+                }`}
+              >
+                <div className="text-center">
+                  <p className={`text-[10px] font-medium uppercase tracking-wider ${isToday ? "text-violet-400" : "text-slate-600"}`}>
+                    {DAYS[i]}
+                  </p>
+                  <p className={`text-lg font-semibold leading-tight mt-0.5 ${isToday ? "text-white" : "text-slate-400"}`}>
+                    {day.getDate()}
+                  </p>
+                </div>
+
+                {isToday && (
+                  <div className="flex justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
+                  </div>
+                )}
+
+                {birthdays.map(({ name, contactId }) => (
+                  <button
+                    key={`bday-${contactId}`}
+                    onClick={() => setCalendarJump({ type: "contact", id: contactId })}
+                    className="rounded px-1.5 py-1 text-[9px] font-medium leading-tight bg-pink-500/15 border-l-2 border-pink-400 text-pink-300 text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all"
+                    title={`${name}'s Birthday`}
+                  >
+                    <div className="truncate">🎂 {name}&apos;s Birthday</div>
+                  </button>
+                ))}
+
+                {contactEvts.map(({ title, contactId }) => (
+                  <button
+                    key={`evt-${contactId}-${title}`}
+                    onClick={() => setCalendarJump({ type: "contact", id: contactId })}
+                    className="rounded px-1.5 py-1 text-[9px] font-medium leading-tight bg-violet-500/15 border-l-2 border-violet-400 text-violet-300 text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all"
+                    title={title}
+                  >
+                    <div className="truncate">🎯 {title}</div>
+                  </button>
+                ))}
+
+                <div className="flex flex-col gap-1">
+                  {calEvents.map((evt, j) => (
+                    <button key={j} className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${EVENT_COLOR[evt.color]}`}>
+                      <div className="text-slate-400 text-[8px] mb-0.5">{evt.time}</div>
+                      <div className="truncate">{evt.title}</div>
+                    </button>
+                  ))}
+                  {visible.map((task) => (
+                    <button
+                      key={task.id}
+                      onClick={() => setCalendarJump({ type: "task", id: task.id })}
+                      className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${DEADLINE_PRIORITY_COLOR[task.priority]}`}
+                      title={task.title}
+                    >
+                      <div className="truncate">{task.title}</div>
+                    </button>
+                  ))}
+                  {overflow > 0 && <div className="text-[9px] text-slate-600 pl-1">+{overflow} more</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── MONTH VIEW ────────────────────────────────────────────────────────── */}
+      {calendarView === "month" && (
+        <div className="flex flex-col gap-1">
+          {/* Day-of-week header */}
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {DAYS.map((d) => (
+              <div key={d} className="text-center text-[10px] font-semibold text-slate-600 uppercase tracking-wider py-0.5">
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Date cells */}
+          <div className="grid grid-cols-7 gap-1">
+            {monthCells.map((day, idx) => {
+              if (!day) return <div key={idx} className="rounded-lg min-h-[48px]" />;
+
+              const yyyy        = day.getFullYear();
+              const mm          = String(day.getMonth() + 1).padStart(2, "0");
+              const dd          = String(day.getDate()).padStart(2, "0");
+              const dayKey      = `${yyyy}-${mm}-${dd}`;
+              const mmdd        = `${mm}-${dd}`;
+              const isToday     = day.getTime() === today.getTime();
+              const deadlines   = deadlineMap.get(dayKey) ?? [];
+              const birthdays   = birthdayMap.get(mmdd) ?? [];
+              const contactEvts = contactEventMap.get(dayKey) ?? [];
+
+              type EventBadge = { key: string; label: string; cls: string; jump: CalendarJump | null };
+              const badges: EventBadge[] = [
+                ...birthdays.map(({ name, contactId }) => ({
+                  key: `bday-${contactId}`,
+                  label: `🎂 ${name}`,
+                  cls: "bg-pink-500/15 border-pink-500/25 text-pink-300",
+                  jump: { type: "contact" as const, id: contactId },
+                })),
+                ...contactEvts.map(({ title, contactId }) => ({
+                  key: `evt-${contactId}-${title}`,
+                  label: `🎯 ${title}`,
+                  cls: "bg-violet-500/10 border-violet-500/20 text-violet-300",
+                  jump: { type: "contact" as const, id: contactId },
+                })),
+                ...deadlines.map((t) => ({
+                  key: `dl-${t.id}`,
+                  label: t.title,
+                  cls: t.priority === "High"
+                    ? "bg-red-500/10 border-red-500/20 text-red-300"
+                    : t.priority === "Med"
+                      ? "bg-amber-500/10 border-amber-500/20 text-amber-300"
+                      : "bg-blue-500/10 border-blue-500/20 text-blue-300",
+                  jump: { type: "task" as const, id: t.id },
+                })),
+              ];
+              const visibleBadges = badges.slice(0, 3);
+              const badgeOverflow = badges.length - visibleBadges.length;
+              const hasContent    = badges.length > 0;
+
+              return (
+                <div
+                  key={idx}
+                  className={`rounded-lg p-1.5 border transition-all duration-200 min-h-[100px] flex flex-col items-stretch justify-start overflow-hidden ${
+                    isToday
+                      ? "border-violet-500/40 bg-violet-600/10"
+                      : hasContent
+                        ? "border-white/[0.07] bg-white/[0.03]"
+                        : "border-transparent bg-white/[0.015]"
+                  }`}
+                >
+                  <span className={`text-[11px] font-semibold leading-none mb-1.5 ${isToday ? "text-violet-300" : "text-slate-500"}`}>
+                    {day.getDate()}
+                  </span>
+                  {visibleBadges.map((b) => (
+                    <button
+                      key={b.key}
+                      onClick={() => b.jump && setCalendarJump(b.jump)}
+                      className={`w-full text-[10px] truncate px-1.5 py-0.5 mb-0.5 rounded font-medium text-left border cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${b.cls}`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                  {badgeOverflow > 0 && (
+                    <span className="text-[9px] text-slate-600 pl-0.5 leading-none mt-0.5">+{badgeOverflow} more</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

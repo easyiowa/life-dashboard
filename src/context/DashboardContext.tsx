@@ -6,6 +6,7 @@ import {
   useReducer,
   useEffect,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 import { secsToMins } from "@/lib/time";
@@ -13,6 +14,7 @@ import { secsToMins } from "@/lib/time";
 // ── Public types ─────────────────────────────────────────────────────────────
 
 export type SphereId  = string;
+export type CalendarJump = { type: "contact"; id: string } | { type: "task"; id: string };
 export type Priority  = "High" | "Med" | "Low";
 export type Energy    = "Flow" | "Quick" | "Easy";
 export type Urgency   = "urgent" | "not-urgent";
@@ -71,8 +73,8 @@ export interface ActiveTask {
 export interface FocusSession {
   id: string;
   taskName: string;
-  project: string;
-  sphere: string;
+  project?: string;
+  sphere?: string;
   durationSeconds: number;
   completedAt: Date;
   completedAtDateString: string; // "YYYY-MM-DD" in local time — used for day grouping
@@ -382,6 +384,7 @@ interface State {
   activeTask: ActiveTask | null;
   running: boolean;
   elapsed: number;
+  committedSecs: number; // elapsed already written to task.timeSpentMinutes; avoids double-count on finish
   sessions: FocusSession[];
   recurringTasks: RecurringTask[];
   quickNotes: QuickNote[];
@@ -445,13 +448,13 @@ function mkDateString(d: Date): string {
   return d.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local time
 }
 
-function mkSession(task: ActiveTask, elapsed: number): FocusSession {
+function mkSession(task: ActiveTask | null, elapsed: number): FocusSession {
   const now = new Date();
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    taskName: task.title,
-    project: task.project,
-    sphere: task.sphere,
+    taskName: task?.title ?? "Session",
+    project:  task?.project,
+    sphere:   task?.sphere,
     durationSeconds: elapsed,
     completedAt: now,
     completedAtDateString: mkDateString(now),
@@ -465,8 +468,9 @@ function reducer(state: State, action: Action): State {
         state.activeTask && state.elapsed > 0
           ? [...state.sessions, mkSession(state.activeTask, state.elapsed)]
           : state.sessions;
-      // Commit elapsed minutes to the interrupted task's total, same as FINISH_SESSION does
-      const interruptedMinutes = state.activeTask && state.elapsed > 0 ? secsToMins(state.elapsed) : 0;
+      // Only commit uncommitted delta — paused portion was already written to timeSpentMinutes.
+      const interruptUncommitted = state.elapsed - (state.committedSecs ?? 0);
+      const interruptedMinutes = state.activeTask && interruptUncommitted > 0 ? secsToMins(interruptUncommitted) : 0;
       const tasks = interruptedMinutes > 0
         ? state.tasks.map((t) =>
             t.id === state.activeTask!.id
@@ -474,34 +478,45 @@ function reducer(state: State, action: Action): State {
               : t
           )
         : state.tasks;
-      return { ...state, activeTask: action.task, running: true, elapsed: 0, sessions, tasks };
+      return { ...state, activeTask: action.task, running: true, elapsed: 0, committedSecs: 0, sessions, tasks };
     }
     case "START_FREE":
       return { ...state, running: true };
 
-    case "PAUSE_SESSION":
-      // Stop the ticker but preserve elapsed — resume picks up where it left off.
-      return { ...state, running: false };
-
-    case "RESET":
-      // Abandon the current session without logging any time.
-      return { ...state, activeTask: null, running: false, elapsed: 0 };
-
-    case "FINISH_SESSION": {
-      const sessions =
-        state.activeTask && state.elapsed > 0
-          ? [...state.sessions, mkSession(state.activeTask, state.elapsed)]
-          : state.sessions;
-      // Auto-accumulate focus minutes on the task being worked on
-      const elapsedMinutes = secsToMins(state.elapsed);
-      const tasks = state.activeTask && elapsedMinutes > 0
+    case "PAUSE_SESSION": {
+      // Commit the uncommitted delta to the task's timeSpentMinutes so the progress bar updates immediately.
+      const pauseDelta = state.elapsed - state.committedSecs;
+      const pauseMinutes = state.activeTask && pauseDelta > 0 ? secsToMins(pauseDelta) : 0;
+      const pauseTasks = pauseMinutes > 0
         ? state.tasks.map((t) =>
             t.id === state.activeTask!.id
-              ? { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + elapsedMinutes }
+              ? { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + pauseMinutes }
               : t
           )
         : state.tasks;
-      return { ...state, activeTask: null, running: false, elapsed: 0, sessions, tasks };
+      return { ...state, running: false, committedSecs: state.elapsed, tasks: pauseTasks };
+    }
+
+    case "RESET":
+      // Abandon the current session without logging any time.
+      return { ...state, activeTask: null, running: false, elapsed: 0, committedSecs: 0 };
+
+    case "FINISH_SESSION": {
+      const sessions =
+        state.elapsed > 0
+          ? [...state.sessions, mkSession(state.activeTask, state.elapsed)]
+          : state.sessions;
+      // Only commit the portion not yet written during pause — avoids double-counting.
+      const uncommittedSecs = state.elapsed - state.committedSecs;
+      const uncommittedMinutes = state.activeTask && uncommittedSecs > 0 ? secsToMins(uncommittedSecs) : 0;
+      const tasks = uncommittedMinutes > 0
+        ? state.tasks.map((t) =>
+            t.id === state.activeTask!.id
+              ? { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + uncommittedMinutes }
+              : t
+          )
+        : state.tasks;
+      return { ...state, activeTask: null, running: false, elapsed: 0, committedSecs: 0, sessions, tasks };
     }
 
     case "SET_ESTIMATE":
@@ -986,6 +1001,7 @@ function reviveState(raw: Record<string, unknown>): State {
     dailyCheckIn:    (raw.dailyCheckIn    as DailyCheckIn | null) ?? null,
     running: false,
     elapsed: (raw.elapsed as number) ?? 0,
+    committedSecs: 0,
   };
 }
 
@@ -1021,6 +1037,7 @@ function buildInitialState(): State {
     activeTask: null,
     running: false,
     elapsed: 0,
+    committedSecs: 0,
     sessions: [
       // ── Today ──
       {
@@ -1115,6 +1132,7 @@ interface DashboardContextType {
   activeTask: ActiveTask | null;
   running: boolean;
   elapsed: number;
+  committedSecs: number;
   sessions: FocusSession[];
   recurringTasks: RecurringTask[];
   quickNotes: QuickNote[];
@@ -1161,12 +1179,15 @@ interface DashboardContextType {
   updateRecurringTask: (id: string, fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel" | "anchorDay">>) => void;
   deleteRecurringTask: (id: string) => void;
   completeRecurringTask: (id: string) => void;
+  calendarJump: CalendarJump | null;
+  setCalendarJump: (j: CalendarJump | null) => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | null>(null);
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
+  const [calendarJump, setCalendarJump] = useState<CalendarJump | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -1301,6 +1322,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         activeTask: state.activeTask,
         running: state.running,
         elapsed: state.elapsed,
+        committedSecs: state.committedSecs,
         sessions: state.sessions,
         recurringTasks: state.recurringTasks,
         quickNotes:     state.quickNotes,
@@ -1366,6 +1388,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         updateRecurringTask:  (id, fields)    => dispatch({ type: "UPDATE_RECURRING_TASK", id, fields }),
         deleteRecurringTask:  (id)            => dispatch({ type: "DELETE_RECURRING_TASK", id }),
         completeRecurringTask:(id)            => dispatch({ type: "COMPLETE_RECURRING_TASK", id }),
+        calendarJump,
+        setCalendarJump,
       }}
     >
       {children}

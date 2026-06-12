@@ -487,16 +487,48 @@ export default function ProgressCard() {
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-violet-400" />
-            <div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-violet-400" />
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest leading-none">
                 Weekly Progress
               </h2>
-              <p className="text-[10px] text-slate-600 mt-0.5 tabular-nums">{weekRangeStr}</p>
             </div>
+            <p className="text-[10px] text-slate-600 mt-0.5 tabular-nums pl-6">{weekRangeStr}</p>
           </div>
-          <span className="text-sm font-semibold text-white tabular-nums">{overallPct}%</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-white tabular-nums">{overallPct}%</span>
+
+            {/* Last Week / Current Week segmented toggle */}
+            <div className="flex rounded-lg border border-white/[0.07] overflow-hidden">
+              {([
+                { label: "Last Week",    offset: -1 },
+                { label: "Current Week", offset:  0 },
+              ] as const).map(({ label, offset }, i) => (
+                <button
+                  key={offset}
+                  onClick={() => setViewOffset(offset)}
+                  className={`px-2.5 h-7 text-[11px] font-medium transition-all duration-150 ${
+                    i === 0 ? "border-r border-white/[0.07]" : ""
+                  } ${
+                    viewOffset === offset
+                      ? `bg-purple-600/20 text-purple-400 font-bold ${i === 0 ? "rounded-l-lg rounded-r-none" : "rounded-r-lg rounded-l-none"}`
+                      : "bg-white/[0.02] text-slate-500 hover:text-slate-300 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* View All — matches Headspace trends link style */}
+            <button
+              onClick={() => setShowModal(true)}
+              className="text-[11px] font-normal text-violet-400/70 hover:text-violet-300 transition-colors whitespace-nowrap"
+            >
+              View All →
+            </button>
+          </div>
         </div>
 
         {/* Metrics */}
@@ -531,31 +563,6 @@ export default function ProgressCard() {
           })}
         </div>
 
-        {/* Footer: three equal action buttons */}
-        <div className="flex gap-2 pt-1 border-t border-white/[0.05]">
-          {([
-            { label: "Last Week",     offset: -1  },
-            { label: "Current Week",  offset:  0  },
-          ] as const).map(({ label, offset }) => (
-            <button
-              key={offset}
-              onClick={() => setViewOffset(offset)}
-              className={`flex-1 rounded-xl py-2 text-xs font-medium transition-all border ${
-                viewOffset === offset
-                  ? "bg-violet-600/20 border-violet-500/30 text-violet-300"
-                  : "bg-white/[0.03] border-white/[0.05] text-slate-500 hover:border-violet-500/20 hover:text-slate-300"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex-1 rounded-xl py-2 text-xs font-medium transition-all border bg-white/[0.03] border-white/[0.05] text-slate-500 hover:border-violet-500/30 hover:text-violet-400"
-          >
-            View All
-          </button>
-        </div>
       </div>
 
       {showModal && (
