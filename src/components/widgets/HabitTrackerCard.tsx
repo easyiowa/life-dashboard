@@ -252,8 +252,8 @@ function HabitRow({
                 ? "bg-emerald-600/[0.08] border-emerald-500/20 text-emerald-500"
               : isToday
                 ? "border-violet-500/30 bg-violet-600/[0.06] text-violet-300"
-                : isFuture && isStop
-                  ? "border-white/[0.04] bg-transparent text-slate-700 cursor-default"
+                : isFuture
+                  ? "border-white/[0.04] bg-transparent text-slate-700 cursor-default pointer-events-none"
                   : "border-white/[0.05] bg-white/[0.02] text-slate-600 hover:border-white/[0.12] hover:text-slate-400";
 
           const dotClass = isChecked ? "bg-emerald-400"
@@ -265,7 +265,7 @@ function HabitRow({
           return (
             <button
               key={dateString}
-              onClick={() => { if (!(isFuture && isStop)) toggleHabitDate(habit.id, dateString); }}
+              onClick={() => { if (!isFuture) toggleHabitDate(habit.id, dateString); }}
               title={dateString}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px] font-medium border transition-all duration-150 ${btnClass}`}
             >

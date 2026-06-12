@@ -5,6 +5,7 @@ import CalendarCard from "@/components/widgets/CalendarCard";
 import ProjectsCard from "@/components/widgets/ProjectsCard";
 import ActivityLogCard from "@/components/widgets/ActivityLogCard";
 import RecurringCard from "@/components/widgets/RecurringCard";
+import NetworkCard from "@/components/widgets/NetworkCard";
 import HabitTrackerCard from "@/components/widgets/HabitTrackerCard";
 import QuickNotesCard from "@/components/widgets/QuickNotesCard";
 import NightlyReviewModal from "@/components/NightlyReviewModal";
@@ -137,6 +138,11 @@ export default function DashboardPage() {
         {/* ── Recurring Responsibilities ───────────────────────────── */}
         <div className="mt-4">
           <RecurringCard />
+        </div>
+
+        {/* ── Network & Relationships ──────────────────────────────── */}
+        <div className="mt-4">
+          <NetworkCard />
         </div>
 
         {/* ── World Clock ─────────────────────────────────────────── */}

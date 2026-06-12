@@ -97,6 +97,36 @@ export interface QuickNote {
   sphere: string;
   projectId?: string;    // optional project assignment
   createdAt: string;     // "YYYY-MM-DD HH:MM"
+  isImportant?: boolean;
+}
+
+export const GROUP_COLOR_PALETTE = ["rose", "sky", "amber", "emerald", "violet", "teal", "orange", "pink"] as const;
+export type GroupColor = typeof GROUP_COLOR_PALETTE[number];
+
+export interface RelationshipGroup {
+  id: string;
+  label: string;
+  emoji: string;
+  color: GroupColor;
+}
+
+export interface ContactEvent {
+  id: string;
+  title: string;
+  date: string | null;  // "YYYY-MM-DD"
+  notes: string;
+  completed: boolean;
+}
+
+export interface NetworkContact {
+  id: string;
+  name: string;
+  relationshipType: string;      // references RelationshipGroup.label
+  birthday: string | null;       // "YYYY-MM-DD" or null
+  notes: string;
+  lastTouchpoint: string | null; // "YYYY-MM-DD" or null
+  events: ContactEvent[];
+  cycleCompleted: boolean;
 }
 
 export interface TaskArchiveMeta {
@@ -236,6 +266,14 @@ const INITIAL_HABITS: Habit[] = [
   },
 ];
 
+// ── Relationship group seed data ─────────────────────────────────────────────
+
+const INITIAL_GROUPS: RelationshipGroup[] = [
+  { id: "group-cf",  label: "Close Friend", emoji: "🤝", color: "rose"  },
+  { id: "group-biz", label: "Business",     emoji: "💼", color: "sky"   },
+  { id: "group-fam", label: "Family",       emoji: "❤️", color: "amber" },
+];
+
 // ── Recurring seed data ───────────────────────────────────────────────────────
 
 const now = Date.now();
@@ -347,6 +385,8 @@ interface State {
   sessions: FocusSession[];
   recurringTasks: RecurringTask[];
   quickNotes: QuickNote[];
+  networkContacts: NetworkContact[];
+  relationshipGroups: RelationshipGroup[];
   currentTrackingDate: string;  // "YYYY-MM-DD" — operational date of the dashboard
   showNightlyReview: boolean;   // gate shown when tracking date lags real date
   historicalLogs: HistoricalLog[];
@@ -390,6 +430,13 @@ type Action =
   | { type: "DELETE_TASK"; id: string }
   | { type: "ADD_QUICK_NOTE"; note: Omit<QuickNote, "id"> }
   | { type: "DELETE_QUICK_NOTE"; id: string }
+  | { type: "TOGGLE_QUICK_NOTE_IMPORTANT"; id: string }
+  | { type: "ADD_NETWORK_CONTACT"; contact: Omit<NetworkContact, "id"> }
+  | { type: "UPDATE_NETWORK_CONTACT"; id: string; fields: Partial<Omit<NetworkContact, "id">> }
+  | { type: "DELETE_NETWORK_CONTACT"; id: string }
+  | { type: "ADD_RELATIONSHIP_GROUP"; group: Omit<RelationshipGroup, "id"> }
+  | { type: "UPDATE_RELATIONSHIP_GROUP"; id: string; fields: Partial<Omit<RelationshipGroup, "id">> }
+  | { type: "DELETE_RELATIONSHIP_GROUP"; id: string }
   | { type: "RENAME_TASK_REFS"; taskId: string; oldTitle: string; newTitle: string }
   | { type: "LOCK_DAY"; date: string; dayVelocity: number; recap: string; completedTasks: string[]; rolledOverTasks: string[]; taskMeta?: Record<string, TaskArchiveMeta>; mindStateClosure?: MindStateClosure }
   | { type: "SAVE_CHECK_IN"; checkIn: DailyCheckIn };
@@ -806,6 +853,52 @@ function reducer(state: State, action: Action): State {
     case "DELETE_QUICK_NOTE":
       return { ...state, quickNotes: state.quickNotes.filter((n) => n.id !== action.id) };
 
+    case "TOGGLE_QUICK_NOTE_IMPORTANT":
+      return {
+        ...state,
+        quickNotes: state.quickNotes.map((n) =>
+          n.id !== action.id ? n : { ...n, isImportant: !n.isImportant }
+        ),
+      };
+
+    case "ADD_NETWORK_CONTACT": {
+      const contact: NetworkContact = {
+        ...action.contact,
+        id: `contact-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      };
+      return { ...state, networkContacts: [...state.networkContacts, contact] };
+    }
+
+    case "UPDATE_NETWORK_CONTACT":
+      return {
+        ...state,
+        networkContacts: state.networkContacts.map((c) =>
+          c.id !== action.id ? c : { ...c, ...action.fields }
+        ),
+      };
+
+    case "DELETE_NETWORK_CONTACT":
+      return { ...state, networkContacts: state.networkContacts.filter((c) => c.id !== action.id) };
+
+    case "ADD_RELATIONSHIP_GROUP": {
+      const group: RelationshipGroup = {
+        ...action.group,
+        id: `group-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      };
+      return { ...state, relationshipGroups: [...state.relationshipGroups, group] };
+    }
+
+    case "UPDATE_RELATIONSHIP_GROUP":
+      return {
+        ...state,
+        relationshipGroups: state.relationshipGroups.map((g) =>
+          g.id !== action.id ? g : { ...g, ...action.fields }
+        ),
+      };
+
+    case "DELETE_RELATIONSHIP_GROUP":
+      return { ...state, relationshipGroups: state.relationshipGroups.filter((g) => g.id !== action.id) };
+
     default:
       return state;
   }
@@ -863,7 +956,18 @@ function reviveState(raw: Record<string, unknown>): State {
   const isEvening          = new Date().getHours() >= 20;
   const showNightlyReview  = savedTrackingDate !== today && isEvening;
 
-  const quickNotes = ((raw.quickNotes as QuickNote[]) ?? []);
+  const quickNotes         = ((raw.quickNotes         as QuickNote[])         ?? []);
+  const networkContacts    = ((raw.networkContacts    as any[])    ?? []).map((c: Record<string, unknown>): NetworkContact => {
+    const base = { ...c, cycleCompleted: (c.cycleCompleted as boolean) ?? false } as NetworkContact;
+    if (!Array.isArray(c.events)) {
+      const leg = c.customEvent as ({ title?: string; date?: string | null; notes?: string } | undefined);
+      base.events = leg?.title || leg?.date
+        ? [{ id: `mig-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`, title: leg.title ?? "", date: leg.date ?? null, notes: leg.notes ?? "", completed: false }]
+        : [];
+    }
+    return base;
+  });
+  const relationshipGroups = ((raw.relationshipGroups as RelationshipGroup[]) ?? INITIAL_GROUPS);
 
   return {
     ...(raw as unknown as State),
@@ -872,6 +976,8 @@ function reviveState(raw: Record<string, unknown>): State {
     sessions,
     recurringTasks,
     quickNotes,
+    networkContacts,
+    relationshipGroups,
     projects,
     currentTrackingDate: savedTrackingDate,
     showNightlyReview,
@@ -910,6 +1016,8 @@ function buildInitialState(): State {
     projects: INITIAL_PROJECTS,
     recurringTasks: INITIAL_RECURRING,
     quickNotes: [],
+    networkContacts: [],
+    relationshipGroups: INITIAL_GROUPS,
     activeTask: null,
     running: false,
     elapsed: 0,
@@ -1012,6 +1120,15 @@ interface DashboardContextType {
   quickNotes: QuickNote[];
   addQuickNote: (text: string, sphere: string, projectId?: string) => void;
   deleteQuickNote: (id: string) => void;
+  toggleQuickNoteImportant: (id: string) => void;
+  networkContacts: NetworkContact[];
+  addNetworkContact: (contact: Omit<NetworkContact, "id">) => void;
+  updateNetworkContact: (id: string, fields: Partial<Omit<NetworkContact, "id">>) => void;
+  deleteNetworkContact: (id: string) => void;
+  relationshipGroups: RelationshipGroup[];
+  addRelationshipGroup: (group: Omit<RelationshipGroup, "id">) => void;
+  updateRelationshipGroup: (id: string, fields: Partial<Omit<RelationshipGroup, "id">>) => void;
+  deleteRelationshipGroup: (id: string) => void;
   addTag: (tag: Omit<Tag, "id">) => void;
   updateTag: (id: string, fields: Partial<Omit<Tag, "id">>) => void;
   deleteTag: (id: string) => void;
@@ -1077,7 +1194,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } catch {
       // Quota exceeded or private-browsing restriction — silently ignore.
     }
-  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate, state.quickNotes, state.historicalLogs, state.yesterdayRecap, state.dailyCheckIn]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.tasks, state.projects, state.sessions, state.recurringTasks, state.spheres, state.habits, state.activeTask, state.currentTrackingDate, state.quickNotes, state.networkContacts, state.relationshipGroups, state.historicalLogs, state.yesterdayRecap, state.dailyCheckIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync a lightweight snapshot to agent-server for Benicio's live context.
   useEffect(() => {
@@ -1195,6 +1312,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           dispatch({ type: "ADD_QUICK_NOTE", note: { text, sphere, projectId, createdAt } });
         },
         deleteQuickNote: (id) => dispatch({ type: "DELETE_QUICK_NOTE", id }),
+        toggleQuickNoteImportant: (id) => dispatch({ type: "TOGGLE_QUICK_NOTE_IMPORTANT", id }),
+        networkContacts:          state.networkContacts,
+        addNetworkContact:        (contact) => dispatch({ type: "ADD_NETWORK_CONTACT", contact }),
+        updateNetworkContact:     (id, fields) => dispatch({ type: "UPDATE_NETWORK_CONTACT", id, fields }),
+        deleteNetworkContact:     (id) => dispatch({ type: "DELETE_NETWORK_CONTACT", id }),
+        relationshipGroups:       state.relationshipGroups,
+        addRelationshipGroup:     (group) => dispatch({ type: "ADD_RELATIONSHIP_GROUP", group }),
+        updateRelationshipGroup:  (id, fields) => dispatch({ type: "UPDATE_RELATIONSHIP_GROUP", id, fields }),
+        deleteRelationshipGroup:  (id) => dispatch({ type: "DELETE_RELATIONSHIP_GROUP", id }),
         addTag:    (tag)          => dispatch({ type: "ADD_TAG", tag }),
         updateTag: (id, fields)   => dispatch({ type: "UPDATE_TAG", id, fields }),
         deleteTag: (id)           => dispatch({ type: "DELETE_TAG", id }),

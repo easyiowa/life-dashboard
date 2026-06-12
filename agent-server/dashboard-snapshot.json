@@ -53,15 +53,16 @@
       "title": "Reports Loyalty Program jgyd,ydf,yfi.uf.ulg",
       "priority": "High",
       "energy": "Flow",
-      "done": false,
+      "done": true,
       "deadline": null,
       "notes": "this is the way to do!",
       "manualMinutes": 0,
       "urgency": "urgent",
       "queuedDate": null,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 1
+      "intent": "time",
+      "dailyTargetMinutes": 96,
+      "rolloverCount": 2,
+      "timeSpentMinutes": 1
     },
     {
       "id": "siin-t5",
@@ -141,7 +142,10 @@
       "done": false,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "intent": "maybe",
+      "dailyTargetMinutes": null
     },
     {
       "id": "siin-t11",
@@ -177,7 +181,11 @@
       "done": false,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 78,
+      "rolloverCount": 2
     },
     {
       "id": "siin-t14",
@@ -190,7 +198,11 @@
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
-      "urgency": "not-urgent"
+      "urgency": "not-urgent",
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 67,
+      "rolloverCount": 2
     },
     {
       "id": "siin-t15",
@@ -221,12 +233,18 @@
       "sphere": "siin",
       "project": "Product",
       "title": "Sentry Errors (Agent)",
-      "priority": "Med",
+      "priority": "Low",
       "energy": "Flow",
       "done": false,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 10,
+      "timeSpentMinutes": 61,
+      "rolloverCount": 2,
+      "urgency": "urgent"
     },
     {
       "id": "siin-t18",
@@ -250,7 +268,11 @@
       "done": false,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1
     },
     {
       "id": "siin-t20",
@@ -262,7 +284,11 @@
       "done": false,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1
     },
     {
       "id": "siin-t21",
@@ -376,7 +402,10 @@
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
-      "id": "t-1780345715849-4c9"
+      "id": "t-1780345715849-4c9",
+      "queuedDate": null,
+      "intent": "maybe",
+      "dailyTargetMinutes": null
     },
     {
       "title": "FOLLOW",
@@ -447,7 +476,7 @@
       "priority": "Med",
       "energy": "Easy",
       "urgency": "not-urgent",
-      "done": false,
+      "done": true,
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
@@ -480,7 +509,7 @@
       "priority": "Med",
       "energy": "Easy",
       "urgency": "urgent",
-      "done": false,
+      "done": true,
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
@@ -488,7 +517,8 @@
       "queuedDate": null,
       "intent": "finish",
       "dailyTargetMinutes": null,
-      "rolloverCount": 1
+      "rolloverCount": 2,
+      "timeSpentMinutes": 6
     },
     {
       "title": "Wash the faceedwefwefwefewfw",
@@ -497,12 +527,12 @@
       "priority": "High",
       "energy": "Easy",
       "urgency": "urgent",
-      "done": false,
+      "done": true,
       "deadline": null,
       "notes": "",
-      "manualMinutes": 0,
+      "manualMinutes": 24,
       "id": "t-1780377226052-tf0",
-      "queuedDate": "2026-06-03",
+      "queuedDate": null,
       "intent": "finish",
       "dailyTargetMinutes": null,
       "rolloverCount": 3,
@@ -529,14 +559,14 @@
       "priority": "High",
       "energy": "Quick",
       "urgency": "urgent",
-      "done": false,
+      "done": true,
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
       "id": "t-1780386025042-dnf",
       "queuedDate": null,
-      "intent": "maybe",
-      "dailyTargetMinutes": null,
+      "intent": "time",
+      "dailyTargetMinutes": 25,
       "timeSpentMinutes": 9,
       "rolloverCount": 2
     },
@@ -575,12 +605,180 @@
       "title": "rtyuiop",
       "priority": "High",
       "energy": "Quick",
-      "urgency": "urgent",
+      "urgency": "not-urgent",
       "deadline": null,
       "notes": "",
       "manualMinutes": 0,
       "done": false,
       "id": "t-1780418636193-z9r"
+    },
+    {
+      "sphere": "vibing",
+      "project": "Dashboard",
+      "title": "Fixing bugs",
+      "priority": "High",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1781085976167-7us",
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 10,
+      "timeSpentMinutes": 8,
+      "rolloverCount": 1
+    },
+    {
+      "sphere": "vibing",
+      "project": "Dashboard",
+      "title": "Test timer display",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1781086813709-hbu",
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 4,
+      "timeSpentMinutes": 3
+    },
+    {
+      "sphere": "iowa",
+      "project": "Sammal",
+      "title": "one task",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1781101082172-f1u",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 4,
+      "timeSpentMinutes": 1
+    },
+    {
+      "sphere": "iowa",
+      "project": "Sammal",
+      "title": "two tasks",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": true,
+      "id": "t-1781101087425-ii0",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null
+    },
+    {
+      "sphere": "iowa",
+      "project": "Sammal",
+      "title": "3 tasks",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": true,
+      "id": "t-1781101092339-355",
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 15,
+      "rolloverCount": 1,
+      "timeSpentMinutes": 1
+    },
+    {
+      "sphere": "iowa",
+      "project": "Sammal",
+      "title": "lets create a super long note u know what i mean it is ve…",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "lets create a super long note u know what i mean it is very important to do that if u know hwat i meaaan broo",
+      "manualMinutes": 0,
+      "done": true,
+      "id": "t-1781170195220-adp",
+      "queuedDate": null,
+      "intent": "maybe",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 2
+    },
+    {
+      "sphere": "iowa",
+      "project": "Sammal",
+      "title": "lets create a...",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "lets create a super long note u know what i mean it is very important to do that if u know hwat i meaaan broo",
+      "manualMinutes": 0,
+      "done": true,
+      "id": "t-1781186907187-pgs",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null
+    },
+    {
+      "sphere": "iowa",
+      "project": "Sammal",
+      "title": "Review Dashboard with Ernie",
+      "priority": "High",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "deadline": "2026-06-19",
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1781190000545-erw",
+      "queuedDate": null,
+      "intent": "time",
+      "dailyTargetMinutes": 5,
+      "timeSpentMinutes": 7,
+      "rolloverCount": 1
+    },
+    {
+      "sphere": "education",
+      "project": "TEST PROJECT",
+      "title": "Silat Bekis Platform",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1781191206726-1j3"
+    },
+    {
+      "sphere": "education",
+      "project": "Ableton",
+      "title": "Mastering",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1781191229639-lq3",
+      "queuedDate": null,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1
     }
   ],
   "habits": [
@@ -665,7 +863,8 @@
         "2026-06-05": true,
         "2026-06-01": true,
         "2026-06-04": true,
-        "2026-06-06": true
+        "2026-06-06": true,
+        "2026-06-11": false
       }
     },
     {
@@ -692,7 +891,9 @@
       "emoji": "⭐",
       "notes": "",
       "id": "habit-1780320570102-ai6",
-      "history": {}
+      "history": {
+        "2026-06-12": false
+      }
     },
     {
       "title": "Wash face in the evening",
@@ -882,18 +1083,44 @@
       "name": "Sammal",
       "tagIds": [
         "tag-home",
-        "tag-1780389575658-465"
+        "tag-1780389575658-465",
+        "tag-product",
+        "tag-operations",
+        "tag-bizdev",
+        "tag-meetings",
+        "tag-clients",
+        "tag-analytics",
+        "tag-finance",
+        "tag-business",
+        "tag-brand"
       ],
       "status": "on-track",
       "milestone": "In progress",
       "id": "p-1780389530002-zmq"
+    },
+    {
+      "emoji": "📁",
+      "sphere": "education",
+      "name": "Ableton",
+      "tagIds": [
+        "tag-home",
+        "tag-analytics",
+        "tag-website",
+        "tag-business",
+        "tag-brand",
+        "tag-influencers",
+        "tag-1780389575658-465"
+      ],
+      "status": "on-track",
+      "milestone": "In progress",
+      "id": "p-1781191224833-54w"
     }
   ],
   "spheres": [
     {
       "id": "sphere-private",
       "name": "iowa",
-      "labelColor": "emerald",
+      "labelColor": "orange",
       "description": "Personal things to do"
     },
     {
@@ -958,9 +1185,13 @@
       "intervalDays": 90,
       "intervalLabel": "Every 3 Months",
       "sphere": "iowa",
-      "lastDoneDate": "2026-06-01T05:45:57.564Z",
-      "completionCount": 5,
+      "lastDoneDate": "2026-06-11T08:13:55.199Z",
+      "completionCount": 6,
       "history": [
+        {
+          "id": "1781165635199-7apsf",
+          "completedAt": "June 11, 2026 at 11:13"
+        },
         {
           "id": "1780292757564-rvggc",
           "completedAt": "June 1, 2026 at 08:45"
@@ -985,9 +1216,14 @@
       "intervalDays": 14,
       "intervalLabel": "Every 2 Weeks",
       "sphere": "iowa",
-      "lastDoneDate": "2026-05-21T20:48:26.115Z",
-      "completionCount": 12,
-      "history": []
+      "lastDoneDate": "2026-06-11T12:34:36.188Z",
+      "completionCount": 13,
+      "history": [
+        {
+          "id": "1781181276188-z8ukj",
+          "completedAt": "June 11, 2026 at 15:34"
+        }
+      ]
     },
     {
       "id": "rec-6",
@@ -996,9 +1232,13 @@
       "intervalDays": 30,
       "intervalLabel": "Every Month",
       "sphere": "iowa",
-      "lastDoneDate": "2026-06-03T13:22:55.706Z",
-      "completionCount": 6,
+      "lastDoneDate": "2026-06-11T10:40:15.277Z",
+      "completionCount": 7,
       "history": [
+        {
+          "id": "1781174415277-2u5oc",
+          "completedAt": "June 11, 2026 at 13:40"
+        },
         {
           "id": "1780492975706-rpeol",
           "completedAt": "June 3, 2026 at 16:22"
@@ -1011,10 +1251,14 @@
       "intervalDays": 30,
       "intervalLabel": "Every Month",
       "sphere": "iowa",
-      "lastDoneDate": "2026-06-02T16:52:50.129Z",
+      "lastDoneDate": "2026-06-11T10:40:17.630Z",
       "id": "rec-1780419164432-egt",
-      "completionCount": 1,
+      "completionCount": 2,
       "history": [
+        {
+          "id": "1781174417630-if3lw",
+          "completedAt": "June 11, 2026 at 13:40"
+        },
         {
           "id": "1780419170129-lsh66",
           "completedAt": "June 2, 2026 at 19:52"
@@ -1031,9 +1275,85 @@
       "id": "rec-1780492961199-0a2",
       "completionCount": 0,
       "history": []
+    },
+    {
+      "title": "Pay Invoices",
+      "notes": "",
+      "intervalDays": 30,
+      "intervalLabel": "Every Month",
+      "sphere": "iowa",
+      "lastDoneDate": "2026-06-10T11:02:35.769Z",
+      "id": "rec-1781089347723-cfm",
+      "completionCount": 1,
+      "history": [
+        {
+          "id": "1781089355769-doll2",
+          "completedAt": "June 10, 2026 at 14:02"
+        }
+      ],
+      "anchorDay": 3
+    },
+    {
+      "title": "Pay invoices INOVIICEEES",
+      "notes": "",
+      "intervalDays": 30,
+      "intervalLabel": "Every Month",
+      "sphere": "iowa",
+      "lastDoneDate": null,
+      "anchorDay": 1,
+      "id": "rec-1781193012586-tdz",
+      "completionCount": 0,
+      "history": []
     }
   ],
   "quickNotes": [
+    {
+      "text": "jhvkbln",
+      "sphere": "siin",
+      "createdAt": "2026-06-11 18:06",
+      "id": "note-1781190376310-61md"
+    },
+    {
+      "text": "lets create a super long note u know what i mean it is very important to do that if u know hwat i meaaan broo",
+      "sphere": "iowa",
+      "createdAt": "2026-06-11 12:27",
+      "id": "note-1781170050994-d9n9",
+      "isImportant": false
+    },
+    {
+      "text": "tvytf tf7tguyg87y",
+      "sphere": "iowa",
+      "createdAt": "2026-06-11 11:22",
+      "id": "note-1781166134113-zob9",
+      "isImportant": false
+    },
+    {
+      "text": "rtsdi7fogpuyuycuyviyiuiu",
+      "sphere": "iowa",
+      "createdAt": "2026-06-11 08:57",
+      "id": "note-1781157463679-vqff",
+      "isImportant": true
+    },
+    {
+      "text": "huipaaa",
+      "sphere": "siin",
+      "projectId": "Brand",
+      "createdAt": "2026-06-10 13:44",
+      "id": "note-1781088275822-qx9r",
+      "isImportant": false
+    },
+    {
+      "text": "dfgdr",
+      "sphere": "iowa",
+      "createdAt": "2026-06-10 13:31",
+      "id": "note-1781087490122-ty1u"
+    },
+    {
+      "text": "grge",
+      "sphere": "iowa",
+      "createdAt": "2026-06-10 13:31",
+      "id": "note-1781087487732-hvt0"
+    },
     {
       "text": "jytujgluköhijäpk'l",
       "sphere": "iowa",
@@ -1107,12 +1427,6 @@
       "id": "note-1780342772641-loi0"
     },
     {
-      "text": "to buy milk to siin sphere",
-      "sphere": "Private",
-      "createdAt": "2026-06-01 22:38",
-      "id": "note-1780342704320-ioau"
-    },
-    {
       "text": "so iowa sphere: here i am",
       "sphere": "Private",
       "createdAt": "2026-06-01 22:36",
@@ -1122,7 +1436,8 @@
       "text": "khjlkl",
       "sphere": "👨🏻‍💻 vibing",
       "createdAt": "2026-06-01 17:42",
-      "id": "note-1780324958914-t7qg"
+      "id": "note-1780324958914-t7qg",
+      "isImportant": true
     },
     {
       "text": "sdfdsf",
@@ -1143,5 +1458,5 @@
       "id": "note-1780324402284-qjtq"
     }
   ],
-  "currentTrackingDate": "2026-06-03"
+  "currentTrackingDate": "2026-06-11"
 }

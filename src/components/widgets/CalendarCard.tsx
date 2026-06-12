@@ -50,7 +50,7 @@ function getMondayOfWeek(offset: number): Date {
 
 export default function CalendarCard() {
   const [weekOffset, setWeekOffset] = useState(0);
-  const { tasks } = useDashboard();
+  const { tasks, networkContacts } = useDashboard();
 
   const monday = getMondayOfWeek(weekOffset);
   const today = new Date();
@@ -70,6 +70,26 @@ export default function CalendarCard() {
     if (task.deadline && !task.done) {
       const existing = deadlineMap.get(task.deadline) ?? [];
       deadlineMap.set(task.deadline, [...existing, task]);
+    }
+  }
+
+  // Build birthday map: "MM-DD" → contact names (year-agnostic, recurs annually)
+  const birthdayMap = new Map<string, string[]>();
+  for (const contact of networkContacts) {
+    if (contact.birthday) {
+      const mmdd = contact.birthday.slice(5); // "MM-DD"
+      birthdayMap.set(mmdd, [...(birthdayMap.get(mmdd) ?? []), contact.name]);
+    }
+  }
+
+  // Build contact-event map: "YYYY-MM-DD" → event titles (all uncompleted events)
+  const contactEventMap = new Map<string, string[]>();
+  for (const contact of networkContacts) {
+    for (const evt of contact.events) {
+      if (evt.date && !evt.completed) {
+        const title = evt.title || `${contact.name}'s Event`;
+        contactEventMap.set(evt.date, [...(contactEventMap.get(evt.date) ?? []), title]);
+      }
     }
   }
 
@@ -116,13 +136,15 @@ export default function CalendarCard() {
           const yyyy = day.getFullYear();
           const mm   = String(day.getMonth() + 1).padStart(2, "0");
           const dd   = String(day.getDate()).padStart(2, "0");
-          const dayKey = `${yyyy}-${mm}-${dd}`;
-          const deadlineTasks = deadlineMap.get(dayKey) ?? [];
+          const dayKey       = `${yyyy}-${mm}-${dd}`;
+          const deadlineTasks    = deadlineMap.get(dayKey) ?? [];
+          const birthdayNames    = birthdayMap.get(`${mm}-${dd}`) ?? [];
+          const contactEvents    = contactEventMap.get(dayKey) ?? [];
           // Show at most 2 deadline chips; +N overflow otherwise
           const visibleDeadlines = deadlineTasks.slice(0, 2);
-          const overflow = deadlineTasks.length - visibleDeadlines.length;
+          const overflow         = deadlineTasks.length - visibleDeadlines.length;
 
-          const hasContent = calEvents.length > 0 || deadlineTasks.length > 0;
+          const hasContent = calEvents.length > 0 || deadlineTasks.length > 0 || birthdayNames.length > 0 || contactEvents.length > 0;
 
           return (
             <div
@@ -151,6 +173,28 @@ export default function CalendarCard() {
                   <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
                 </div>
               )}
+
+              {/* Birthday chips */}
+              {birthdayNames.map((name) => (
+                <div
+                  key={`bday-${name}`}
+                  className="rounded px-1.5 py-1 text-[9px] font-medium leading-tight bg-pink-500/15 border-l-2 border-pink-400 text-pink-300"
+                  title={`${name}'s Birthday`}
+                >
+                  <div className="truncate">🎂 {name}&apos;s Birthday</div>
+                </div>
+              ))}
+
+              {/* Contact custom events */}
+              {contactEvents.map((title) => (
+                <div
+                  key={`evt-${title}`}
+                  className="rounded px-1.5 py-1 text-[9px] font-medium leading-tight bg-violet-500/15 border-l-2 border-violet-400 text-violet-300"
+                  title={title}
+                >
+                  <div className="truncate">🎯 {title}</div>
+                </div>
+              ))}
 
               {/* Calendar events */}
               <div className="flex flex-col gap-1">

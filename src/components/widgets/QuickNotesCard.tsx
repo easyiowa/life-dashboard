@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { NotebookPen, Trash2, X, Search } from "lucide-react";
+import { NotebookPen, Trash2, X, Search, Zap } from "lucide-react";
 import { useDashboard, type QuickNote, type Sphere } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
+import TaskModal from "@/components/TaskModal";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TODAY = new Date().toLocaleDateString("en-CA");
-const ALL_TAB = "__all__";
+const TODAY        = new Date().toLocaleDateString("en-CA");
+const ALL_TAB      = "__all__";
+const FAVORITES_TAB = "__favorites__";
 
 function fmtTime(createdAt: string): string {
   return createdAt.split(" ")[1] ?? "";
@@ -21,17 +23,29 @@ function fmtDateHeader(datePart: string): string {
   });
 }
 
+function toTaskTitle(text: string): string {
+  const first = text.split("\n")[0].trim();
+  if (first.length <= 40) return first;
+  const words = first.split(/\s+/).filter(Boolean);
+  const slug  = words.slice(0, 3).join(" ");
+  return (slug || "Review Note") + "...";
+}
+
 // ── Note row (today feed) ─────────────────────────────────────────────────────
 
 function NoteRow({
   note,
   showArea,
   onDelete,
+  onToggleImportant,
+  onConvertToTask,
   sphereColor,
 }: {
   note: QuickNote;
   showArea?: boolean;
   onDelete: () => void;
+  onToggleImportant: () => void;
+  onConvertToTask: () => void;
   sphereColor?: string;
 }) {
   const ac = areaColor(sphereColor);
@@ -56,13 +70,109 @@ function NoteRow({
             </>
           )}
         </div>
-        <button
-          onClick={onDelete}
-          title="Delete note"
-          className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-        >
-          <Trash2 className="w-2.5 h-2.5" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          {/* Important toggle — always visible when flagged, hover-only when not */}
+          <button
+            onClick={onToggleImportant}
+            title={note.isImportant ? "Unmark important" : "Mark as important"}
+            className={`p-1 rounded-md transition-all text-[11px] leading-none ${
+              note.isImportant
+                ? "opacity-100 hover:bg-amber-500/10"
+                : "opacity-0 group-hover:opacity-100 hover:bg-amber-500/10"
+            }`}
+          >
+            🔥
+          </button>
+          {/* Convert to task */}
+          <button
+            onClick={onConvertToTask}
+            title="Convert to task"
+            className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
+          >
+            <Zap className="w-2.5 h-2.5" />
+            <span>Task</span>
+          </button>
+          {/* Delete */}
+          <button
+            onClick={onDelete}
+            title="Delete note"
+            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          >
+            <Trash2 className="w-2.5 h-2.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Archive note item ─────────────────────────────────────────────────────────
+
+function ArchiveNoteItem({
+  note,
+  spheres,
+  onDelete,
+  onToggleImportant,
+  onConvertToTask,
+}: {
+  note: QuickNote;
+  spheres: Sphere[];
+  onDelete: () => void;
+  onToggleImportant: () => void;
+  onConvertToTask: () => void;
+}) {
+  const ac = areaColor(spheres.find((s) => s.name === note.sphere)?.labelColor);
+  return (
+    <div
+      className={`group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg transition-all hover:bg-white/[0.03]`}
+    >
+      <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
+        {note.text}
+      </p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
+          {note.sphere && (
+            <>
+              <span className="text-slate-700 text-[10px]">·</span>
+              <span className={`text-[10px] ${ac.text}`}>{note.sphere}</span>
+            </>
+          )}
+          {note.projectId && (
+            <>
+              <span className="text-slate-700 text-[10px]">·</span>
+              <span className="text-[10px] text-slate-600">{note.projectId}</span>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={onToggleImportant}
+            title={note.isImportant ? "Unmark important" : "Mark as important"}
+            className={`p-1 rounded-md transition-all text-[11px] leading-none ${
+              note.isImportant
+                ? "opacity-100 hover:bg-amber-500/10"
+                : "opacity-0 group-hover:opacity-100 hover:bg-amber-500/10"
+            }`}
+          >
+            🔥
+          </button>
+          <button
+            onClick={onConvertToTask}
+            title="Convert to task"
+            className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
+          >
+            <Zap className="w-2.5 h-2.5" />
+            <span>Task</span>
+          </button>
+          <button
+            onClick={onDelete}
+            title="Delete note"
+            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          >
+            <Trash2 className="w-2.5 h-2.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -75,18 +185,26 @@ function ArchiveModal({
   spheres,
   onClose,
   onDelete,
+  onToggleImportant,
+  onConvertToTask,
 }: {
   notes: QuickNote[];
   spheres: Sphere[];
   onClose: () => void;
   onDelete: (id: string) => void;
+  onToggleImportant: (id: string) => void;
+  onConvertToTask: (note: QuickNote) => void;
 }) {
-  const [query, setQuery] = useState("");
+  const [query,         setQuery]         = useState("");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   const filtered = useMemo(() => {
+    let list = notes;
+    if (favoritesOnly) list = list.filter((n) => n.isImportant);
     const q = query.toLowerCase().trim();
-    return q ? notes.filter((n) => n.text.toLowerCase().includes(q)) : notes;
-  }, [notes, query]);
+    if (q) list = list.filter((n) => n.text.toLowerCase().includes(q));
+    return list;
+  }, [notes, query, favoritesOnly]);
 
   // Group by date descending
   const grouped = useMemo(() => {
@@ -98,6 +216,8 @@ function ArchiveModal({
     }
     return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
   }, [filtered]);
+
+  const favoriteCount = notes.filter((n) => n.isImportant).length;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -120,8 +240,8 @@ function ArchiveModal({
           </button>
         </div>
 
-        {/* Search */}
-        <div className="px-5 py-3 border-b border-white/[0.05] flex-shrink-0">
+        {/* Search + filters */}
+        <div className="px-5 py-3 border-b border-white/[0.05] flex-shrink-0 flex flex-col gap-2">
           <div className="flex items-center gap-2 h-8 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] focus-within:border-purple-500/50 transition-colors">
             <Search className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
             <input
@@ -138,18 +258,29 @@ function ArchiveModal({
               </button>
             )}
           </div>
+          {/* Favorites filter */}
+          <button
+            type="button"
+            onClick={() => setFavoritesOnly((v) => !v)}
+            className={`self-start flex items-center gap-1.5 px-3 h-6 rounded-full text-[11px] font-medium border transition-all duration-150 ${
+              favoritesOnly
+                ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                : "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
+            }`}
+          >
+            🔥 Favorites{favoriteCount > 0 && <span className="tabular-nums">({favoriteCount})</span>}
+          </button>
         </div>
 
         {/* Grouped notes */}
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5">
           {grouped.length === 0 ? (
             <p className="text-xs text-slate-600 text-center py-8">
-              {query ? "No notes match your search." : "No notes captured yet."}
+              {favoritesOnly ? "No favorites yet — mark notes with 🔥 to save them here." : query ? "No notes match your search." : "No notes captured yet."}
             </p>
           ) : (
             grouped.map(([date, dateNotes]) => (
               <div key={date} className="flex flex-col gap-2">
-                {/* Date header */}
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0">
                     {date === TODAY ? "Today" : fmtDateHeader(date)}
@@ -159,45 +290,17 @@ function ArchiveModal({
                     {dateNotes.length}
                   </span>
                 </div>
-                {/* Notes for this date */}
                 <div className="flex flex-col gap-1.5">
-                  {dateNotes.map((note) => {
-                    const ac = areaColor(spheres.find((s) => s.name === note.sphere)?.labelColor);
-                    return (
-                      <div
-                        key={note.id}
-                        className={`group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg transition-all hover:bg-white/[0.03]`}
-                      >
-                        <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
-                          {note.text}
-                        </p>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
-                            {note.sphere && (
-                              <>
-                                <span className="text-slate-700 text-[10px]">·</span>
-                                <span className={`text-[10px] ${ac.text}`}>{note.sphere}</span>
-                              </>
-                            )}
-                            {note.projectId && (
-                              <>
-                                <span className="text-slate-700 text-[10px]">·</span>
-                                <span className="text-[10px] text-slate-600">{note.projectId}</span>
-                              </>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => onDelete(note.id)}
-                            title="Delete note"
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                          >
-                            <Trash2 className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {dateNotes.map((note) => (
+                    <ArchiveNoteItem
+                      key={note.id}
+                      note={note}
+                      spheres={spheres}
+                      onDelete={() => onDelete(note.id)}
+                      onToggleImportant={() => onToggleImportant(note.id)}
+                      onConvertToTask={() => onConvertToTask(note)}
+                    />
+                  ))}
                 </div>
               </div>
             ))
@@ -211,27 +314,49 @@ function ArchiveModal({
 // ── Card ──────────────────────────────────────────────────────────────────────
 
 export default function QuickNotesCard() {
-  const { spheres, projects, quickNotes, addQuickNote, deleteQuickNote } = useDashboard();
+  const {
+    spheres, projects, quickNotes,
+    addQuickNote, deleteQuickNote, toggleQuickNoteImportant,
+  } = useDashboard();
 
   const [activeSphereId,    setActiveSphereId]    = useState<string>(ALL_TAB);
   const [text,              setText]              = useState("");
   const [projectId,         setProjectId]         = useState("");
   const [showAllNotesModal, setShowAllNotesModal] = useState(false);
 
-  const isAll           = activeSphereId === ALL_TAB;
-  const activeSphereObj = isAll ? undefined : (spheres.find((s) => s.id === activeSphereId) ?? spheres[0]);
-  const activeSphere    = activeSphereObj?.name ?? "";
-  const sphereProjects  = isAll ? [] : projects.filter((p) => p.sphere === activeSphere);
+  // Task conversion modal state
+  const [taskModalOpen,     setTaskModalOpen]     = useState(false);
+  const [taskModalDefaults, setTaskModalDefaults] = useState<{ title: string; notes: string; sphere: string }>({ title: "", notes: "", sphere: "" });
 
-  // Today's notes: all areas when "All" tab is active, otherwise filtered by area
-  const todayNotes: QuickNote[] = isAll
-    ? quickNotes.filter((n) => n.createdAt.startsWith(TODAY))
-    : quickNotes.filter((n) => n.sphere === activeSphere && n.createdAt.startsWith(TODAY));
+  const isAll       = activeSphereId === ALL_TAB;
+  const isFavorites = activeSphereId === FAVORITES_TAB;
+
+  const activeSphereObj = (isAll || isFavorites) ? undefined : (spheres.find((s) => s.id === activeSphereId) ?? spheres[0]);
+  const activeSphere    = activeSphereObj?.name ?? "";
+  const sphereProjects  = (isAll || isFavorites) ? [] : projects.filter((p) => p.sphere === activeSphere);
+
+  // Notes shown in the main feed
+  const todayNotes: QuickNote[] = isFavorites
+    ? quickNotes.filter((n) => n.isImportant)
+    : isAll
+      ? quickNotes.filter((n) => n.createdAt.startsWith(TODAY))
+      : quickNotes.filter((n) => n.sphere === activeSphere && n.createdAt.startsWith(TODAY));
+
+  const favoriteCount = quickNotes.filter((n) => n.isImportant).length;
+
+  function handleConvertToTask(note: QuickNote) {
+    setTaskModalDefaults({
+      title:  toTaskTitle(note.text),
+      notes:  note.text,
+      sphere: note.sphere,
+    });
+    setTaskModalOpen(true);
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed || isAll) return;
+    if (!trimmed || isAll || isFavorites) return;
     addQuickNote(trimmed, activeSphere, projectId || undefined);
     setText("");
     setProjectId("");
@@ -252,8 +377,18 @@ export default function QuickNotesCard() {
           spheres={spheres}
           onClose={() => setShowAllNotesModal(false)}
           onDelete={deleteQuickNote}
+          onToggleImportant={toggleQuickNoteImportant}
+          onConvertToTask={(note) => { setShowAllNotesModal(false); handleConvertToTask(note); }}
         />
       )}
+
+      <TaskModal
+        open={taskModalOpen}
+        onClose={() => setTaskModalOpen(false)}
+        defaultSphere={taskModalDefaults.sphere}
+        defaultTitle={taskModalDefaults.title}
+        defaultNotes={taskModalDefaults.notes}
+      />
 
       <div className="w-full rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col h-full min-h-[340px]">
 
@@ -287,6 +422,7 @@ export default function QuickNotesCard() {
           >
             All
           </button>
+
           {spheres.map((sphere) => {
             const pill = areaColor(sphere.labelColor);
             return (
@@ -302,12 +438,25 @@ export default function QuickNotesCard() {
               </button>
             );
           })}
+
+          {/* Favorites filter pill */}
+          <button
+            type="button"
+            onClick={() => { setActiveSphereId(FAVORITES_TAB); setProjectId(""); }}
+            className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+              isFavorites
+                ? "bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.2)]"
+                : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-amber-400/70 hover:bg-amber-500/[0.06] hover:border-amber-500/20"
+            }`}
+          >
+            🔥 Favorites{favoriteCount > 0 && <span className="ml-1 tabular-nums text-[10px]">({favoriteCount})</span>}
+          </button>
         </div>
 
-        {/* Capture form — hidden when "All" is active */}
-        {isAll ? (
+        {/* Capture form — hidden when "All" or "Favorites" is active */}
+        {(isAll || isFavorites) ? (
           <p className="mt-4 text-[11px] text-slate-600 flex-shrink-0">
-            Select an area above to add a note.
+            {isFavorites ? "Showing all notes marked as important." : "Select an area above to add a note."}
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4 flex-shrink-0">
@@ -342,19 +491,25 @@ export default function QuickNotesCard() {
           </form>
         )}
 
-        {/* Today's notes feed — scrollable, fills remaining height */}
+        {/* Notes feed */}
         <div className="flex-1 overflow-y-auto mt-3 flex flex-col gap-1.5 pr-1 min-h-0">
           {todayNotes.length === 0 ? (
             <p className="text-xs text-slate-700 text-center py-4">
-              {isAll ? "No notes today across any area." : `No notes today for ${activeSphere}.`}
+              {isFavorites
+                ? "No important notes yet — hover a note and click 🔥 to flag it."
+                : isAll
+                  ? "No notes today across any area."
+                  : `No notes today for ${activeSphere}.`}
             </p>
           ) : (
             todayNotes.map((note) => (
               <NoteRow
                 key={note.id}
                 note={note}
-                showArea={isAll}
+                showArea={isAll || isFavorites}
                 onDelete={() => deleteQuickNote(note.id)}
+                onToggleImportant={() => toggleQuickNoteImportant(note.id)}
+                onConvertToTask={() => handleConvertToTask(note)}
                 sphereColor={spheres.find((s) => s.name === note.sphere)?.labelColor}
               />
             ))

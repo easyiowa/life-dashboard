@@ -17,6 +17,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   defaultSphere?: string;
+  defaultTitle?: string;
+  defaultNotes?: string;
 }
 
 type FormData = Omit<Task, "id" | "done">;
@@ -62,7 +64,7 @@ function ToggleGroup<T extends string>({
   );
 }
 
-export default function TaskModal({ open, onClose, defaultSphere }: Props) {
+export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, defaultNotes }: Props) {
   const { spheres, projects, tags, tasks, addTask, addProject } = useDashboard();
 
   const fallbackSphere  = spheres[0]?.name ?? "";
@@ -104,7 +106,13 @@ export default function TaskModal({ open, onClose, defaultSphere }: Props) {
         projects.find((p) => p.sphere === targetSphere)?.name ??
         fallbackProject;
 
-      setForm({ ...blank(), sphere: targetSphere, project: targetProject });
+      setForm({
+        ...blank(),
+        sphere:  targetSphere,
+        project: targetProject,
+        title:   defaultTitle ?? "",
+        notes:   defaultNotes ?? "",
+      });
       setTitleError(false);
       setShowNewProject(false);
       setNewProjectName("");
