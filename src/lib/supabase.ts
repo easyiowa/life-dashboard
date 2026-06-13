@@ -1,12 +1,13 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-// Singleton browser client — safe to import anywhere in client components.
-// Environment variables are set in .env.local (never committed to git).
-//
-//   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
-//   NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-public-key>
+// Populated from .env.local — copy .env.local.example to get started.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+// When env vars are absent (local dev without Supabase), the client is null.
+// AuthContext detects this and bypasses auth so the app still runs locally.
+export const supabase = (supabaseUrl && supabaseKey)
+  ? createBrowserClient(supabaseUrl, supabaseKey)
+  : null;
+
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);

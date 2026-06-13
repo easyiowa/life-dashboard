@@ -1,24 +1,5 @@
 "use client";
 
-// =============================================================================
-// AuthContext — Phase 2 wiring skeleton
-//
-// HOW TO ACTIVATE:
-//   1. npm install @supabase/supabase-js @supabase/ssr
-//   2. Add .env.local entries (see src/lib/supabase.ts)
-//   3. Wrap <DashboardProvider> with <AuthProvider> in src/app/layout.tsx
-//   4. Replace the stub below with the real implementation.
-//
-// SIGN-IN METHODS SUPPORTED:
-//   - Email + Password   →  supabase.auth.signInWithPassword({ email, password })
-//   - Google OAuth       →  supabase.auth.signInWithOAuth({ provider: "google",
-//                             options: { redirectTo: window.location.origin } })
-//
-// SESSION FLOW:
-//   Supabase stores the session in a secure HttpOnly cookie (SSR package handles
-//   this automatically). On every navigation the middleware refreshes the token.
-// =============================================================================
-
 import {
   createContext,
   useContext,
@@ -27,14 +8,15 @@ import {
   type ReactNode,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface AuthState {
-  session:  Session | null;
-  user:     User    | null;
-  loading:  boolean;
+  session:          Session | null;
+  user:             User    | null;
+  loading:          boolean;
+  isConfigured:     boolean;
   signInWithEmail:  (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithEmail:  (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<void>;
@@ -55,16 +37,16 @@ export function useAuth(): AuthState {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isSupabaseConfigured); // only show spinner when Supabase is wired
 
   useEffect(() => {
-    // Hydrate from existing cookie/session on mount
+    if (!supabase) return; // no credentials — skip; app runs in local-only mode
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
     });
 
-    // Subscribe to auth state changes (sign-in, sign-out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
@@ -74,16 +56,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signInWithEmail(email: string, password: string) {
+    if (!supabase) return { error: "Supabase is not configured." };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   }
 
   async function signUpWithEmail(email: string, password: string) {
+    if (!supabase) return { error: "Supabase is not configured." };
     const { error } = await supabase.auth.signUp({ email, password });
     return { error: error?.message ?? null };
   }
 
   async function signInWithGoogle() {
+    if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -93,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
+    if (!supabase) return;
     await supabase.auth.signOut();
   }
 
@@ -102,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         user: session?.user ?? null,
         loading,
+        isConfigured: isSupabaseConfigured,
         signInWithEmail,
         signUpWithEmail,
         signInWithGoogle,
@@ -112,39 +99,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-// =============================================================================
-// USAGE EXAMPLE — src/app/layout.tsx
-// =============================================================================
-//
-// import { AuthProvider } from "@/context/AuthContext";
-// import { DashboardProvider } from "@/context/DashboardContext";
-//
-// export default function RootLayout({ children }: { children: React.ReactNode }) {
-//   return (
-//     <html lang="en">
-//       <body>
-//         <AuthProvider>
-//           <DashboardProvider>
-//             {children}
-//           </DashboardProvider>
-//         </AuthProvider>
-//       </body>
-//     </html>
-//   );
-// }
-//
-// =============================================================================
-// AUTH GATE — src/components/AuthGate.tsx (Phase 2 addition)
-// =============================================================================
-//
-// "use client";
-// import { useAuth } from "@/context/AuthContext";
-// import LoginPage from "@/components/LoginPage";
-//
-// export default function AuthGate({ children }: { children: React.ReactNode }) {
-//   const { user, loading } = useAuth();
-//   if (loading) return <div className="...">Loading…</div>;
-//   if (!user)   return <LoginPage />;
-//   return <>{children}</>;
-// }
