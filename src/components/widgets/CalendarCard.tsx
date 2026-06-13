@@ -18,18 +18,7 @@ const EVENT_COLOR: Record<string, string> = {
   pink:    "bg-pink-500/20 border-l-2 border-pink-500 text-pink-300",
 };
 
-const WEEK_EVENTS: Record<number, Event[]> = {
-  0: [{ time: "09:00", title: "Team Standup",    color: "violet"  }],
-  1: [{ time: "14:00", title: "Client Call",     color: "blue"    }],
-  2: [],
-  3: [
-    { time: "10:00", title: "Deep Work Block",   color: "emerald" },
-    { time: "15:30", title: "1:1 w/ Manager",    color: "orange"  },
-  ],
-  4: [{ time: "13:00", title: "Lunch w/ Sarah",  color: "pink"    }],
-  5: [],
-  6: [],
-};
+const WEEK_EVENTS: Record<number, Event[]> = {};
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 

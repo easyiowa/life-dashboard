@@ -193,195 +193,7 @@ export interface RecurringTask {
   history: RecurringHistoryEntry[];
 }
 
-// ── Tag seed data ────────────────────────────────────────────────────────────
-
-const INITIAL_TAGS: Tag[] = [
-  { id: "tag-home",        label: "Home",         color: "amber"   },
-  { id: "tag-outdoor",     label: "Outdoor",      color: "emerald" },
-  { id: "tag-finance",     label: "Finance",      color: "blue"    },
-  { id: "tag-marketing",   label: "Marketing",    color: "violet"  },
-  { id: "tag-product",     label: "Product",      color: "violet"  },
-  { id: "tag-design",      label: "Design",       color: "pink"    },
-  { id: "tag-operations",  label: "Operations",   color: "teal"    },
-  { id: "tag-analytics",   label: "Analytics",    color: "violet"  },
-  { id: "tag-bizdev",      label: "Business Dev", color: "amber"   },
-  { id: "tag-brand",       label: "Brand",        color: "rose"    },
-  { id: "tag-business",    label: "Business",     color: "amber"   },
-  { id: "tag-website",     label: "Website",      color: "blue"    },
-  { id: "tag-clients",     label: "Clients",      color: "teal"    },
-  { id: "tag-content",     label: "Content",      color: "orange"  },
-  { id: "tag-meetings",    label: "Meetings",     color: "sky"     },
-  { id: "tag-influencers", label: "Influencers",  color: "indigo"  },
-];
-
-// ── Sphere seed data ─────────────────────────────────────────────────────────
-
-const INITIAL_SPHERES: Sphere[] = [
-  { id: "sphere-private", name: "Private",    labelColor: "emerald", description: "Personal life & wellbeing"   },
-  { id: "sphere-b1",      name: "Business 1", labelColor: "violet",  description: "Core business operations"    },
-  { id: "sphere-b2",      name: "Business 2", labelColor: "sky",     description: "Secondary venture & growth"  },
-  { id: "sphere-siin",    name: "siin",       labelColor: "rose",    description: "Local loyalty & discovery app" },
-];
-
-// ── Habit seed data ──────────────────────────────────────────────────────────
-
-const _today = new Date().toLocaleDateString("en-CA");
-const _yd    = new Date(Date.now() - 86_400_000).toLocaleDateString("en-CA");
-const _2d    = new Date(Date.now() - 2 * 86_400_000).toLocaleDateString("en-CA");
-const _3d    = new Date(Date.now() - 3 * 86_400_000).toLocaleDateString("en-CA");
-const _4d    = new Date(Date.now() - 4 * 86_400_000).toLocaleDateString("en-CA");
-
-const INITIAL_HABITS: Habit[] = [
-  {
-    id: "habit-1",
-    title:       "Read Books",
-    type:        "start",
-    routine:     "evening",
-    frequency:   "daily",
-    targetCount: 5,
-    emoji:       "📚",
-    notes:       "At least 20 pages before bed.",
-    history:     { [_yd]: true, [_2d]: true, [_3d]: true, [_4d]: true },
-  },
-  {
-    id: "habit-2",
-    title:       "Morning Workout",
-    type:        "start",
-    routine:     "morning",
-    frequency:   "daily",
-    targetCount: 5,
-    emoji:       "💪",
-    notes:       "30 min run or gym session.",
-    history:     { [_today]: true, [_2d]: true, [_4d]: true },
-  },
-  {
-    id: "habit-3",
-    title:       "Eat Junk Food",
-    type:        "stop",
-    routine:     "day",
-    frequency:   "weekly",
-    targetCount: 2,
-    emoji:       "🍔",
-    notes:       "Max 2 cheat meals per week.",
-    history:     { [_yd]: true },
-  },
-  {
-    id: "habit-4",
-    title:       "Late Night Screen Time",
-    type:        "stop",
-    routine:     "evening",
-    frequency:   "daily",
-    targetCount: 3,
-    emoji:       "📵",
-    notes:       "No screens after 22:00.",
-    history:     { [_2d]: true, [_3d]: true },
-  },
-];
-
-// ── Relationship group seed data ─────────────────────────────────────────────
-
-const INITIAL_GROUPS: RelationshipGroup[] = [
-  { id: "group-cf",  label: "Close Friend", emoji: "🤝", color: "rose"  },
-  { id: "group-biz", label: "Business",     emoji: "💼", color: "sky"   },
-  { id: "group-fam", label: "Family",       emoji: "❤️", color: "amber" },
-];
-
-// ── Recurring seed data ───────────────────────────────────────────────────────
-
-const now = Date.now();
-const INITIAL_RECURRING: RecurringTask[] = [
-  {
-    id: "rec-1", title: "Buy Vitamins",      notes: "Nordic Naturals Omega-3 + Vitamin D3.", intervalDays: 30,  intervalLabel: "Every 30 Days",
-    sphere: "Private",    lastDoneDate: new Date(now - 22 * 86_400_000),  completionCount: 6,  history: [],
-  },
-  {
-    id: "rec-2", title: "Teeth Cleaning",    notes: "Book at Helsinki Dental Centre.",        intervalDays: 180, intervalLabel: "Every 6 Months",
-    sphere: "Private",    lastDoneDate: new Date(now - 140 * 86_400_000), completionCount: 3,  history: [],
-  },
-  {
-    id: "rec-3", title: "Car Service",       notes: "Full service + tyre rotation.",          intervalDays: 90,  intervalLabel: "Every 3 Months",
-    sphere: "Private",    lastDoneDate: new Date(now - 60 * 86_400_000),  completionCount: 4,  history: [],
-  },
-  {
-    id: "rec-4", title: "Review Finances",   notes: "Check budget vs actuals in YNAB.",       intervalDays: 30,  intervalLabel: "Every Month",
-    sphere: "Private",    lastDoneDate: new Date(now - 5 * 86_400_000),   completionCount: 8,  history: [],
-  },
-  {
-    id: "rec-5", title: "Team 1:1 Catchup", notes: "30 min sync — blockers + next sprint.",  intervalDays: 14,  intervalLabel: "Every 2 Weeks",
-    sphere: "Business 1", lastDoneDate: new Date(now - 10 * 86_400_000),  completionCount: 12, history: [],
-  },
-  {
-    id: "rec-6", title: "Invoice Clients",  notes: "Send via Holvi. Net-14 terms.",           intervalDays: 30,  intervalLabel: "Every Month",
-    sphere: "Business 2", lastDoneDate: new Date(now - 28 * 86_400_000),  completionCount: 5,  history: [],
-  },
-];
-
-// ── Seed data ────────────────────────────────────────────────────────────────
-
-const INITIAL_PROJECTS: Project[] = [
-  { id: "priv-1", sphere: "Private",    emoji: "🏡", name: "Home Renovation",         tagIds: ["tag-home"],       status: "on-track", milestone: "Kitchen complete · Jun 15" },
-  { id: "priv-2", sphere: "Private",    emoji: "🌿", name: "Garden Landscaping",      tagIds: ["tag-outdoor"],    status: "at-risk",  milestone: "Design sign-off · Jul 1"  },
-  { id: "priv-3", sphere: "Private",    emoji: "💰", name: "Personal Finance Plan",   tagIds: ["tag-finance"],    status: "on-track", milestone: "Q3 review · Aug 1"        },
-  { id: "b1-1",   sphere: "Business 1", emoji: "📣", name: "Q2 Marketing Strategy",   tagIds: ["tag-marketing"],  status: "ahead",    milestone: "Campaign live · Jun 1"    },
-  { id: "b1-2",   sphere: "Business 1", emoji: "🚀", name: "Product Launch v2.0",     tagIds: ["tag-product"],    status: "on-track", milestone: "Beta release · Jul 15"    },
-  { id: "b1-3",   sphere: "Business 1", emoji: "🎨", name: "Brand Identity Refresh",  tagIds: ["tag-design"],     status: "on-track", milestone: "Final review · Jun 30"    },
-  { id: "b2-1",   sphere: "Business 2", emoji: "👥", name: "Client Onboarding System",tagIds: ["tag-operations"], status: "on-track", milestone: "Soft launch · Jun 20"     },
-  { id: "b2-2",   sphere: "Business 2", emoji: "📊", name: "Revenue Dashboard",       tagIds: ["tag-analytics"],  status: "at-risk",  milestone: "MVP · Aug 1"              },
-  { id: "b2-3",   sphere: "Business 2", emoji: "🤝", name: "Partnership Outreach",    tagIds: ["tag-bizdev"],     status: "ahead",    milestone: "2 deals signed · Jun 10"  },
-  // ── siin ──────────────────────────────────────────────────────────────────
-  { id: "siin-p1", sphere: "siin", emoji: "🎨", name: "Brand",       tagIds: ["tag-brand"],       status: "on-track", milestone: "In progress" },
-  { id: "siin-p2", sphere: "siin", emoji: "💼", name: "Business",    tagIds: ["tag-business"],    status: "on-track", milestone: "In progress" },
-  { id: "siin-p3", sphere: "siin", emoji: "🚀", name: "Product",     tagIds: ["tag-product"],     status: "on-track", milestone: "In progress" },
-  { id: "siin-p4", sphere: "siin", emoji: "💻", name: "Website",     tagIds: ["tag-website"],     status: "on-track", milestone: "In progress" },
-  { id: "siin-p5", sphere: "siin", emoji: "📣", name: "Marketing",   tagIds: ["tag-marketing"],   status: "on-track", milestone: "In progress" },
-  { id: "siin-p6", sphere: "siin", emoji: "👥", name: "Clients",     tagIds: ["tag-clients"],     status: "on-track", milestone: "In progress" },
-  { id: "siin-p7", sphere: "siin", emoji: "✍️", name: "Content",     tagIds: ["tag-content"],     status: "on-track", milestone: "In progress" },
-  { id: "siin-p8", sphere: "siin", emoji: "💬", name: "Meetings",    tagIds: ["tag-meetings"],    status: "on-track", milestone: "In progress" },
-  { id: "siin-p9", sphere: "siin", emoji: "⭐", name: "Influencers", tagIds: ["tag-influencers"], status: "on-track", milestone: "In progress" },
-];
-
-const INITIAL_TASKS: Task[] = [
-  { id: "t1",  sphere: "Private",    project: "Home Renovation",          title: "Get kitchen renovation quotes",      priority: "High", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t2",  sphere: "Private",    project: "Home Renovation",          title: "Research cabinet suppliers",         priority: "Med",  energy: "Easy",  done: true,  deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t3",  sphere: "Private",    project: "Personal Finance Plan",    title: "Review monthly budget",              priority: "High", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t4",  sphere: "Private",    project: "Personal Finance Plan",    title: "Set up investment tracking",         priority: "Med",  energy: "Easy",  done: true,  deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t5",  sphere: "Private",    project: "Garden Landscaping",       title: "Get landscaping quotes",             priority: "Low",  energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t6",  sphere: "Business 1", project: "Brand Identity Refresh",   title: "Design brand mockups",               priority: "High", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t7",  sphere: "Business 1", project: "Brand Identity Refresh",   title: "Compile competitor brand analysis",  priority: "Med",  energy: "Quick", done: true,  deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t8",  sphere: "Business 1", project: "Q2 Marketing Strategy",    title: "Review campaign analytics",          priority: "Med",  energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t9",  sphere: "Business 1", project: "Q2 Marketing Strategy",    title: "Draft campaign brief",               priority: "High", energy: "Flow",  done: true,  deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t10", sphere: "Business 1", project: "Product Launch v2.0",      title: "Define MVP feature set",             priority: "High", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t11", sphere: "Business 2", project: "Client Onboarding System", title: "Document onboarding flow",           priority: "Med",  energy: "Quick", done: true,  deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t12", sphere: "Business 2", project: "Client Onboarding System", title: "Build welcome email template",       priority: "Low",  energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t13", sphere: "Business 2", project: "Revenue Dashboard",        title: "Design metrics layout",              priority: "Med",  energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t14", sphere: "Business 2", project: "Revenue Dashboard",        title: "Define KPI definitions",             priority: "High", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t15", sphere: "Business 2", project: "Partnership Outreach",     title: "Send partnership deck to prospects", priority: "High", energy: "Flow",  done: true,  deadline: null, notes: "", manualMinutes: 0 },
-  { id: "t16", sphere: "Business 2", project: "Partnership Outreach",     title: "Follow up on initial responses",     priority: "Med",  energy: "Quick", done: true,  deadline: null, notes: "", manualMinutes: 0 },
-  // ── siin ──────────────────────────────────────────────────────────────────
-  { id: "siin-t1",  sphere: "siin", project: "Brand",       title: "Siin Foundation Doc",                      priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t2",  sphere: "siin", project: "Business",    title: "Update PP/TC",                             priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t3",  sphere: "siin", project: "Product",     title: "Google maps",                              priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t4",  sphere: "siin", project: "Product",     title: "Reports Loyalty Program",                  priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t5",  sphere: "siin", project: "Product",     title: "In-app copy (Discount)",                   priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t6",  sphere: "siin", project: "Website",     title: "Skeleton Customers",                       priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t7",  sphere: "siin", project: "Website",     title: "Skeleton Businesses",                      priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t8",  sphere: "siin", project: "Product",     title: "Paywall",                                  priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t9",  sphere: "siin", project: "Marketing",   title: "Message Cafes",                            priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t10", sphere: "siin", project: "Clients",     title: "Instruction 'How to' for Põhjala Businesses", priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t11", sphere: "siin", project: "Content",     title: "Finish intro videos",                      priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t12", sphere: "siin", project: "Clients",     title: "Inform old users (Email)",                 priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t13", sphere: "siin", project: "Meetings",    title: "Rotermann Manager",                        priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t14", sphere: "siin", project: "Meetings",    title: "KIOSK Georg",                              priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t15", sphere: "siin", project: "Clients",     title: "Add koligriv to majaline",                 priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t16", sphere: "siin", project: "Product",     title: "Add checkbox (Marketing)",                 priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t17", sphere: "siin", project: "Product",     title: "Sentry Errors (Agent)",                    priority: "Med", energy: "Flow",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t18", sphere: "siin", project: "Influencers", title: "Message old influencers",                  priority: "Med", energy: "Easy",  done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t19", sphere: "siin", project: "Meetings",    title: "Andrei Kazakov",                           priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t20", sphere: "siin", project: "Meetings",    title: "Taavet/Silver",                            priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t21", sphere: "siin", project: "Meetings",    title: "Jahuu (Ksenia)",                           priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t22", sphere: "siin", project: "Clients",     title: "Buy black holders (temu)",                 priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-  { id: "siin-t23", sphere: "siin", project: "Meetings",    title: "Alexandr Zdank",                           priority: "Med", energy: "Quick", done: false, deadline: null, notes: "", manualMinutes: 0 },
-];
+// (Seed data removed — new accounts start clean and are hydrated from Supabase)
 
 // ── State & actions ──────────────────────────────────────────────────────────
 
@@ -971,37 +783,11 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-// ── Initial state (empty — hydrated from Supabase on login) ──────────────────
+// ── Initial state (always empty — HYDRATE action populates from Supabase) ─────
 
 function buildInitialState(): State {
-  const today = new Date().toLocaleDateString("en-CA");
-  // When Supabase is not configured fall back to seed data for local dev/demo
-  if (!isSupabaseConfigured) {
-    return {
-      currentTrackingDate: today,
-      showNightlyReview:   false,
-      historicalLogs:      [],
-      yesterdayRecap:      "",
-      dailyCheckIn:        null,
-      tags:               INITIAL_TAGS,
-      spheres:            INITIAL_SPHERES,
-      habits:             INITIAL_HABITS,
-      tasks:              INITIAL_TASKS,
-      projects:           INITIAL_PROJECTS,
-      recurringTasks:     INITIAL_RECURRING,
-      quickNotes:         [],
-      networkContacts:    [],
-      relationshipGroups: INITIAL_GROUPS,
-      activeTask:    null,
-      running:       false,
-      elapsed:       0,
-      committedSecs: 0,
-      sessions:      [],
-    };
-  }
-  // Supabase configured — start clean; HYDRATE action will populate from DB
   return {
-    currentTrackingDate: today,
+    currentTrackingDate: new Date().toLocaleDateString("en-CA"),
     showNightlyReview:   false,
     historicalLogs:      [],
     yesterdayRecap:      "",
@@ -1181,6 +967,18 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
   const today = new Date().toLocaleDateString("en-CA");
   const savedTrackingDate = (dashState?.current_tracking_date as string) ?? today;
   const showNightlyReview = savedTrackingDate !== today && new Date().getHours() >= 20;
+
+  // Auto-provision default spheres for brand-new accounts
+  if (spheres.length === 0) {
+    const defaults = [
+      { id: crypto.randomUUID(), name: "Private",  labelColor: "emerald" },
+      { id: crypto.randomUUID(), name: "Business", labelColor: "violet"  },
+    ];
+    await Promise.all(defaults.map((s) =>
+      supabase!.from("spheres").insert({ id: s.id, user_id: userId, name: s.name, label_color: s.labelColor, sort_order: defaults.indexOf(s) })
+    ));
+    spheres.push(...defaults.map(s => ({ id: s.id, name: s.name, labelColor: s.labelColor, description: undefined })));
+  }
 
   return {
     spheres, tags, projects, tasks, sessions, habits, quickNotes,
