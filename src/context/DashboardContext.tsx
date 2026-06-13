@@ -968,16 +968,24 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
   const savedTrackingDate = (dashState?.current_tracking_date as string) ?? today;
   const showNightlyReview = savedTrackingDate !== today && new Date().getHours() >= 20;
 
-  // Auto-provision default spheres for brand-new accounts
-  if (spheres.length === 0) {
-    const defaults = [
-      { id: crypto.randomUUID(), name: "Private",  labelColor: "emerald" },
-      { id: crypto.randomUUID(), name: "Business", labelColor: "violet"  },
-    ];
-    await Promise.all(defaults.map((s) =>
-      supabase!.from("spheres").insert({ id: s.id, user_id: userId, name: s.name, label_color: s.labelColor, sort_order: defaults.indexOf(s) })
+  // Auto-provision default spheres for brand-new accounts.
+  // Check by name so a partial setup (e.g. only "Private" exists) never
+  // inserts a duplicate — only the missing one gets created.
+  const existingNames = new Set(spheres.map(s => s.name));
+  const DEFAULTS = [
+    { name: "Private",  labelColor: "emerald" },
+    { name: "Business", labelColor: "violet"  },
+  ];
+  const missing = DEFAULTS.filter(d => !existingNames.has(d.name));
+  if (missing.length > 0) {
+    const toInsert = missing.map((d, i) => ({
+      id: crypto.randomUUID(), name: d.name, labelColor: d.labelColor,
+      sortOrder: spheres.length + i,
+    }));
+    await Promise.all(toInsert.map(s =>
+      supabase!.from("spheres").insert({ id: s.id, user_id: userId, name: s.name, label_color: s.labelColor, sort_order: s.sortOrder })
     ));
-    spheres.push(...defaults.map(s => ({ id: s.id, name: s.name, labelColor: s.labelColor, description: undefined })));
+    spheres.push(...toInsert.map(s => ({ id: s.id, name: s.name, labelColor: s.labelColor, description: undefined })));
   }
 
   return {
