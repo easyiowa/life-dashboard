@@ -11,51 +11,19 @@ import QuickNotesCard from "@/components/widgets/QuickNotesCard";
 import NightlyReviewModal from "@/components/NightlyReviewModal";
 import MorningRecapBanner from "@/components/MorningRecapBanner";
 import MindfulCheckIn from "@/components/MindfulCheckIn";
+import DashboardHeader from "@/components/DashboardHeader";
 import { DashboardProvider } from "@/context/DashboardContext";
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-}
-
-function formatDate() {
-  return new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 export default function DashboardPage() {
-  const greeting = getGreeting();
-  const date = formatDate();
-
   const now = new Date();
-  const helsinkiTime = now.toLocaleTimeString("en-US", {
-    timeZone: "Europe/Helsinki",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const nyTime = now.toLocaleTimeString("en-US", {
-    timeZone: "America/New_York",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const laTime = now.toLocaleTimeString("en-US", {
-    timeZone: "America/Los_Angeles",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const helsinkiTime = now.toLocaleTimeString("en-US", { timeZone: "Europe/Helsinki", hour: "2-digit", minute: "2-digit", hour12: false });
+  const nyTime       = now.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false });
+  const laTime       = now.toLocaleTimeString("en-US", { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit", hour12: false });
 
   const clocks = [
-    { city: "Helsinki", code: "HEL", time: helsinkiTime, active: true },
-    { city: "New York", code: "NYC", time: nyTime, active: false },
-    { city: "Los Angeles", code: "LAX", time: laTime, active: false },
+    { city: "Helsinki",    code: "HEL", time: helsinkiTime, active: true  },
+    { city: "New York",    code: "NYC", time: nyTime,       active: false },
+    { city: "Los Angeles", code: "LAX", time: laTime,       active: false },
   ];
 
   return (
@@ -65,30 +33,8 @@ export default function DashboardPage() {
 
         <MorningRecapBanner />
 
-        {/* ── Header ─────────────────────────────────────────────── */}
-        <div className="relative min-h-[160px] pb-12 mb-0">
-          <header className="flex items-start justify-between">
-            <div>
-              <p className="text-slate-500 text-xs font-medium tracking-widest uppercase mb-1">
-                {date}
-              </p>
-              <h1 className="text-3xl font-semibold text-white tracking-tight">
-                {greeting}, Olaf
-              </h1>
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-              <span className="text-slate-400 text-sm">Live</span>
-            </div>
-          </header>
-
-          {/* Monstera — floating transparent decoration, no layout footprint */}
-          <img
-            src="/monstera.png"
-            alt=""
-            className="absolute top-4 right-4 w-36 h-36 z-0 object-contain opacity-70 hover:opacity-95 transition-opacity duration-300 pointer-events-none select-none"
-          />
-        </div>
+        {/* ── Header (client component — owns settings modal + dynamic greeting) */}
+        <DashboardHeader />
 
         <MindfulCheckIn />
 

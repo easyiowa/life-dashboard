@@ -13,14 +13,16 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface AuthState {
-  session:          Session | null;
-  user:             User    | null;
-  loading:          boolean;
-  isConfigured:     boolean;
-  signInWithEmail:  (email: string, password: string) => Promise<{ error: string | null }>;
-  signUpWithEmail:  (email: string, password: string) => Promise<{ error: string | null }>;
-  signInWithGoogle: () => Promise<void>;
-  signOut:          () => Promise<void>;
+  session:             Session | null;
+  user:                User    | null;
+  loading:             boolean;
+  isConfigured:        boolean;
+  signInWithEmail:     (email: string, password: string) => Promise<{ error: string | null }>;
+  signUpWithEmail:     (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle:    () => Promise<void>;
+  signOut:             () => Promise<void>;
+  updateDisplayName:   (name: string)     => Promise<{ error: string | null }>;
+  updatePassword:      (password: string) => Promise<{ error: string | null }>;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -82,6 +84,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }
 
+  async function updateDisplayName(name: string) {
+    if (!supabase) return { error: "Supabase is not configured." };
+    const { error } = await supabase.auth.updateUser({ data: { display_name: name } });
+    return { error: error?.message ?? null };
+  }
+
+  async function updatePassword(password: string) {
+    if (!supabase) return { error: "Supabase is not configured." };
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error: error?.message ?? null };
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -93,6 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUpWithEmail,
         signInWithGoogle,
         signOut,
+        updateDisplayName,
+        updatePassword,
       }}
     >
       {children}
