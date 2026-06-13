@@ -3,19 +3,29 @@
 import { useState, useEffect } from "react";
 import { Lock, Delete } from "lucide-react";
 
-const PIN = "1234";
+const PIN_ENABLED_KEY = "ld_pin_enabled";
+const PIN_VALUE_KEY   = "ld_pin_value";
 
 export default function PasscodeLock({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [digits, setDigits] = useState<string[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+  const [savedPin, setSavedPin] = useState("");
+  const [digits,   setDigits]   = useState<string[]>([]);
   const [unlocked, setUnlocked] = useState(false);
-  const [shake, setShake] = useState(false);
+  const [shake,    setShake]    = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Declared before any useEffect so closures always capture initialised bindings.
+  useEffect(() => {
+    const enabled = localStorage.getItem(PIN_ENABLED_KEY) === "true";
+    const pin     = localStorage.getItem(PIN_VALUE_KEY) ?? "";
+    setSavedPin(pin);
+    if (!enabled) setUnlocked(true);
+    setHydrated(true);
+  }, []);
+
   const handleDigit = (d: string) => {
     if (digits.length >= 4 || shake) return;
     setDigits((prev) => [...prev, d]);
@@ -28,7 +38,7 @@ export default function PasscodeLock({
 
   useEffect(() => {
     if (digits.length === 4) {
-      if (digits.join("") === PIN) {
+      if (digits.join("") === savedPin) {
         setUnlocked(true);
       } else {
         setErrorMsg("Incorrect PIN");
@@ -40,9 +50,8 @@ export default function PasscodeLock({
         }, 650);
       }
     }
-  }, [digits]);
+  }, [digits, savedPin]);
 
-  // Keyboard support
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key >= "0" && e.key <= "9") handleDigit(e.key);
@@ -53,7 +62,8 @@ export default function PasscodeLock({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [digits, shake]);
 
-  if (unlocked) return <>{children}</>;
+  if (!hydrated) return null;
+  if (unlocked)  return <>{children}</>;
 
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
 
@@ -118,8 +128,6 @@ export default function PasscodeLock({
             );
           })}
         </div>
-
-        <p className="text-slate-600 text-xs">Demo PIN: 1234</p>
       </div>
     </div>
   );

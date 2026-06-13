@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, User, Mail, Calendar, Lock, LogOut, Eye, EyeOff, Loader2 } from "lucide-react";
+import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -67,6 +67,9 @@ function SectionHeading({ icon: Icon, label }: { icon: React.ElementType; label:
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
+const PIN_ENABLED_KEY = "ld_pin_enabled";
+const PIN_VALUE_KEY   = "ld_pin_value";
+
 interface Props { isOpen: boolean; onClose: () => void }
 
 export default function SettingsModal({ isOpen, onClose }: Props) {
@@ -83,16 +86,23 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
 
   const [signOutLoading, setSignOutLoading] = useState(false);
 
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [pinValue,   setPinValue]   = useState("");
+  const [pinToast,   setPinToast]   = useState<Toast | null>(null);
+
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Seed display name from user metadata when modal opens
+  // Seed state from user metadata + localStorage when modal opens
   useEffect(() => {
     if (isOpen) {
       setDisplayName(user?.user_metadata?.display_name ?? "");
       setNameToast(null);
       setPwdToast(null);
+      setPinToast(null);
       setNewPwd("");
       setConfirmPwd("");
+      setPinEnabled(localStorage.getItem(PIN_ENABLED_KEY) === "true");
+      setPinValue(localStorage.getItem(PIN_VALUE_KEY) ?? "");
       setTimeout(() => nameInputRef.current?.focus(), 50);
     }
   }, [isOpen, user]);
@@ -109,6 +119,12 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
     const t = setTimeout(() => setPwdToast(null), 4000);
     return () => clearTimeout(t);
   }, [pwdToast]);
+
+  useEffect(() => {
+    if (!pinToast) return;
+    const t = setTimeout(() => setPinToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [pinToast]);
 
   if (!isOpen) return null;
 
@@ -141,6 +157,16 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
       setNewPwd("");
       setConfirmPwd("");
     }
+  }
+
+  function handleSavePin() {
+    if (pinEnabled && pinValue.length !== 4) {
+      setPinToast({ type: "error", message: "PIN must be exactly 4 digits." });
+      return;
+    }
+    localStorage.setItem(PIN_ENABLED_KEY, String(pinEnabled));
+    if (pinEnabled) localStorage.setItem(PIN_VALUE_KEY, pinValue);
+    setPinToast({ type: "success", message: pinEnabled ? "Lock screen PIN saved." : "Lock screen PIN disabled." });
   }
 
   async function handleSignOut() {
@@ -257,6 +283,55 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
               </div>
             </section>
           )}
+
+          <div className="h-px bg-white/[0.06]" />
+
+          {/* ── Local screen lock ─────────────────────────────────── */}
+          <section>
+            <SectionHeading icon={KeyRound} label="Local Screen Lock" />
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center justify-between cursor-pointer select-none">
+                <span className="text-sm text-slate-300">Enable lock screen PIN</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={pinEnabled}
+                  onClick={() => setPinEnabled(v => !v)}
+                  className={`relative w-10 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
+                    pinEnabled ? "bg-violet-600" : "bg-white/[0.1]"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                      pinEnabled ? "translate-x-4" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </label>
+              {pinEnabled && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">4-digit PIN</label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={pinValue}
+                    onChange={e => setPinValue(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="••••"
+                    className="h-10 px-3.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors tracking-[0.5em]"
+                  />
+                </div>
+              )}
+              <ToastBanner toast={pinToast} />
+              <button
+                onClick={handleSavePin}
+                className="h-9 rounded-xl text-sm font-semibold text-white transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+              >
+                Save Lock Settings
+              </button>
+            </div>
+          </section>
 
           <div className="h-px bg-white/[0.06]" />
 
