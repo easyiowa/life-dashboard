@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap, Plus } from "lucide-react";
-import { useDashboard, type Task, type HistoricalLog } from "@/context/DashboardContext";
+import { useDashboard, type Task, type HistoricalLog, type DailyTrackingEntry } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -31,13 +31,18 @@ const INACTIVE_PILL = "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:
 // ── Queue row ─────────────────────────────────────────────────────────────────
 
 function QueueRow({ task }: { task: Task }) {
-  const { updateTask, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, elapsed, committedSecs, currentTrackingDate, spheres } = useDashboard();
+  const { updateTaskDaily, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, elapsed, committedSecs, currentTrackingDate, spheres } = useDashboard();
   const ac = areaColor(spheres.find((s) => s.name === task.sphere)?.labelColor);
-  const intent             = task.intent ?? "finish";
-  const committedFocusMins = (task.timeSpentMinutes ?? 0) + (task.manualMinutes ?? 0);
+
+  // All daily focus data reads from the per-date registry — never from cumulative task fields
+  const dailyEntry: DailyTrackingEntry = task.dailyTracking?.[currentTrackingDate]
+    ?? { timeSpentMinutes: 0, intent: "finish", dailyTargetMinutes: null };
+
+  const intent             = dailyEntry.intent;
+  const committedFocusMins = dailyEntry.timeSpentMinutes; // today only, no historical bleed
   const isThisTaskActive   = activeTaskId === task.id && timerIsRunning;
   const isMaybe            = intent === "maybe";
-  const goalMinutes        = task.dailyTargetMinutes ?? 0;
+  const goalMinutes        = dailyEntry.dailyTargetMinutes ?? 0;
   const isTimeGoal         = intent === "time" && goalMinutes > 0;
   // Second-precision calculation so the bar moves every tick, not once per minute.
   const goalSecs           = goalMinutes * 60;
@@ -45,15 +50,21 @@ function QueueRow({ task }: { task: Task }) {
   const pct                = isTimeGoal && goalSecs > 0 ? Math.min((liveTotalSecs / goalSecs) * 100, 100) : 0;
   const totalFocusMinutes  = Math.floor(liveTotalSecs / 60);
   const goalAchieved       = isTimeGoal && liveTotalSecs >= goalSecs;
-  const [localMins, setLocalMins] = useState<string>(task.dailyTargetMinutes?.toString() ?? "");
+  const [localMins, setLocalMins] = useState<string>(dailyEntry.dailyTargetMinutes?.toString() ?? "");
 
   function handleIntentChange(val: Task["intent"]) {
-    updateTask(task.id, { intent: val, dailyTargetMinutes: val !== "time" ? null : (Number(localMins) || null) });
+    const resolvedIntent = val ?? "finish";
+    // Pre-fill 25 min when switching to time goal with no value set
+    if (resolvedIntent === "time" && !localMins) setLocalMins("25");
+    updateTaskDaily(task.id, currentTrackingDate, {
+      intent: resolvedIntent,
+      dailyTargetMinutes: resolvedIntent !== "time" ? null : (Number(localMins) || 25),
+    });
   }
 
   function handleTargetBlur() {
     const mins = Number(localMins);
-    updateTask(task.id, { dailyTargetMinutes: mins > 0 ? mins : null });
+    updateTaskDaily(task.id, currentTrackingDate, { dailyTargetMinutes: mins > 0 ? mins : null });
   }
 
   function handleStart() {
@@ -121,38 +132,48 @@ function QueueRow({ task }: { task: Task }) {
         </button>
       </div>
 
-      {/* Meta + intent selector */}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className={`text-[10px] font-medium flex-shrink-0 ${ac.text}`}>{task.sphere}</span>
-        <span className="text-slate-700 text-[10px]">·</span>
-        <span className="text-[10px] text-slate-500 flex-shrink-0">{task.project}</span>
-        <span className="text-slate-700 text-[10px]">·</span>
-        {INTENT_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => handleIntentChange(opt.value)}
-            className={`px-2 h-5 rounded-full text-[10px] font-medium border transition-all duration-100 ${
-              intent === opt.value ? INTENT_ACTIVE[opt.value] : INACTIVE_PILL
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-        {intent === "time" && (
-          <div className="flex items-center gap-1 ml-1">
-            <input
-              type="number"
-              min={1}
-              value={localMins}
-              onChange={(e) => setLocalMins(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-              onBlur={handleTargetBlur}
-              placeholder="min"
-              className="w-14 h-5 px-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-white outline-none focus:border-blue-500/60 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            <span className={`text-[10px] ${goalAchieved ? "text-emerald-400 font-medium" : "text-slate-600"}`}>
-              {goalAchieved ? "✓ goal reached" : "min goal"}
-            </span>
+      {/* Meta row — sphere/project left, intent pills right */}
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-1.5">
+          <span className={`text-[10px] font-medium flex-shrink-0 ${ac.text}`}>{task.sphere}</span>
+          <span className="text-slate-700 text-[10px]">·</span>
+          <span className="text-[10px] text-slate-500 flex-shrink-0">{task.project}</span>
+        </div>
+        {!isComplete && (
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {INTENT_OPTIONS.map((opt) => {
+              const isActive = intent === opt.value;
+              if (opt.value === "time" && isActive) {
+                return (
+                  <div key={opt.value} className={`inline-flex items-center gap-0.5 px-2.5 h-5 rounded-full text-[10px] font-medium border ${INTENT_ACTIVE["time"]}`}>
+                    <span className="flex-shrink-0 leading-none">⏱️</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={localMins}
+                      onChange={(e) => setLocalMins(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                      onBlur={handleTargetBlur}
+                      className="w-5 p-0 m-0 bg-transparent outline-none text-center leading-none text-blue-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className={`flex-shrink-0 ${goalAchieved ? "text-emerald-400" : ""}`}>
+                      {goalAchieved ? "✓" : "min"}
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleIntentChange(opt.value)}
+                  className={`px-2.5 h-5 rounded-full text-[10px] font-medium border transition-all duration-100 ${
+                    isActive && opt.value ? INTENT_ACTIVE[opt.value] : INACTIVE_PILL
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -490,8 +511,9 @@ export default function DailyFocusQueueCard() {
   const yesterdayLog = historicalLogs[0] ?? null;
 
   const queuedTasks   = tasks.filter((t) => (t.queuedDate ?? null) === currentTrackingDate);
-  const commitments   = queuedTasks.filter((t) => (t.intent ?? "finish") !== "maybe");
-  const maybes        = queuedTasks.filter((t) => (t.intent ?? "finish") === "maybe");
+  const getIntent     = (t: Task) => t.dailyTracking?.[currentTrackingDate]?.intent ?? t.intent ?? "finish";
+  const commitments   = queuedTasks.filter((t) => getIntent(t) !== "maybe");
+  const maybes        = queuedTasks.filter((t) => getIntent(t) === "maybe");
   const doneCount     = commitments.filter((t) => t.done).length;
 
   return (
@@ -502,7 +524,7 @@ export default function DailyFocusQueueCard() {
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-violet-400" />
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-            Today's Focus Queue
+            Today's Focus
           </h2>
           {queuedTasks.length > 0 && (
             <span className="text-[10px] text-slate-600">

@@ -7,15 +7,6 @@ import {
   type RecurringTask,
 } from "@/context/DashboardContext";
 
-function ordSuffix(n: number): string {
-  if (n >= 11 && n <= 13) return "th";
-  switch (n % 10) {
-    case 1: return "st";
-    case 2: return "nd";
-    case 3: return "rd";
-    default: return "th";
-  }
-}
 
 interface Props {
   task: RecurringTask | null;
@@ -37,7 +28,7 @@ interface FormState {
   sphere: string;
   intervalDays: number;
   intervalLabel: string;
-  anchorDay: number | "";
+  startDate: string;
 }
 
 export default function RecurringResponsibilityModal({ task, onClose }: Props) {
@@ -47,13 +38,22 @@ export default function RecurringResponsibilityModal({ task, onClose }: Props) {
 
   useEffect(() => {
     if (task) {
+      // Derive startDate: prefer explicit field, fall back to anchorDay-in-month, then today
+      const today = new Date().toISOString().split("T")[0];
+      let derived = task.startDate ?? today;
+      if (!task.startDate && task.anchorDay && task.intervalDays === 30) {
+        const now = new Date();
+        const d = String(task.anchorDay).padStart(2, "0");
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        derived = `${now.getFullYear()}-${m}-${d}`;
+      }
       setForm({
         title:         task.title,
         notes:         task.notes,
         sphere:        task.sphere,
         intervalDays:  task.intervalDays,
         intervalLabel: task.intervalLabel,
-        anchorDay:     task.anchorDay ?? "",
+        startDate:     derived,
       });
       setTitleError(false);
     }
@@ -69,7 +69,8 @@ export default function RecurringResponsibilityModal({ task, onClose }: Props) {
       sphere:        form.sphere,
       intervalDays:  form.intervalDays,
       intervalLabel: form.intervalLabel,
-      anchorDay:     form.intervalDays === 30 && form.anchorDay !== "" ? form.anchorDay : undefined,
+      startDate:     form.startDate,
+      anchorDay:     undefined,
     });
     onClose();
   }
@@ -80,7 +81,6 @@ export default function RecurringResponsibilityModal({ task, onClose }: Props) {
       ...f,
       intervalDays:  days,
       intervalLabel: preset?.label ?? `Every ${days} days`,
-      anchorDay:     days !== 30 ? "" : f.anchorDay,
     } : f);
   }
 
@@ -168,36 +168,18 @@ export default function RecurringResponsibilityModal({ task, onClose }: Props) {
             </div>
           </div>
 
-          {/* Day of Month Anchor — shown only when "Every Month" is selected */}
-          {form.intervalDays === 30 && (
+          {/* Start Date */}
+          <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
-                Day of Month Anchor{" "}
-                <span className="text-slate-600 normal-case font-normal">(optional — e.g. 1st, 15th)</span>
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min={1}
-                  max={28}
-                  value={form.anchorDay}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "") { setForm((f) => f ? { ...f, anchorDay: "" } : f); return; }
-                    const n = Math.min(28, Math.max(1, parseInt(v, 10)));
-                    if (!isNaN(n)) setForm((f) => f ? { ...f, anchorDay: n } : f);
-                  }}
-                  placeholder="e.g. 1, 15…"
-                  className="w-32 h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                {form.anchorDay !== "" && (
-                  <p className="text-xs text-slate-500">
-                    Due on the <span className="text-violet-300 font-medium">{form.anchorDay}{ordSuffix(form.anchorDay)}</span> of each month
-                  </p>
-                )}
-              </div>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Start Date</label>
+              <input
+                type="date"
+                value={form.startDate}
+                onChange={(e) => setForm((f) => f ? { ...f, startDate: e.target.value } : f)}
+                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors [color-scheme:dark] cursor-pointer"
+              />
             </div>
-          )}
+          </div>
 
           {/* Stats strip */}
           <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 flex items-center gap-6">

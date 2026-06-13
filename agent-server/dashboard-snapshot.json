@@ -365,7 +365,14 @@
       "intent": "finish",
       "dailyTargetMinutes": null,
       "timeSpentMinutes": 21,
-      "rolloverCount": 1
+      "rolloverCount": 1,
+      "dailyTracking": {
+        "2026-06-12": {
+          "timeSpentMinutes": 0,
+          "intent": "time",
+          "dailyTargetMinutes": 25
+        }
+      }
     },
     {
       "title": "Buy milk tomorrow",
@@ -582,11 +589,18 @@
       "deadline": null,
       "notes": "- how to come (map image)\n- food/bar menu\n- casual pics/videos\n- area plan\n- line up",
       "manualMinutes": 0,
-      "done": true,
+      "done": false,
       "id": "t-1780389543648-6q6",
-      "queuedDate": null,
+      "queuedDate": "2026-06-12",
       "intent": "finish",
-      "dailyTargetMinutes": null
+      "dailyTargetMinutes": null,
+      "dailyTracking": {
+        "2026-06-12": {
+          "timeSpentMinutes": 0,
+          "intent": "maybe",
+          "dailyTargetMinutes": null
+        }
+      }
     },
     {
       "sphere": "siin",
@@ -661,11 +675,18 @@
       "manualMinutes": 0,
       "done": false,
       "id": "t-1781101082172-f1u",
-      "queuedDate": null,
-      "intent": "time",
-      "dailyTargetMinutes": 3,
+      "queuedDate": "2026-06-12",
+      "intent": "finish",
+      "dailyTargetMinutes": null,
       "rolloverCount": 5,
-      "timeSpentMinutes": 5
+      "timeSpentMinutes": 7,
+      "dailyTracking": {
+        "2026-06-12": {
+          "timeSpentMinutes": 1,
+          "intent": "finish",
+          "dailyTargetMinutes": null
+        }
+      }
     },
     {
       "sphere": "iowa",
@@ -746,11 +767,18 @@
       "manualMinutes": 0,
       "done": false,
       "id": "t-1781190000545-erw",
-      "queuedDate": null,
+      "queuedDate": "2026-06-12",
       "intent": "time",
       "dailyTargetMinutes": 5,
       "timeSpentMinutes": 7,
-      "rolloverCount": 1
+      "rolloverCount": 1,
+      "dailyTracking": {
+        "2026-06-12": {
+          "timeSpentMinutes": 0,
+          "intent": "maybe",
+          "dailyTargetMinutes": null
+        }
+      }
     },
     {
       "sphere": "education",
@@ -799,6 +827,19 @@
       "dailyTargetMinutes": 2,
       "rolloverCount": 2,
       "timeSpentMinutes": 2
+    },
+    {
+      "sphere": "education",
+      "project": "Ableton",
+      "title": "TODAY STUFF",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": "2026-06-13",
+      "notes": "xcvbhnj",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "t-1781343851805-wzu"
     }
   ],
   "habits": [
@@ -865,7 +906,8 @@
       "notes": "No screens after 22:00.",
       "history": {
         "2026-05-29": true,
-        "2026-05-28": true
+        "2026-05-28": true,
+        "2026-06-13": true
       },
       "routine": "day"
     },
@@ -900,7 +942,8 @@
       "history": {
         "2026-06-02": true,
         "2026-06-01": true,
-        "2026-06-03": true
+        "2026-06-03": true,
+        "2026-06-13": true
       }
     },
     {
@@ -913,7 +956,12 @@
       "notes": "",
       "id": "habit-1780320570102-ai6",
       "history": {
-        "2026-06-12": false
+        "2026-06-12": true,
+        "2026-06-11": true,
+        "2026-06-10": true,
+        "2026-06-09": true,
+        "2026-06-08": true,
+        "2026-06-13": true
       }
     },
     {
@@ -1236,7 +1284,8 @@
       "sphere": "iowa",
       "lastDoneDate": "2026-05-26T20:48:26.115Z",
       "completionCount": 8,
-      "history": []
+      "history": [],
+      "anchorDay": 5
     },
     {
       "id": "rec-5",
@@ -1328,18 +1377,6 @@
       "anchorDay": 3
     },
     {
-      "title": "Pay invoices INOVIICEEES",
-      "notes": "",
-      "intervalDays": 30,
-      "intervalLabel": "Every Month",
-      "sphere": "iowa",
-      "lastDoneDate": null,
-      "anchorDay": 1,
-      "id": "rec-1781193012586-tdz",
-      "completionCount": 0,
-      "history": []
-    },
-    {
       "title": "cool stuff",
       "notes": "",
       "intervalDays": 30,
@@ -1350,9 +1387,50 @@
       "id": "rec-1781260614625-loj",
       "completionCount": 0,
       "history": []
+    },
+    {
+      "title": "Pay invoices",
+      "notes": "Importnant",
+      "intervalDays": 30,
+      "intervalLabel": "Every Month",
+      "sphere": "iowa",
+      "lastDoneDate": null,
+      "anchorDay": 1,
+      "id": "rec-1781349132927-afm",
+      "completionCount": 0,
+      "history": []
+    },
+    {
+      "title": "Rave Pills",
+      "notes": "Anywhere in Veterean",
+      "intervalDays": 7,
+      "intervalLabel": "Every Week",
+      "sphere": "iowa",
+      "lastDoneDate": null,
+      "id": "rec-1781349178471-5jv",
+      "completionCount": 0,
+      "history": []
+    },
+    {
+      "title": "PILLS FOR RAVE",
+      "notes": "",
+      "intervalDays": 90,
+      "intervalLabel": "Every 3 Months",
+      "startDate": "2026-07-01",
+      "sphere": "iowa",
+      "lastDoneDate": null,
+      "id": "rec-1781349864778-pjc",
+      "completionCount": 0,
+      "history": []
     }
   ],
   "quickNotes": [
+    {
+      "text": "note here and rthere¨",
+      "sphere": "iowa",
+      "createdAt": "2026-06-13 11:39",
+      "id": "note-1781339984211-7wyg"
+    },
     {
       "text": "oåjn",
       "sphere": "vibing",

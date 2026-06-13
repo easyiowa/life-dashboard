@@ -95,7 +95,7 @@ export default function HabitModal({ open, onClose }: Props) {
   const [type,        setType]        = useState<Habit["type"]>("start");
   const [routine,     setRoutine]     = useState<NonNullable<Habit["routine"]>>("morning");
   const [frequency,   setFrequency]   = useState<Habit["frequency"]>("daily");
-  const [targetCount, setTargetCount] = useState(5);
+  const [targetCount, setTargetCount] = useState<number | "">(5);
   const [emoji,       setEmoji]       = useState("⭐");
   const [emojiLocked, setEmojiLocked] = useState(false);
   const [notes,       setNotes]       = useState("");
@@ -117,7 +117,7 @@ export default function HabitModal({ open, onClose }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setTitleErr(true); return; }
-    addHabit({ title: title.trim(), type, routine, frequency, targetCount, emoji, notes });
+    addHabit({ title: title.trim(), type, routine, frequency, targetCount: targetCount || 1, emoji, notes });
     handleClose();
   }
 
@@ -216,7 +216,12 @@ export default function HabitModal({ open, onClose }: Props) {
                 min={1}
                 max={31}
                 value={targetCount}
-                onChange={(e) => setTargetCount(Math.max(1, Number(e.target.value)))}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "") { setTargetCount(""); return; }
+                  const n = parseInt(v, 10);
+                  if (!isNaN(n)) setTargetCount(n);
+                }}
                 className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>

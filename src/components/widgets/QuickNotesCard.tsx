@@ -1,16 +1,24 @@
 "use client";
 
-import { useState, useMemo, type ReactNode } from "react";
+import { useState, useMemo, useEffect, type ReactNode } from "react";
 import { NotebookPen, Trash2, X, Search, Zap, ChevronDown } from "lucide-react";
 import { useDashboard, type QuickNote, type Sphere } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
 import TaskModal from "@/components/TaskModal";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, horizontalListSortingStrategy,
+  useSortable, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TODAY        = new Date().toLocaleDateString("en-CA");
-const ALL_TAB      = "__all__";
-const FAVORITES_TAB = "__favorites__";
+const TODAY   = new Date().toLocaleDateString("en-CA");
+const ALL_TAB = "__all__";
 
 function fmtTime(createdAt: string): string {
   return createdAt.split(" ")[1] ?? "";
@@ -407,11 +415,17 @@ function ArchiveModal({
     }
   }
 
+  // Lock background scroll while modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-[#0F1629] border border-white/[0.08] rounded-2xl w-full max-w-xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="relative bg-[#0F1629] border border-white/[0.08] rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
 
         {/* Modal header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] flex-shrink-0">
@@ -471,8 +485,10 @@ function ArchiveModal({
           </div>
         </div>
 
-        {/* Accordion notes */}
-        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-4 flex flex-col gap-2">
+        {/* Outer scroll window — owns overflow clipping, no flex-col */}
+        <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+        {/* Inner layout box — owns flex-col spacing, no overflow */}
+        <div className="px-5 pt-3 pb-4 flex flex-col gap-2">
           {totalNotes === 0 ? (
             <p className="text-xs text-slate-600 text-center py-8">
               {favoritesOnly ? "No favorites yet — mark notes with 🔥 to save them here." : query ? "No notes match your search." : "No notes captured yet."}
@@ -551,9 +567,38 @@ function ArchiveModal({
               ))}
             </>
           )}
-        </div>
+        </div>{/* end inner layout box */}
+        </div>{/* end outer scroll window */}
       </div>
     </div>
+  );
+}
+
+// ── Sortable sphere pill ──────────────────────────────────────────────────────
+
+function SortablePill({
+  sphere, isActive, onClick,
+}: { sphere: Sphere; isActive: boolean; onClick: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: sphere.id });
+  const pill = areaColor(sphere.labelColor);
+  return (
+    <button
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.45 : 1,
+      }}
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+      className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 cursor-grab active:cursor-grabbing select-none touch-none ${
+        isActive ? pill.pillActive : pill.pillInactive
+      }`}
+    >
+      {sphere.name}
+    </button>
   );
 }
 
@@ -565,7 +610,27 @@ export default function QuickNotesCard() {
     addQuickNote, deleteQuickNote, toggleQuickNoteImportant,
   } = useDashboard();
 
-  const [activeSphereId,    setActiveSphereId]    = useState<string>(ALL_TAB);
+  // Persisted sphere ordering — saved to localStorage so custom order survives refresh
+  const [sphereOrder, setSphereOrder] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("qn-sphere-order");
+      if (saved) return JSON.parse(saved) as string[];
+    } catch { /* */ }
+    return spheres.map((s) => s.id);
+  });
+
+  // Active tab initialises to the first sphere in persisted order
+  const [activeSphereId, setActiveSphereId] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem("qn-sphere-order");
+      if (saved) {
+        const order = JSON.parse(saved) as string[];
+        if (order.length > 0) return order[0];
+      }
+    } catch { /* */ }
+    return spheres[0]?.id ?? ALL_TAB;
+  });
+
   const [text,              setText]              = useState("");
   const [projectId,         setProjectId]         = useState("");
   const [showAllNotesModal, setShowAllNotesModal] = useState(false);
@@ -574,21 +639,44 @@ export default function QuickNotesCard() {
   const [taskModalOpen,     setTaskModalOpen]     = useState(false);
   const [taskModalDefaults, setTaskModalDefaults] = useState<{ title: string; notes: string; sphere: string }>({ title: "", notes: "", sphere: "" });
 
-  const isAll       = activeSphereId === ALL_TAB;
-  const isFavorites = activeSphereId === FAVORITES_TAB;
+  // Stable ordered sphere list — persisted order + any newly added spheres appended
+  const orderedSpheres = useMemo(() => {
+    const ordered = sphereOrder
+      .map((id) => spheres.find((s) => s.id === id))
+      .filter(Boolean) as Sphere[];
+    const added = spheres.filter((s) => !sphereOrder.includes(s.id));
+    return [...ordered, ...added];
+  }, [spheres, sphereOrder]);
 
-  const activeSphereObj = (isAll || isFavorites) ? undefined : (spheres.find((s) => s.id === activeSphereId) ?? spheres[0]);
+  // Drag sensor: require 5px of movement before activating drag so clicks still fire normally
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setSphereOrder((prev) => {
+      const from = prev.indexOf(String(active.id));
+      const to   = prev.indexOf(String(over.id));
+      const next = arrayMove(prev, from, to);
+      try { localStorage.setItem("qn-sphere-order", JSON.stringify(next)); } catch { /* */ }
+      return next;
+    });
+  }
+
+  const isAll = activeSphereId === ALL_TAB;
+
+  const activeSphereObj = isAll ? undefined : (spheres.find((s) => s.id === activeSphereId) ?? spheres[0]);
   const activeSphere    = activeSphereObj?.name ?? "";
-  const sphereProjects  = (isAll || isFavorites) ? [] : projects.filter((p) => p.sphere === activeSphere);
+  const sphereProjects  = isAll ? [] : projects.filter((p) => p.sphere === activeSphere);
 
-  // Notes shown in the main feed
-  const todayNotes: QuickNote[] = isFavorites
-    ? quickNotes.filter((n) => n.isImportant)
-    : isAll
+  // Notes shown in the main feed — favorites always float to the top
+  const todayNotes: QuickNote[] = (
+    isAll
       ? quickNotes.filter((n) => n.createdAt.startsWith(TODAY))
-      : quickNotes.filter((n) => n.sphere === activeSphere && n.createdAt.startsWith(TODAY));
-
-  const favoriteCount = quickNotes.filter((n) => n.isImportant).length;
+      : quickNotes.filter((n) => n.sphere === activeSphere && n.createdAt.startsWith(TODAY))
+  ).slice().sort((a, b) => Number(b.isImportant) - Number(a.isImportant));
 
   function handleConvertToTask(note: QuickNote) {
     setTaskModalDefaults({
@@ -602,7 +690,7 @@ export default function QuickNotesCard() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed || isAll || isFavorites) return;
+    if (!trimmed || isAll) return;
     addQuickNote(trimmed, activeSphere, projectId || undefined);
     setText("");
     setProjectId("");
@@ -654,9 +742,22 @@ export default function QuickNotesCard() {
           </button>
         </div>
 
-        {/* Area tabs */}
+        {/* Area tabs — drag to reorder, order persisted to localStorage */}
         <div className="flex items-center gap-2 flex-wrap mt-4 flex-shrink-0">
-          {/* All tab */}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={orderedSpheres.map((s) => s.id)} strategy={horizontalListSortingStrategy}>
+              {orderedSpheres.map((sphere) => (
+                <SortablePill
+                  key={sphere.id}
+                  sphere={sphere}
+                  isActive={activeSphereObj?.id === sphere.id}
+                  onClick={() => { setActiveSphereId(sphere.id); setProjectId(""); }}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+
+          {/* All tab — always at the far right */}
           <button
             type="button"
             onClick={() => { setActiveSphereId(ALL_TAB); setProjectId(""); }}
@@ -668,42 +769,11 @@ export default function QuickNotesCard() {
           >
             All
           </button>
-
-          {spheres.map((sphere) => {
-            const pill = areaColor(sphere.labelColor);
-            return (
-              <button
-                key={sphere.id}
-                type="button"
-                onClick={() => { setActiveSphereId(sphere.id); setProjectId(""); }}
-                className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-                  activeSphereObj?.id === sphere.id ? pill.pillActive : pill.pillInactive
-                }`}
-              >
-                {sphere.name}
-              </button>
-            );
-          })}
-
-          {/* Favorites filter pill */}
-          <button
-            type="button"
-            onClick={() => { setActiveSphereId(FAVORITES_TAB); setProjectId(""); }}
-            className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-              isFavorites
-                ? "bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.2)]"
-                : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-amber-400/70 hover:bg-amber-500/[0.06] hover:border-amber-500/20"
-            }`}
-          >
-            🔥 Favorites{favoriteCount > 0 && <span className="ml-1 tabular-nums text-[10px]">({favoriteCount})</span>}
-          </button>
         </div>
 
-        {/* Capture form — hidden when "All" or "Favorites" is active */}
-        {(isAll || isFavorites) ? (
-          <p className="mt-4 text-[11px] text-slate-600 flex-shrink-0">
-            {isFavorites ? "Showing all notes marked as important." : "Select an area above to add a note."}
-          </p>
+        {/* Capture form — hidden when "All" is active */}
+        {isAll ? (
+          <p className="mt-4 text-[11px] text-slate-600 flex-shrink-0">Select an area above to add a note.</p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4 flex-shrink-0">
             <textarea
@@ -741,18 +811,14 @@ export default function QuickNotesCard() {
         <div className="flex-1 overflow-y-auto mt-3 flex flex-col gap-1.5 pr-1 min-h-0">
           {todayNotes.length === 0 ? (
             <p className="text-xs text-slate-700 text-center py-4">
-              {isFavorites
-                ? "No important notes yet — hover a note and click 🔥 to flag it."
-                : isAll
-                  ? "No notes today across any area."
-                  : `No notes today for ${activeSphere}.`}
+              {isAll ? "No notes today across any area." : `No notes today for ${activeSphere}.`}
             </p>
           ) : (
             todayNotes.map((note) => (
               <NoteRow
                 key={note.id}
                 note={note}
-                showArea={isAll || isFavorites}
+                showArea={isAll}
                 onDelete={() => deleteQuickNote(note.id)}
                 onToggleImportant={() => toggleQuickNoteImportant(note.id)}
                 onConvertToTask={() => handleConvertToTask(note)}

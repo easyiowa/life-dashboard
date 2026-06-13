@@ -774,11 +774,6 @@ export default function ProjectsCard() {
                   {!isOpen && (
                     <div className="flex items-center gap-3 pl-5">
                       <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                        <CalendarClock className="w-3 h-3 flex-shrink-0" />
-                        <span>{project.milestone}</span>
-                      </div>
-                      <span className="text-slate-700 text-[10px]">·</span>
-                      <div className="flex items-center gap-1 text-[10px] text-slate-500">
                         <CheckSquare className="w-3 h-3 flex-shrink-0" />
                         <span>{project.taskDone}/{project.taskTotal} tasks</span>
                       </div>

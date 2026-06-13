@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Plus, X, Trash2, Pencil, FileText, Settings, Check, Circle, ChevronDown, CheckCircle2 } from "lucide-react";
+import { Users, Plus, X, Trash2, Pencil, FileText, Settings, Check, ChevronDown, CheckCircle2 } from "lucide-react";
 import {
   useDashboard,
   type NetworkContact,
   type ContactEvent,
   type RelationshipGroup,
-  GROUP_COLOR_PALETTE,
   type GroupColor,
 } from "@/context/DashboardContext";
+import ManageGroupsModal from "@/components/modals/ManageGroupsModal";
 
 // ── Color palette ─────────────────────────────────────────────────────────────
 
@@ -90,124 +90,6 @@ function computeProgress(contact: NetworkContact): ProgressResult | null {
   const label     = daysLeft === 0 ? "Today!" : daysLeft === 1 ? "1d" : daysLeft < 7 ? `${daysLeft}d` : daysLeft < 60 ? `${Math.ceil(daysLeft / 7)}w` : `${Math.ceil(daysLeft / 30)}mo`;
 
   return { daysLeft, progress, label, urgency, icon: nearest.icon, milestoneLabel: nearest.label, type: nearest.type, eventId: nearest.eventId };
-}
-
-// ── Group manager panel ───────────────────────────────────────────────────────
-
-function GroupManager({
-  groups,
-  onAdd,
-  onUpdate,
-  onDelete,
-  onClose,
-}: {
-  groups: RelationshipGroup[];
-  onAdd: (g: Omit<RelationshipGroup, "id">) => void;
-  onUpdate: (id: string, fields: Partial<Omit<RelationshipGroup, "id">>) => void;
-  onDelete: (id: string) => void;
-  onClose: () => void;
-}) {
-  const [label,    setLabel]    = useState("");
-  const [emoji,    setEmoji]    = useState("👥");
-  const [color,    setColor]    = useState<GroupColor>("violet");
-  const [editId,   setEditId]   = useState<string | null>(null);
-  const [editLabel,setEditLabel]= useState("");
-
-  function handleAdd() {
-    if (!label.trim()) return;
-    onAdd({ label: label.trim(), emoji, color });
-    setLabel(""); setEmoji("👥");
-  }
-
-  function startEdit(g: RelationshipGroup) {
-    setEditId(g.id); setEditLabel(g.label);
-  }
-
-  function commitEdit(id: string) {
-    if (editLabel.trim()) onUpdate(id, { label: editLabel.trim() });
-    setEditId(null);
-  }
-
-  return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Manage Groups</span>
-        <button onClick={onClose} className="text-slate-600 hover:text-slate-400 transition-colors">
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Existing groups */}
-      <div className="flex flex-col gap-1.5">
-        {groups.map((g) => {
-          const cc = COLOR_CLASSES[g.color];
-          return (
-            <div key={g.id} className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cc.dot}`} />
-              {editId === g.id ? (
-                <input
-                  autoFocus
-                  value={editLabel}
-                  onChange={(e) => setEditLabel(e.target.value)}
-                  onBlur={() => commitEdit(g.id)}
-                  onKeyDown={(e) => { if (e.key === "Enter") commitEdit(g.id); if (e.key === "Escape") setEditId(null); }}
-                  className="flex-1 h-6 px-2 rounded-md bg-white/[0.06] border border-white/[0.12] text-xs text-white outline-none"
-                />
-              ) : (
-                <span className="flex-1 text-xs text-slate-300">{g.emoji} {g.label}</span>
-              )}
-              <button onClick={() => startEdit(g)} className="p-0.5 text-slate-600 hover:text-slate-400 transition-colors">
-                <Pencil className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => onDelete(g.id)}
-                disabled={groups.length <= 1}
-                className="p-0.5 text-slate-700 hover:text-red-400 disabled:opacity-30 transition-colors"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Add new group */}
-      <div className="flex items-center gap-2 pt-1 border-t border-white/[0.05]">
-        <input
-          type="text"
-          value={emoji}
-          onChange={(e) => setEmoji(e.target.value)}
-          className="w-10 h-7 text-center rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm outline-none focus:border-violet-500/50"
-        />
-        <input
-          type="text"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-          placeholder="Group name…"
-          className="flex-1 h-7 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50"
-        />
-        {/* Color swatches */}
-        <div className="flex gap-1">
-          {GROUP_COLOR_PALETTE.slice(0, 5).map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setColor(c)}
-              className={`w-3.5 h-3.5 rounded-full ${COLOR_CLASSES[c].dot} transition-all ${color === c ? "ring-2 ring-white/40 ring-offset-1 ring-offset-[#0F1629]" : "opacity-50 hover:opacity-100"}`}
-            />
-          ))}
-        </div>
-        <button
-          onClick={handleAdd}
-          disabled={!label.trim()}
-          className="flex-shrink-0 w-7 h-7 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-30 flex items-center justify-center transition-all"
-        >
-          <Plus className="w-3.5 h-3.5 text-white" />
-        </button>
-      </div>
-    </div>
-  );
 }
 
 // ── Add / Edit contact modal ──────────────────────────────────────────────────
@@ -539,9 +421,7 @@ function ContactModal({
             </button>
             <button
               type="submit"
-              className={`flex-1 h-10 rounded-xl text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.3)] ${
-                activeGroup ? `bg-gradient-to-r ${COLOR_CLASSES[activeGroup.color].bar} hover:opacity-90` : "bg-violet-600 hover:bg-violet-500"
-              }`}
+              className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.35)]"
             >
               {initial ? "Save Changes" : "Add Contact"}
             </button>
@@ -700,10 +580,10 @@ export default function NetworkCard() {
     calendarJump, setCalendarJump,
   } = useDashboard();
 
-  const [activeFilter,  setActiveFilter]  = useState<string>("__all__");
-  const [showModal,     setShowModal]      = useState(false);
-  const [editing,       setEditing]        = useState<NetworkContact | null>(null);
-  const [showGroupMgr,  setShowGroupMgr]   = useState(false);
+  const [activeFilter,     setActiveFilter]     = useState<string>("__all__");
+  const [showModal,        setShowModal]         = useState(false);
+  const [editing,          setEditing]           = useState<NetworkContact | null>(null);
+  const [isGroupsModalOpen,setIsGroupsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!calendarJump || calendarJump.type !== "contact") return;
@@ -736,6 +616,10 @@ export default function NetworkCard() {
 
   return (
     <>
+      <ManageGroupsModal
+        isOpen={isGroupsModalOpen}
+        onClose={() => setIsGroupsModalOpen(false)}
+      />
       {(showModal || editing) && (
         <ContactModal
           groups={relationshipGroups}
@@ -795,28 +679,13 @@ export default function NetworkCard() {
 
           <button
             type="button"
-            onClick={() => setShowGroupMgr((v) => !v)}
+            onClick={() => setIsGroupsModalOpen(true)}
             title="Manage groups"
-            className={`w-7 h-7 rounded-full flex items-center justify-center border transition-all duration-150 ${
-              showGroupMgr
-                ? "bg-violet-600/20 border-violet-500/40 text-violet-300"
-                : "bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-slate-400 hover:bg-white/[0.07]"
-            }`}
+            className="w-7 h-7 rounded-full flex items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
         </div>
-
-        {/* Group manager panel */}
-        {showGroupMgr && (
-          <GroupManager
-            groups={relationshipGroups}
-            onAdd={addRelationshipGroup}
-            onUpdate={updateRelationshipGroup}
-            onDelete={deleteRelationshipGroup}
-            onClose={() => setShowGroupMgr(false)}
-          />
-        )}
 
         {/* Contact list */}
         {visible.length === 0 ? (

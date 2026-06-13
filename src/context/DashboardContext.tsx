@@ -32,6 +32,12 @@ export interface Sphere {
   description?: string;
 }
 
+export interface DailyTrackingEntry {
+  timeSpentMinutes: number;           // focus minutes logged on this specific date
+  intent: "finish" | "time" | "maybe";
+  dailyTargetMinutes: number | null;
+}
+
 export interface Task {
   id: string;
   sphere: SphereId;
@@ -46,10 +52,11 @@ export interface Task {
   manualMinutes: number;
   // ── Daily planning queue ──────────────────────────────────────────────────
   queuedDate?: string | null;          // "YYYY-MM-DD" when pushed to a day's deck
-  timeSpentMinutes?: number;           // accumulated focus time this session cycle
-  intent?: "finish" | "time" | "maybe"; // defaults to "finish"
-  dailyTargetMinutes?: number | null;  // explicit allocation for "time" intent
+  timeSpentMinutes?: number;           // cumulative focus time across all time (historical)
+  intent?: "finish" | "time" | "maybe"; // kept for backward compat; authoritative source is dailyTracking
+  dailyTargetMinutes?: number | null;  // kept for backward compat
   rolloverCount?: number;              // increments when unfinished at day end
+  dailyTracking?: Record<string, DailyTrackingEntry>; // per-date isolated tracking
 }
 
 export interface Project {
@@ -176,7 +183,8 @@ export interface RecurringTask {
   notes: string;
   intervalDays: number;
   intervalLabel: string;
-  anchorDay?: number;        // 1–28: calendar day of month when intervalDays === 30
+  anchorDay?: number;        // kept for legacy seed data; prefer startDate for new tasks
+  startDate?: string;        // ISO YYYY-MM-DD: the cycle anchor for all countdown calculations
   sphere: SphereId;
   lastDoneDate: Date | null;
   completionCount: number;
@@ -406,6 +414,7 @@ type Action =
   | { type: "FINISH_SESSION" }
   | { type: "SET_ESTIMATE"; minutes: number }
   | { type: "TOGGLE_TASK_FOR_TODAY"; id: string; dateString: string; intent: Task["intent"]; targetMinutes: number | null }
+  | { type: "UPDATE_TASK_DAILY"; id: string; dateKey: string; changes: Partial<DailyTrackingEntry> }
   | { type: "UPDATE_TASK_TIME_SPENT"; id: string; minutes: number }
   | { type: "TRANSITION_TO_NEXT_DAY" }
   | { type: "REQUEST_NIGHTLY_REVIEW" }
@@ -415,7 +424,7 @@ type Action =
   | { type: "ADD_PROJECT"; project: Omit<Project, "id"> }
   | { type: "ADD_MANUAL_TIME"; projectId: string; minutes: number }
   | { type: "ADD_RECURRING_TASK"; task: Omit<RecurringTask, "id" | "completionCount" | "history"> }
-  | { type: "UPDATE_RECURRING_TASK"; id: string; fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel" | "anchorDay">> }
+  | { type: "UPDATE_RECURRING_TASK"; id: string; fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel" | "anchorDay" | "startDate">> }
   | { type: "DELETE_RECURRING_TASK"; id: string }
   | { type: "COMPLETE_RECURRING_TASK"; id: string }
   | { type: "ADD_SPHERE"; name: string; labelColor: string }
@@ -461,6 +470,17 @@ function mkSession(task: ActiveTask | null, elapsed: number): FocusSession {
   };
 }
 
+function addDailyMinutes(tasks: Task[], taskId: string, dateKey: string, minutes: number): Task[] {
+  return tasks.map((t) => {
+    if (t.id !== taskId) return t;
+    const cur = t.dailyTracking?.[dateKey];
+    const entry: DailyTrackingEntry = cur
+      ? { ...cur, timeSpentMinutes: cur.timeSpentMinutes + minutes }
+      : { timeSpentMinutes: minutes, intent: "finish", dailyTargetMinutes: null };
+    return { ...t, dailyTracking: { ...(t.dailyTracking ?? {}), [dateKey]: entry } };
+  });
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "START_TASK": {
@@ -471,13 +491,16 @@ function reducer(state: State, action: Action): State {
       // Only commit uncommitted delta — paused portion was already written to timeSpentMinutes.
       const interruptUncommitted = state.elapsed - (state.committedSecs ?? 0);
       const interruptedMinutes = state.activeTask && interruptUncommitted > 0 ? secsToMins(interruptUncommitted) : 0;
-      const tasks = interruptedMinutes > 0
+      const tasksAfterInterrupt = interruptedMinutes > 0
         ? state.tasks.map((t) =>
             t.id === state.activeTask!.id
               ? { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + interruptedMinutes }
               : t
           )
         : state.tasks;
+      const tasks = interruptedMinutes > 0 && state.activeTask
+        ? addDailyMinutes(tasksAfterInterrupt, state.activeTask.id, state.currentTrackingDate, interruptedMinutes)
+        : tasksAfterInterrupt;
       return { ...state, activeTask: action.task, running: true, elapsed: 0, committedSecs: 0, sessions, tasks };
     }
     case "START_FREE":
@@ -487,13 +510,16 @@ function reducer(state: State, action: Action): State {
       // Commit the uncommitted delta to the task's timeSpentMinutes so the progress bar updates immediately.
       const pauseDelta = state.elapsed - state.committedSecs;
       const pauseMinutes = state.activeTask && pauseDelta > 0 ? secsToMins(pauseDelta) : 0;
-      const pauseTasks = pauseMinutes > 0
+      const pauseTasksRoot = pauseMinutes > 0
         ? state.tasks.map((t) =>
             t.id === state.activeTask!.id
               ? { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + pauseMinutes }
               : t
           )
         : state.tasks;
+      const pauseTasks = pauseMinutes > 0 && state.activeTask
+        ? addDailyMinutes(pauseTasksRoot, state.activeTask.id, state.currentTrackingDate, pauseMinutes)
+        : pauseTasksRoot;
       return { ...state, running: false, committedSecs: state.elapsed, tasks: pauseTasks };
     }
 
@@ -509,13 +535,16 @@ function reducer(state: State, action: Action): State {
       // Only commit the portion not yet written during pause — avoids double-counting.
       const uncommittedSecs = state.elapsed - state.committedSecs;
       const uncommittedMinutes = state.activeTask && uncommittedSecs > 0 ? secsToMins(uncommittedSecs) : 0;
-      const tasks = uncommittedMinutes > 0
+      const finishTasksRoot = uncommittedMinutes > 0
         ? state.tasks.map((t) =>
             t.id === state.activeTask!.id
               ? { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + uncommittedMinutes }
               : t
           )
         : state.tasks;
+      const tasks = uncommittedMinutes > 0 && state.activeTask
+        ? addDailyMinutes(finishTasksRoot, state.activeTask.id, state.currentTrackingDate, uncommittedMinutes)
+        : finishTasksRoot;
       return { ...state, activeTask: null, running: false, elapsed: 0, committedSecs: 0, sessions, tasks };
     }
 
@@ -659,12 +688,16 @@ function reducer(state: State, action: Action): State {
           if ((t.queuedDate ?? null) === action.dateString) {
             return { ...t, queuedDate: null };
           }
-          // Add to queue with intent
+          // Add to queue — always start with a clean daily slate for this date
           return {
             ...t,
             queuedDate:         action.dateString,
-            intent:             action.intent ?? "finish",
-            dailyTargetMinutes: action.targetMinutes,
+            intent:             "finish",
+            dailyTargetMinutes: null,
+            dailyTracking: {
+              ...(t.dailyTracking ?? {}),
+              [action.dateString]: { timeSpentMinutes: 0, intent: "finish", dailyTargetMinutes: null },
+            },
           };
         }),
       };
@@ -672,11 +705,25 @@ function reducer(state: State, action: Action): State {
     case "UPDATE_TASK_TIME_SPENT":
       return {
         ...state,
-        tasks: state.tasks.map((t) =>
-          t.id !== action.id
-            ? t
-            : { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + action.minutes }
+        tasks: addDailyMinutes(
+          state.tasks.map((t) =>
+            t.id !== action.id ? t : { ...t, timeSpentMinutes: (t.timeSpentMinutes ?? 0) + action.minutes }
+          ),
+          action.id, state.currentTrackingDate, action.minutes
         ),
+      };
+
+    case "UPDATE_TASK_DAILY":
+      return {
+        ...state,
+        tasks: state.tasks.map((t) => {
+          if (t.id !== action.id) return t;
+          const cur = t.dailyTracking?.[action.dateKey] ?? { timeSpentMinutes: 0, intent: "finish" as const, dailyTargetMinutes: null };
+          return {
+            ...t,
+            dailyTracking: { ...(t.dailyTracking ?? {}), [action.dateKey]: { ...cur, ...action.changes } },
+          };
+        }),
       };
 
     case "TRANSITION_TO_NEXT_DAY": {
@@ -1120,6 +1167,7 @@ interface DashboardContextType {
   dailyCheckIn: DailyCheckIn | null;
   saveDailyCheckIn: (checkIn: DailyCheckIn) => void;
   toggleTaskForToday: (id: string, dateString: string, intent: Task["intent"], targetMinutes: number | null) => void;
+  updateTaskDaily: (id: string, dateKey: string, changes: Partial<DailyTrackingEntry>) => void;
   updateTaskTimeSpent: (id: string, minutes: number) => void;
   transitionToNextDay: () => void;
   requestNightlyReview: () => void;
@@ -1176,7 +1224,7 @@ interface DashboardContextType {
   startGlobalTimer: (taskId: string) => void;
   pauseGlobalTimer: () => void;
   addRecurringTask: (task: Omit<RecurringTask, "id" | "completionCount" | "history">) => void;
-  updateRecurringTask: (id: string, fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel" | "anchorDay">>) => void;
+  updateRecurringTask: (id: string, fields: Partial<Pick<RecurringTask, "title" | "notes" | "sphere" | "intervalDays" | "intervalLabel" | "anchorDay" | "startDate">>) => void;
   deleteRecurringTask: (id: string) => void;
   completeRecurringTask: (id: string) => void;
   calendarJump: CalendarJump | null;
@@ -1307,6 +1355,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         yesterdayRecap:       state.yesterdayRecap,
         toggleTaskForToday:   (id, dateString, intent, targetMinutes) => dispatch({ type: "TOGGLE_TASK_FOR_TODAY", id, dateString, intent: intent ?? "finish", targetMinutes }),
         updateTaskTimeSpent:  (id, minutes)    => dispatch({ type: "UPDATE_TASK_TIME_SPENT", id, minutes }),
+        updateTaskDaily:      (id, dateKey, changes) => dispatch({ type: "UPDATE_TASK_DAILY", id, dateKey, changes }),
         transitionToNextDay:  ()               => dispatch({ type: "TRANSITION_TO_NEXT_DAY" }),
         requestNightlyReview: ()               => dispatch({ type: "REQUEST_NIGHTLY_REVIEW" }),
         dismissNightlyReview: ()               => dispatch({ type: "DISMISS_NIGHTLY_REVIEW" }),

@@ -136,7 +136,6 @@ export default function ProjectEditModal({ project, onClose }: Props) {
   const [emojiLocked, setEmojiLocked] = useState(false);
   const [tagIds,      setTagIds]      = useState<string[]>([]);
   const [status,      setStatus]      = useState<Project["status"]>("on-track");
-  const [milestone,   setMilestone]   = useState("");
   const [nameErr,     setNameErr]     = useState(false);
   const [showNewTag,  setShowNewTag]  = useState(false);
   const [renamingId,  setRenamingId]  = useState<string | null>(null);
@@ -151,7 +150,6 @@ export default function ProjectEditModal({ project, onClose }: Props) {
       setEmojiLocked(true); // existing emoji treated as locked by default
       setTagIds(project.tagIds ?? []);
       setStatus(project.status);
-      setMilestone(project.milestone);
       setNameErr(false);
       setShowNewTag(false);
       setRenamingId(null);
@@ -204,7 +202,6 @@ export default function ProjectEditModal({ project, onClose }: Props) {
       emoji,
       tagIds,
       status,
-      milestone: milestone.trim(),
     });
     onClose();
   }
@@ -369,18 +366,6 @@ export default function ProjectEditModal({ project, onClose }: Props) {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Milestone */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Milestone</label>
-            <input
-              type="text"
-              value={milestone}
-              onChange={(e) => setMilestone(e.target.value)}
-              placeholder="e.g. Launch · Jul 15"
-              className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
-            />
           </div>
 
           {/* Actions */}
