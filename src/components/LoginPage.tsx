@@ -68,9 +68,9 @@ function FoundersNote() {
 
       {/* Avatar + badge */}
       <div className="flex items-start gap-3.5">
-        <div className="w-12 h-12 rounded-full overflow-hidden bg-zinc-800 shrink-0 flex items-center justify-center">
+        <div className="w-20 h-20 rounded-full overflow-hidden bg-zinc-800 shrink-0 flex items-center justify-center">
           {imgErr ? (
-            <User className="w-5 h-5 text-zinc-500" />
+            <User className="w-8 h-8 text-zinc-500" />
           ) : (
             <img
               src="/avatar.jpg"
@@ -85,7 +85,6 @@ function FoundersNote() {
             👋 A note from the founder
           </span>
           <p className="text-sm font-medium text-white leading-none">Olaf</p>
-          <p className="text-[10px] text-zinc-500">Founder · Helsinki</p>
         </div>
       </div>
 
