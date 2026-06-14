@@ -14,7 +14,6 @@ import NightlyReviewModal from "@/components/NightlyReviewModal";
 import MorningRecapBanner from "@/components/MorningRecapBanner";
 import MindfulCheckIn from "@/components/MindfulCheckIn";
 import DashboardHeader from "@/components/DashboardHeader";
-import { DashboardProvider } from "@/context/DashboardContext";
 
 export default function DashboardPage() {
   const now = new Date();
@@ -30,7 +29,6 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen p-4 md:p-6 lg:p-8">
-      <DashboardProvider>
       <div className="max-w-7xl mx-auto">
 
         <MorningRecapBanner />
@@ -118,7 +116,6 @@ export default function DashboardPage() {
 
       {/* Nightly review modal — self-contained, reads showNightlyReview from context */}
       <NightlyReviewModal />
-      </DashboardProvider>
     </main>
   );
 }
