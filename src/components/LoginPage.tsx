@@ -80,30 +80,30 @@ function FoundersNote() {
             />
           )}
         </div>
-        <div className="flex flex-col gap-1 pt-0.5">
-          <span className="self-start text-[10px] text-zinc-400 bg-white/[0.04] border border-white/[0.06] rounded-full px-2.5 py-0.5 leading-none">
+        <div className="flex flex-col gap-2 pt-1">
+          <span className="self-start text-xs text-zinc-400 bg-white/[0.04] border border-white/[0.06] rounded-full px-2.5 py-1 leading-none">
             👋 A note from the founder
           </span>
-          <p className="text-sm font-medium text-white leading-none">Olaf</p>
+          <p className="text-2xl font-bold text-white leading-none">Olaf</p>
         </div>
       </div>
 
       {/* Narrative */}
       <div className="flex flex-col gap-3.5 text-sm text-zinc-300 leading-relaxed">
         <p>
-          I&apos;m German. Supposedly that comes with colour-coded calendars, a place for everything, and meticulous life admin. I got the punctuality gene and skipped the rest.
+          If you know me, you know I&apos;m the organized German dude. I love structure, and for years I tried absolutely everything to optimize my life: habit trackers, apps, more apps, even more apps, and then Notion. Yet, everything still felt completely scattered across seven different tabs, apps, and endless monthly subscriptions. You still couldn&apos;t find things, and maintaining the apps felt like a job in itself.
         </p>
         <p>
-          It was my girlfriend who figured it out first. She has this remarkable, slightly terrifying ability to know things about me before I do. One afternoon she looked at my fifteen open browser tabs, three half-finished to-do lists, and the dentist appointment I&apos;d missed twice — and said, very calmly: <span className="text-zinc-400 italic">&ldquo;I think you have ADHD.&rdquo;</span> She was, as she almost always is, completely right.
+          Well, additionally, my girlfriend (now fianc&eacute;e), with her terrifying ability to know me better than I know myself, looked at the chaos one day and said: <span className="italic text-zinc-400">&ldquo;You have ADHD!&rdquo;</span> She was, as always, completely right.
         </p>
         <p>
-          I tried to fix it the modern way. A task manager, a habit tracker, a notes app, a timer, a calendar — five different logins, five monthly fees, and somehow I was more scattered than before. The tools were running me.
+          What you see here, the &ldquo;Life Dashboard&rdquo;, is a single, clean space designed to put everything into one fast overview and free up massive headspace. We seriously need to find a proper name for it, so ideas are very welcome.
         </p>
         <p>
-          So I built this instead. One place for work, people, habits, projects, and time. No subscriptions, no data silos, no tab-switching to remember what you were doing. I built it for myself — but I&apos;m sharing it with people I care about because I want them to forget less and enjoy their lives more.
+          You are the early adopters. Take it for a spin, build your layout, and tell me: what would you love to see here to help with your own life? The plan is to give this dashboard a &ldquo;brain&rdquo; next to help us organize effortlessly, track what matters, and keep closer tabs on our friendships.
         </p>
-        <p className="text-zinc-400">
-          One more thing: this doesn&apos;t even have a proper name yet. <span className="text-zinc-500">&ldquo;Life Dashboard&rdquo;</span> is a placeholder — good name ideas are genuinely welcome. And if something&apos;s missing, broken, or you&apos;d love a feature that doesn&apos;t exist yet, please tell me. I&apos;m building this for you too.
+        <p>
+          At the end of the day, I just want to forget and plan less, have a clean head, and enjoy life in the physical world more. Easy.
         </p>
         <p className="text-zinc-600 text-xs border-t border-white/[0.05] pt-3.5">
           — Olaf
