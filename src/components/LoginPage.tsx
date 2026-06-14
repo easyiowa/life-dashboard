@@ -91,20 +91,22 @@ function FoundersNote() {
       {/* Narrative */}
       <div className="flex flex-col gap-3.5 text-sm text-zinc-300 leading-relaxed">
         <p>
-          I have ADHD. Not the kind that makes for good content — the kind that means I forget dentist appointments, let months pass without calling people I care about, and lie awake wondering if I replied to an important email.
+          I&apos;m German. Supposedly that comes with colour-coded calendars, a place for everything, and meticulous life admin. I got the punctuality gene and skipped the rest.
         </p>
         <p>
-          For years I tried to fix this with subscriptions. A project manager here, a habit tracker there, a calendar app, a notes app, a timer. I was spending more time managing the tools than managing my life.
+          It was my girlfriend who figured it out first. She has this remarkable, slightly terrifying ability to know things about me before I do. One afternoon she looked at my fifteen open browser tabs, three half-finished to-do lists, and the dentist appointment I&apos;d missed twice — and said, very calmly: <span className="text-zinc-400 italic">&ldquo;I think you have ADHD.&rdquo;</span> She was, as she almost always is, completely right.
         </p>
         <p>
-          Life Dashboard is what I built instead. One place for everything that matters — tasks, projects, habits, relationships, time. No monthly fees. No data locked away. No context-switching between seven tabs.
+          I tried to fix it the modern way. A task manager, a habit tracker, a notes app, a timer, a calendar — five different logins, five monthly fees, and somehow I was more scattered than before. The tools were running me.
         </p>
         <p>
-          I work in focused blocks. I track what I owe people. I let the dashboard hold the details my brain shouldn&apos;t have to carry. It&apos;s a second brain on the outside — so mine can focus on the parts that actually matter.
+          So I built this instead. One place for work, people, habits, projects, and time. No subscriptions, no data silos, no tab-switching to remember what you were doing. I built it for myself — but I&apos;m sharing it with people I care about because I want them to forget less and enjoy their lives more.
         </p>
-        <p className="text-zinc-500 text-xs border-t border-white/[0.05] pt-3.5">
-          If any of that sounds familiar, you&apos;re in the right place.
-          <span className="block mt-1 text-zinc-600">— Olaf</span>
+        <p className="text-zinc-400">
+          One more thing: this doesn&apos;t even have a proper name yet. <span className="text-zinc-500">&ldquo;Life Dashboard&rdquo;</span> is a placeholder — good name ideas are genuinely welcome. And if something&apos;s missing, broken, or you&apos;d love a feature that doesn&apos;t exist yet, please tell me. I&apos;m building this for you too.
+        </p>
+        <p className="text-zinc-600 text-xs border-t border-white/[0.05] pt-3.5">
+          — Olaf
         </p>
       </div>
 
