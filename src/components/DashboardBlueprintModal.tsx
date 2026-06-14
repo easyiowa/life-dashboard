@@ -52,11 +52,13 @@ const WIDGET_META: Record<string, WidgetMeta> = {
   "network":      { label: "Network",      colSpan: 3, Icon: Users        },
 };
 
-// Tailwind col-span classes must be explicit strings (no template literals)
+// Tailwind col-span classes must be explicit strings (no template literals).
+// On mobile the grid is single-column so col-span-N has no effect — enforce
+// col-span-1 (full width) below md, then restore desktop spans at md+.
 const SPAN_CLS: Record<number, string> = {
   1: "col-span-1",
-  2: "col-span-2",
-  3: "col-span-3",
+  2: "col-span-1 md:col-span-2",
+  3: "col-span-1 md:col-span-3",
 };
 
 // ── Row packer ─────────────────────────────────────────────────────────────────
@@ -306,7 +308,7 @@ export default function DashboardBlueprintModal({ isOpen, onClose, initialOrder,
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-2">
                 {rows.map((row, rowIdx) => (
-                  <div key={rowIdx} className="grid grid-cols-3 gap-2">
+                  <div key={rowIdx} className="grid grid-cols-1 md:grid-cols-3 gap-2">
                     {row.map((slot, slotIdx) =>
                       slot.type === "widget" ? (
                         <BlueprintCard

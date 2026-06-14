@@ -68,8 +68,6 @@ export default function DashboardHeader() {
                 <Settings className="w-4 h-4" />
               </button>
             )}
-            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-            <span className="text-slate-400 text-sm">Live</span>
           </div>
         </header>
 

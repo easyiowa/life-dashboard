@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Wrench, Send, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
+import { X, Lightbulb, Send, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { WorkbenchUpdate } from "@/types/workbench";
@@ -118,7 +118,7 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.06] shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center shrink-0">
-              <Wrench className="w-3.5 h-3.5 text-purple-400" />
+              <Lightbulb className="w-3.5 h-3.5 text-purple-400" />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-white leading-none">Olaf&apos;s Workbench</h2>
@@ -159,10 +159,6 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
                 {displayContent.split("\n\n").map((para, i) => (
                   <p key={i} className="text-xs text-slate-400 leading-relaxed">{para}</p>
                 ))}
-                <div className="h-px bg-white/[0.05]" />
-                <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Next up: smarter onboarding, notification hooks, and probably a mobile nav pass. Stay tuned.
-                </p>
               </div>
             )}
 

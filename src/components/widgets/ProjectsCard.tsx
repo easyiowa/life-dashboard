@@ -15,6 +15,7 @@ import {
   Pause,
   Zap,
   Plus,
+  Settings,
   Settings2,
   X,
   Target,
@@ -635,7 +636,8 @@ export default function ProjectsCard() {
 
         {/* Sphere tabs + manage button */}
         <div className="flex items-center gap-2 flex-wrap">
-          {spheres.map((sphere) => {
+          {/* Deduplicated sphere pills */}
+          {[...new Map(spheres.map((s) => [s.id, s])).values()].map((sphere) => {
             const isActive = activeSphereObj?.id === sphere.id;
             const pill     = areaColor(sphere.labelColor);
             return (
@@ -650,27 +652,25 @@ export default function ProjectsCard() {
               </button>
             );
           })}
-          <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-            {/* Expand / Collapse All */}
-            {sphereProjects.length > 0 && (
-              <button
-                type="button"
-                onClick={handleToggleAllProjects}
-                title={isAnyProjectOpen ? "Collapse All Projects" : "Expand All Projects"}
-                className="h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] text-[11px] font-medium flex items-center gap-1.5 transition-colors duration-150"
-              >
-                {isAnyProjectOpen ? "▲ Collapse All" : "▼ Expand All"}
-              </button>
-            )}
-            {/* Manage spheres */}
+          {/* Manage spheres — inline after pills, matches NetworkCard gear style */}
+          <button
+            onClick={() => setShowManageSpheres(true)}
+            title="Manage areas"
+            className="w-7 h-7 rounded-full flex items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+          {/* Expand / Collapse All — pushed to far right */}
+          {sphereProjects.length > 0 && (
             <button
-              onClick={() => setShowManageSpheres(true)}
-              title="Manage areas"
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 border border-white/[0.05] hover:text-violet-400 hover:border-violet-500/30 hover:bg-violet-500/10 transition-all duration-150"
+              type="button"
+              onClick={handleToggleAllProjects}
+              title={isAnyProjectOpen ? "Collapse All Projects" : "Expand All Projects"}
+              className="ml-auto h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] text-[11px] font-medium flex items-center gap-1.5 transition-colors duration-150"
             >
-              <Settings2 className="w-3.5 h-3.5" />
+              {isAnyProjectOpen ? "▲ Collapse All" : "▼ Expand All"}
             </button>
-          </div>
+          )}
         </div>
 
         {/* Sub-header */}

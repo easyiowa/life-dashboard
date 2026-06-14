@@ -614,13 +614,15 @@ export default function QuickNotesCard() {
   const [sphereOrder, setSphereOrder] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("qn-sphere-order");
-      if (saved) return JSON.parse(saved) as string[];
+      if (saved) return [...new Set(JSON.parse(saved) as string[])]; // deduplicate stale IDs
     } catch { /* */ }
-    return spheres.map((s) => s.id);
+    return [...new Set(spheres.map((s) => s.id))];
   });
 
-  // Active tab initialises to the first sphere in persisted order
+  // Active tab initialises to 'Private' sphere, falling back to first sphere in persisted order
   const [activeSphereId, setActiveSphereId] = useState<string>(() => {
+    const privateId = spheres.find((s) => s.name === "Private")?.id;
+    if (privateId) return privateId;
     try {
       const saved = localStorage.getItem("qn-sphere-order");
       if (saved) {
@@ -639,13 +641,18 @@ export default function QuickNotesCard() {
   const [taskModalOpen,     setTaskModalOpen]     = useState(false);
   const [taskModalDefaults, setTaskModalDefaults] = useState<{ title: string; notes: string; sphere: string }>({ title: "", notes: "", sphere: "" });
 
-  // Stable ordered sphere list — persisted order + any newly added spheres appended
+  // Stable ordered sphere list — persisted order + any newly added spheres appended, deduped by id
   const orderedSpheres = useMemo(() => {
     const ordered = sphereOrder
       .map((id) => spheres.find((s) => s.id === id))
       .filter(Boolean) as Sphere[];
     const added = spheres.filter((s) => !sphereOrder.includes(s.id));
-    return [...ordered, ...added];
+    const seen = new Set<string>();
+    return [...ordered, ...added].filter((s) => {
+      if (seen.has(s.id)) return false;
+      seen.add(s.id);
+      return true;
+    });
   }, [spheres, sphereOrder]);
 
   // Drag sensor: require 5px of movement before activating drag so clicks still fire normally
