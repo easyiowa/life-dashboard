@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2 } from "lucide-react";
+import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import DashboardBlueprintModal from "@/components/DashboardBlueprintModal";
+import ActiveWidgetsModal from "@/components/ActiveWidgetsModal";
+import FounderDashboard from "@/components/FounderDashboard";
+
+const FOUNDER_EMAIL = "iowa.olaf@googlemail.com";
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
@@ -65,6 +71,15 @@ function SectionHeading({ icon: Icon, label }: { icon: React.ElementType; label:
   );
 }
 
+// ── Widget management ─────────────────────────────────────────────────────────
+
+const LAYOUT_KEY = "ld_widget_layout";
+
+const ALL_IDS = [
+  "calendar","habits","projects","time-tracker","quick-notes",
+  "daily-focus","activity-log","progress","recurring","network",
+];
+
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 const PIN_ENABLED_KEY = "ld_pin_enabled";
@@ -90,6 +105,11 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
   const [pinValue,   setPinValue]   = useState("");
   const [pinToast,   setPinToast]   = useState<Toast | null>(null);
 
+  const [widgetMarketplaceOpen, setWidgetMarketplaceOpen] = useState(false);
+  const [pendingWidgets,        setPendingWidgets]        = useState<string[]>(ALL_IDS);
+  const [blueprintOpen,         setBlueprintOpen]         = useState(false);
+  const [founderOpen,           setFounderOpen]           = useState(false);
+
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Seed state from user metadata + localStorage when modal opens
@@ -103,6 +123,18 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
       setConfirmPwd("");
       setPinEnabled(localStorage.getItem(PIN_ENABLED_KEY) === "true");
       setPinValue(localStorage.getItem(PIN_VALUE_KEY) ?? "");
+      setWidgetMarketplaceOpen(false);
+      setBlueprintOpen(false);
+
+      // Seed widget selection from saved layout
+      const savedLayout = user?.user_metadata?.widget_layout as string[] | undefined;
+      const fromStorage = (() => {
+        try { return JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? "null") as string[] | null; }
+        catch { return null; }
+      })();
+      const initial = savedLayout ?? fromStorage ?? ALL_IDS;
+      setPendingWidgets(initial.filter(id => ALL_IDS.includes(id)));
+
       setTimeout(() => nameInputRef.current?.focus(), 50);
     }
   }, [isOpen, user]);
@@ -132,6 +164,13 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : "—";
+
+  // True for Google OAuth accounts — these users cannot change their password
+  const isOAuthUser =
+    user?.app_metadata?.provider === "google" ||
+    (user?.identities as { provider: string }[] | undefined)?.some(id => id.provider === "google") === true;
+
+  const isFounder = user?.email === FOUNDER_EMAIL;
 
   async function handleSaveName() {
     if (!displayName.trim()) { setNameToast({ type: "error", message: "Display name cannot be empty." }); return; }
@@ -167,6 +206,24 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
     localStorage.setItem(PIN_ENABLED_KEY, String(pinEnabled));
     if (pinEnabled) localStorage.setItem(PIN_VALUE_KEY, pinValue);
     setPinToast({ type: "success", message: pinEnabled ? "Lock screen PIN saved." : "Lock screen PIN disabled." });
+  }
+
+  function persistWidgets(layout: string[]) {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+    window.dispatchEvent(new CustomEvent("ld:widget-layout", { detail: layout }));
+    if (isSupabaseConfigured && supabase && user) {
+      supabase.auth.updateUser({ data: { widget_layout: layout } }).catch(console.error);
+    }
+  }
+
+  function handleMarketplaceSave(selected: string[]) {
+    setPendingWidgets(selected);
+    persistWidgets(selected);
+  }
+
+  function handleBlueprintApply(newOrder: string[]) {
+    setPendingWidgets(newOrder);
+    persistWidgets(newOrder);
   }
 
   async function handleSignOut() {
@@ -250,10 +307,10 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
             </section>
           )}
 
-          {isConfigured && <div className="h-px bg-white/[0.06]" />}
+          {isConfigured && !isOAuthUser && <div className="h-px bg-white/[0.06]" />}
 
-          {/* ── Change password ───────────────────────────────────── */}
-          {isConfigured && (
+          {/* ── Change password (email accounts only) ────────────── */}
+          {isConfigured && !isOAuthUser && (
             <section>
               <SectionHeading icon={Lock} label="Security" />
               <div className="flex flex-col gap-3">
@@ -335,23 +392,82 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
 
           <div className="h-px bg-white/[0.06]" />
 
+          {/* ── Manage active widgets + Blueprint Mode ────────────── */}
+          <section>
+            <SectionHeading icon={LayoutGrid} label="Dashboard" />
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setWidgetMarketplaceOpen(true)}
+                className="w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2.5 px-4"
+              >
+                <LayoutGrid className="w-4 h-4 text-violet-400 shrink-0" />
+                <span>Manage Active Widgets</span>
+                <span className="ml-auto text-[10px] text-slate-600">{pendingWidgets.length} active</span>
+              </button>
+              <button
+                onClick={() => setBlueprintOpen(true)}
+                className="w-full h-10 rounded-xl border border-violet-500/25 bg-violet-500/[0.06] hover:bg-violet-500/[0.12] text-sm font-medium text-violet-300 hover:text-violet-200 transition-all flex items-center gap-2.5 px-4"
+              >
+                <span className="text-base leading-none shrink-0">🧩</span>
+                <span>Rearrange Grid Layout</span>
+                <span className="ml-auto text-[10px] text-violet-600">Blueprint Mode</span>
+              </button>
+            </div>
+          </section>
+
+          <div className="h-px bg-white/[0.06]" />
+
           {/* ── Sign out ──────────────────────────────────────────── */}
           <section>
             <SectionHeading icon={LogOut} label="Session" />
-            <button
-              onClick={handleSignOut}
-              disabled={signOutLoading}
-              className="w-full h-10 rounded-xl border border-red-500/30 bg-red-500/[0.07] hover:bg-red-500/[0.14] text-sm font-semibold text-red-400 hover:text-red-300 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {signOutLoading
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <><LogOut className="w-4 h-4" /> Log Out</>
-              }
-            </button>
+            <div className="flex flex-col gap-2">
+              {isFounder && (
+                <button
+                  onClick={() => setFounderOpen(true)}
+                  className="w-full h-10 rounded-xl border border-purple-500/30 bg-purple-500/[0.07] hover:bg-purple-500/[0.14] text-sm font-semibold text-purple-300 hover:text-purple-200 transition-all flex items-center gap-2.5 px-4"
+                >
+                  <Crown className="w-4 h-4 shrink-0" />
+                  <span>Founder Dashboard</span>
+                  <span className="ml-auto text-[10px] text-purple-700">private</span>
+                </button>
+              )}
+              <button
+                onClick={handleSignOut}
+                disabled={signOutLoading}
+                className="w-full h-10 rounded-xl border border-red-500/30 bg-red-500/[0.07] hover:bg-red-500/[0.14] text-sm font-semibold text-red-400 hover:text-red-300 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {signOutLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <><LogOut className="w-4 h-4" /> Log Out</>
+                }
+              </button>
+            </div>
           </section>
 
         </div>
       </div>
+
+      {/* Founder Dashboard — z-[70] highest layer */}
+      <FounderDashboard
+        isOpen={founderOpen}
+        onClose={() => setFounderOpen(false)}
+      />
+
+      {/* Widget Marketplace — z-[60] overlays on top of this modal (z-50) */}
+      <ActiveWidgetsModal
+        isOpen={widgetMarketplaceOpen}
+        onClose={() => setWidgetMarketplaceOpen(false)}
+        initialSelected={pendingWidgets}
+        onSave={handleMarketplaceSave}
+      />
+
+      {/* Blueprint Mode — z-[60] overlays on top of this modal (z-50) */}
+      <DashboardBlueprintModal
+        isOpen={blueprintOpen}
+        onClose={() => setBlueprintOpen(false)}
+        initialOrder={pendingWidgets}
+        onApply={handleBlueprintApply}
+      />
     </div>
   );
 }

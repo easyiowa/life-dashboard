@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, Lightbulb } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import SettingsModal from "@/components/SettingsModal";
+import WorkbenchBeacon from "@/components/WorkbenchBeacon";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -22,6 +23,8 @@ function formatDate() {
 
 export default function DashboardHeader() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [beaconOpen,   setBeaconOpen]   = useState(false);
+  const [beaconUnread, setBeaconUnread] = useState(true);
   const { user, isConfigured } = useAuth();
 
   const greeting    = getGreeting();
@@ -42,6 +45,19 @@ export default function DashboardHeader() {
           </div>
 
           <div className="flex items-center gap-3 mt-2">
+            {/* Workbench Lightbulb — always visible */}
+            <button
+              onClick={() => { setBeaconOpen(true); setBeaconUnread(false); }}
+              title="Olaf's Workbench"
+              className="w-8 h-8 rounded-xl flex items-center justify-center border border-transparent hover:bg-white/[0.06] hover:border-white/[0.08] transition-all"
+            >
+              <Lightbulb className={`w-4 h-4 transition-colors ${
+                beaconUnread
+                  ? "text-purple-400 animate-pulse drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]"
+                  : "text-slate-500 hover:text-slate-300"
+              }`} />
+            </button>
+
             {/* Settings trigger — only shown when auth is active */}
             {isConfigured && (
               <button
@@ -66,6 +82,7 @@ export default function DashboardHeader() {
       </div>
 
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <WorkbenchBeacon isOpen={beaconOpen} onClose={() => setBeaconOpen(false)} />
     </>
   );
 }

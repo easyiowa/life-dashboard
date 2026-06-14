@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/components/LoginPage";
+import OnboardingFlow from "@/components/OnboardingFlow";
 
 // AuthGate renders children only when a valid Supabase session exists.
 // If Supabase env vars are absent (local dev), it passes through immediately.
@@ -26,6 +27,9 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   // No session — show login
   if (!user) return <LoginPage />;
 
-  // Authenticated — render dashboard
+  // Authenticated but hasn't completed onboarding
+  if (!user.user_metadata?.is_onboarded) return <OnboardingFlow />;
+
+  // Authenticated + onboarded — render dashboard
   return <>{children}</>;
 }

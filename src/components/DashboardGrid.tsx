@@ -92,7 +92,8 @@ export default function DashboardGrid() {
   const [widgetIds, setWidgetIds] = useState<string[]>(DEFAULT_ORDER);
   const [activeId,  setActiveId]  = useState<string | null>(null);
 
-  // Load saved layout: Supabase user metadata takes priority over localStorage
+  // Load saved layout: Supabase user metadata takes priority over localStorage.
+  // Honor the explicit selection — do NOT append unselected widgets.
   useEffect(() => {
     const fromMeta    = user?.user_metadata?.widget_layout as string[] | undefined;
     const fromStorage = (() => {
@@ -102,11 +103,23 @@ export default function DashboardGrid() {
 
     const saved = fromMeta ?? fromStorage;
     if (Array.isArray(saved) && saved.length > 0) {
-      const valid   = saved.filter(id => id in REGISTRY);
-      const missing = DEFAULT_ORDER.filter(id => !valid.includes(id));
-      setWidgetIds([...valid, ...missing]);
+      const valid = saved.filter(id => id in REGISTRY);
+      setWidgetIds(valid.length > 0 ? valid : DEFAULT_ORDER);
     }
   }, [user]);
+
+  // Real-time sync when SettingsModal changes the active widget set
+  useEffect(() => {
+    function onLayoutChanged(e: Event) {
+      const newLayout = (e as CustomEvent<string[]>).detail;
+      if (Array.isArray(newLayout)) {
+        const valid = newLayout.filter(id => id in REGISTRY);
+        setWidgetIds(valid.length > 0 ? valid : DEFAULT_ORDER);
+      }
+    }
+    window.addEventListener("ld:widget-layout", onLayoutChanged);
+    return () => window.removeEventListener("ld:widget-layout", onLayoutChanged);
+  }, []);
 
   // Sensors: mouse (8px tolerance), touch (250ms hold + 5px tolerance), keyboard
   const sensors = useSensors(
