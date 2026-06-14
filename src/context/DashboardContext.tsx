@@ -966,7 +966,12 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
   const dashState = dashStateRes.data as Record<string, unknown> | null;
   const today = new Date().toLocaleDateString("en-CA");
   const savedTrackingDate = (dashState?.current_tracking_date as string) ?? today;
-  const showNightlyReview = savedTrackingDate !== today && new Date().getHours() >= 20;
+  const dismissedDate = typeof window !== "undefined"
+    ? localStorage.getItem("ld_nightly_review_dismissed") ?? ""
+    : "";
+  const showNightlyReview = savedTrackingDate !== today
+    && new Date().getHours() >= 20
+    && dismissedDate !== today;
 
   // Auto-provision default spheres for brand-new accounts.
   // Check by name so a partial setup (e.g. only "Private" exists) never
@@ -1231,7 +1236,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         },
 
         requestNightlyReview: () => dispatch({ type: "REQUEST_NIGHTLY_REVIEW" }),
-        dismissNightlyReview: () => dispatch({ type: "DISMISS_NIGHTLY_REVIEW" }),
+        dismissNightlyReview: () => {
+          try { localStorage.setItem("ld_nightly_review_dismissed", new Date().toLocaleDateString("en-CA")); } catch { /* */ }
+          dispatch({ type: "DISMISS_NIGHTLY_REVIEW" });
+        },
 
         lockDay: (date, dayVelocity, recap, completedTasks, rolledOverTasks, taskMeta, mindStateClosure) => {
           const rolledOver = stateRef.current.tasks.filter(t =>
