@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import TimeTrackerCard from "@/components/widgets/TimeTrackerCard";
 import DailyFocusQueueCard from "@/components/widgets/DailyFocusQueueCard";
 import ProgressCard from "@/components/widgets/ProgressCard";
