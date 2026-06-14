@@ -153,7 +153,10 @@ export default function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-xl font-semibold text-white tracking-tight">Life Dashboard</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Your personal command centre</p>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed max-w-[260px] mx-auto">
+              Welcome to your personal space for balancing life&apos;s moving pieces. From daily responsibilities and major life events to business projects and staying in touch with friends. Organize it all in one dashboard so you can forget less and live more.
+            </p>
+            <p className="text-xs font-medium text-slate-400 mt-2">Forget less, enjoy more.</p>
           </div>
         </div>
 
