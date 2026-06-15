@@ -199,19 +199,23 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
     e.preventDefault();
     if (!form.title.trim()) { setTitleError(true); return; }
 
-    // Auto-route fallback: if no project selected, find or create a "Random" catch-all
+    // Auto-route fallback: if no project selected, find or create a "Random" catch-all.
+    // When creating a new project we capture its generated ID and pass it explicitly to
+    // addTask so the Supabase insert gets the correct project_id even though stateRef
+    // hasn't been updated yet by the concurrent addProject dispatch.
     let projectName = form.project.trim();
+    let resolvedProjectId: string | undefined;
     if (!projectName) {
       const existing = projects.find((p) => p.name === "Random" && p.sphere === form.sphere);
       if (existing) {
         projectName = existing.name;
       } else {
-        addProject({ sphere: form.sphere, name: "Random", emoji: "🎲", tagIds: [], status: "on-track", milestone: "In progress" });
+        resolvedProjectId = addProject({ sphere: form.sphere, name: "Random", emoji: "🎲", tagIds: [], status: "on-track", milestone: "In progress" });
         projectName = "Random";
       }
     }
 
-    addTask({ ...form, project: projectName, done: false });
+    addTask({ ...form, project: projectName, done: false }, resolvedProjectId);
     onClose();
   }
 

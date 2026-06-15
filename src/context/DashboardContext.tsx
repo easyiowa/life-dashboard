@@ -1089,11 +1089,11 @@ interface DashboardContextType {
   deleteSphere: (id: string) => void;
   reorderSpheres: (startIndex: number, endIndex: number) => void;
   updateProject: (id: string, fields: Partial<Omit<Project, "id">>) => void;
-  addTask: (task: Omit<Task, "id">) => void;
+  addTask: (task: Omit<Task, "id">, projectId?: string) => void;
   updateTask: (id: string, fields: Partial<Task>) => void;
   toggleTaskComplete: (id: string) => void;
   deleteTask: (id: string) => void;
-  addProject: (project: Omit<Project, "id">) => void;
+  addProject: (project: Omit<Project, "id">) => string;
   addManualTime: (projectId: string, minutes: number) => void;
   startTask: (task: ActiveTask) => void;
   startFree: () => void;
@@ -1395,6 +1395,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
               }
             }).catch(console.error);
           }
+          return _id;
         },
         updateProject: (id, fields) => {
           dispatch({ type: "UPDATE_PROJECT", id, fields });
@@ -1419,14 +1420,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         },
 
         tasks: state.tasks,
-        addTask: (task) => {
+        addTask: (task, projectId) => {
           const _id = crypto.randomUUID();
           dispatch({ type: "ADD_TASK", task, _id });
           if (db && uid) {
             Promise.resolve(db.from("tasks").insert({
               id: _id, user_id: uid,
               sphere_id: getSphereId(task.sphere),
-              project_id: getProjectId(task.project, task.sphere),
+              project_id: projectId ?? getProjectId(task.project, task.sphere),
               title: task.title, priority: task.priority, energy: task.energy,
               urgency: task.urgency ?? "not-urgent", done: task.done,
               deadline: task.deadline, notes: task.notes ?? "",

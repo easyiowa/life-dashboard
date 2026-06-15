@@ -47,7 +47,7 @@ export default function TasksCard() {
 
   return (
     <>
-      <TaskModal open={showModal} onClose={() => setShowModal(false)} />
+      <TaskModal open={showModal} onClose={() => setShowModal(false)} defaultSphere={activeSphere} />
       <TaskInspectModal task={inspectTask} onClose={() => setInspectTask(null)} />
 
       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 h-full flex flex-col gap-4">

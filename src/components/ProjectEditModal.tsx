@@ -186,10 +186,13 @@ export default function ProjectEditModal({ project, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-[#0F1629] border border-white/[0.08] rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="relative bg-[#0F1629] border border-white/[0.08] rounded-2xl w-full max-w-md shadow-2xl overflow-visible">
+        {/* Inner scroll container — keeps overflow-visible on the card so the emoji
+            popover can escape the boundary while still allowing the body to scroll. */}
+        <div className="max-h-[90vh] overflow-y-auto rounded-2xl">
 
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-[#0F1629] border-b border-white/[0.06] px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-[#0F1629] border-b border-white/[0.06] px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <h2 className="text-sm font-semibold text-white">Edit Project</h2>
           <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all">
             <X className="w-4 h-4" />
@@ -391,6 +394,7 @@ export default function ProjectEditModal({ project, onClose }: Props) {
             </button>
           </div>
         </div>
+        </div>{/* end inner scroll wrapper */}
       </div>
     </div>
   );
