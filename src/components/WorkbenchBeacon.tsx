@@ -37,7 +37,7 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
   const [sent,    setSent]    = useState(false);
   const [sending, setSending] = useState(false);
 
-  const [update,        setUpdate]        = useState<WorkbenchUpdate | null>(null);
+  const [updates,       setUpdates]       = useState<WorkbenchUpdate[]>([]);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateFetched, setUpdateFetched] = useState(false);
 
@@ -49,13 +49,12 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
     let query = supabase
       .from("workbench_updates")
       .select("*")
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .order("created_at", { ascending: false });
     if (!isFounder) query = query.eq("status", "published");
     const { data } = await query;
     setUpdateLoading(false);
     setUpdateFetched(true);
-    if (data && data.length > 0) setUpdate(data[0] as WorkbenchUpdate);
+    if (data) setUpdates(data as WorkbenchUpdate[]);
   }, [isFounder, updateFetched]);
 
   // Fetch on first open
@@ -93,10 +92,8 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
     setTimeout(() => setSent(false), 4000);
   }
 
-  const displayTitle   = update?.title   ?? FALLBACK_TITLE;
-  const displayContent = update?.content ?? FALLBACK_CONTENT;
-  const displayDate    = update ? formatDate(update.created_at) : FALLBACK_DATE;
-  const isDraft        = update?.status === "draft";
+  const hasUpdates = updates.length > 0;
+  const latestDate = hasUpdates ? formatDate(updates[0].created_at) : FALLBACK_DATE;
 
   return (
     <>
@@ -136,17 +133,12 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-7">
 
-          {/* The Latest Build */}
+          {/* Builder Log */}
           <section className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">The Latest Build</span>
+              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Builder Log</span>
               <ChevronRight className="w-3 h-3 text-slate-700" />
-              <span className="text-[10px] text-purple-400 font-medium">{displayDate}</span>
-              {isDraft && isFounder && (
-                <span className="ml-auto text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
-                  draft preview
-                </span>
-              )}
+              <span className="text-[10px] text-purple-400 font-medium">{latestDate}</span>
             </div>
 
             {updateLoading ? (
@@ -154,17 +146,41 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
                 <Loader2 className="w-4 h-4 animate-spin" />
               </div>
             ) : (
-              <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 flex flex-col gap-3">
-                <p className="text-xs font-semibold text-white">{displayTitle}</p>
-                {displayContent.split("\n\n").map((para, i) => (
-                  <p key={i} className="text-xs text-slate-400 leading-relaxed">{para}</p>
-                ))}
+              <div className="max-h-[50vh] overflow-y-auto space-y-4 pr-0.5">
+                {hasUpdates
+                  ? updates.filter(item => item.status === "published" || isFounder).map((update) => (
+                      <div key={update.id} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 flex flex-col gap-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-semibold text-white">{update.title}</p>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {update.status === "draft" && isFounder && (
+                              <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
+                                draft
+                              </span>
+                            )}
+                            <span className="text-[10px] text-slate-600 whitespace-nowrap">{formatDate(update.created_at)}</span>
+                          </div>
+                        </div>
+                        {update.content.split("\n\n").map((para, i) => (
+                          <p key={i} className="text-xs text-slate-400 leading-relaxed">{para}</p>
+                        ))}
+                      </div>
+                    ))
+                  : (
+                      <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 flex flex-col gap-3">
+                        <p className="text-xs font-semibold text-white">{FALLBACK_TITLE}</p>
+                        {FALLBACK_CONTENT.split("\n\n").map((para, i) => (
+                          <p key={i} className="text-xs text-slate-400 leading-relaxed">{para}</p>
+                        ))}
+                      </div>
+                    )
+                }
               </div>
             )}
 
             <div className="flex items-center gap-2 px-1">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] text-slate-600">Building in public · last updated {displayDate}</span>
+              <span className="text-[10px] text-slate-600">Building in public · last updated {latestDate}</span>
             </div>
           </section>
 

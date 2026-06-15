@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Trash2, Plus, Pencil, Check } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, Plus } from "lucide-react";
 import { useDashboard, type Project } from "@/context/DashboardContext";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
 
@@ -75,56 +75,15 @@ const STATUS_OPTIONS: { value: Project["status"]; label: string; active: string 
 
 const INACTIVE_STATUS = "border-white/[0.07] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]";
 
-// ── New-tag mini form ─────────────────────────────────────────────────────────
+// ── Tag colour picker palette ─────────────────────────────────────────────────
 
-function NewTagForm({
-  onAdd,
-  onCancel,
-}: {
-  onAdd: (label: string, color: string) => void;
-  onCancel: () => void;
-}) {
-  const [label, setLabel] = useState("");
-  const [color, setColor] = useState("violet");
-  const [err,   setErr]   = useState(false);
-
-  return (
-    <div className="rounded-xl border border-violet-500/20 bg-violet-600/[0.05] p-3 flex flex-col gap-2.5">
-      <div className="flex gap-2 items-center">
-        <input
-          autoFocus
-          type="text"
-          value={label}
-          onChange={(e) => { setLabel(e.target.value); setErr(false); }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && label.trim()) onAdd(label.trim(), color);
-            if (e.key === "Escape") onCancel();
-          }}
-          placeholder="Tag name…"
-          className={`flex-1 h-7 px-2.5 rounded-lg bg-white/[0.04] border text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/60 transition-colors ${err ? "border-red-500/60" : "border-white/[0.07]"}`}
-        />
-        <button onClick={() => { if (!label.trim()) { setErr(true); return; } onAdd(label.trim(), color); }} className="px-2.5 h-7 rounded-lg bg-violet-600 hover:bg-violet-500 text-[11px] text-white font-medium flex-shrink-0 transition-all">
-          Add
-        </button>
-        <button onClick={onCancel} className="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors">
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-      {err && <p className="text-[10px] text-red-400">Label required.</p>}
-      <div className="flex gap-1.5">
-        {COLOR_PALETTE.map((c) => (
-          <button
-            key={c.value}
-            onClick={() => setColor(c.value)}
-            className={`w-4 h-4 rounded-full ${c.dot} transition-all ${
-              color === c.value ? "ring-2 ring-white/60 ring-offset-1 ring-offset-[#0F1629] scale-110" : "opacity-40 hover:opacity-80"
-            }`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+const PTAG_COLORS: Array<{ name: string; dot: string; ring: string }> = [
+  { name: "violet",  dot: "bg-violet-500",  ring: "ring-violet-400"  },
+  { name: "emerald", dot: "bg-emerald-500", ring: "ring-emerald-400" },
+  { name: "rose",    dot: "bg-rose-500",    ring: "ring-rose-400"    },
+  { name: "amber",   dot: "bg-amber-500",   ring: "ring-amber-400"   },
+  { name: "indigo",  dot: "bg-indigo-500",  ring: "ring-indigo-400"  },
+];
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
@@ -137,22 +96,37 @@ export default function ProjectEditModal({ project, onClose }: Props) {
   const [tagIds,      setTagIds]      = useState<string[]>([]);
   const [status,      setStatus]      = useState<Project["status"]>("on-track");
   const [nameErr,     setNameErr]     = useState(false);
-  const [showNewTag,  setShowNewTag]  = useState(false);
-  const [renamingId,  setRenamingId]  = useState<string | null>(null);
-  const [renameVal,   setRenameVal]   = useState("");
   // Used to auto-select a newly created tag after the reducer updates
   const [pendingLabel, setPendingLabel] = useState<string | null>(null);
+
+  // Tag creation panel
+  const [addingPTag,   setAddingPTag]   = useState(false);
+  const [newTagName,   setNewTagName]   = useState("");
+  const [newTagColor,  setNewTagColor]  = useState("violet");
+  // Tag edit popover
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [editTagName,  setEditTagName]  = useState("");
+  const [editTagColor, setEditTagColor] = useState("violet");
+
+  const newTagRef  = useRef<HTMLInputElement>(null);
+  const editTagRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus refs
+  useEffect(() => { if (addingPTag)    newTagRef.current?.focus();  }, [addingPTag]);
+  useEffect(() => { if (editingTagId) editTagRef.current?.focus(); }, [editingTagId]);
 
   useEffect(() => {
     if (project) {
       setName(project.name);
       setEmoji(project.emoji ?? "📁");
-      setEmojiLocked(true); // existing emoji treated as locked by default
+      setEmojiLocked(true);
       setTagIds(project.tagIds ?? []);
       setStatus(project.status);
       setNameErr(false);
-      setShowNewTag(false);
-      setRenamingId(null);
+      setAddingPTag(false);
+      setNewTagName("");
+      setNewTagColor("violet");
+      setEditingTagId(null);
       setPendingLabel(null);
     }
   }, [project]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -174,25 +148,27 @@ export default function ProjectEditModal({ project, onClose }: Props) {
 
   if (!project) return null;
 
-  function toggleTag(id: string) {
-    setTagIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  function commitNewTag() {
+    const label = newTagName.trim();
+    if (label) {
+      addTag({ label, color: newTagColor });
+      setPendingLabel(label);
+    }
+    setNewTagName("");
+    setNewTagColor("violet");
+    setAddingPTag(false);
   }
 
-  function commitRename(id: string) {
-    const trimmed = renameVal.trim();
-    if (trimmed) updateTag(id, { label: trimmed });
-    setRenamingId(null);
-  }
-
-  function handleAddTag(label: string, color: string) {
-    addTag({ label, color });
-    setPendingLabel(label); // will be selected once the reducer fires
-    setShowNewTag(false);
+  function commitEditTag(id: string) {
+    const label = editTagName.trim();
+    if (label) updateTag(id, { label, color: editTagColor });
+    setEditingTagId(null);
   }
 
   function handleDeleteTag(id: string) {
     deleteTag(id);
     setTagIds((prev) => prev.filter((x) => x !== id));
+    if (editingTagId === id) setEditingTagId(null);
   }
 
   function handleSave() {
@@ -247,107 +223,141 @@ export default function ProjectEditModal({ project, onClose }: Props) {
             )}
           </div>
 
-          {/* ── Tag grid ─────────────────────────────────────────────── */}
+          {/* ── Tags ─────────────────────────────────────────────────── */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
-                Tags
-                {tagIds.length > 0 && (
-                  <span className="ml-1.5 text-violet-400 font-normal normal-case tracking-normal">{tagIds.length} selected</span>
-                )}
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowNewTag((v) => !v)}
-                className="flex items-center gap-0.5 text-[10px] text-violet-400 hover:text-violet-300 transition-colors"
-              >
-                <Plus className="w-3 h-3" /> New Tag
-              </button>
-            </div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+              Tags
+              {tagIds.length > 0 && (
+                <span className="ml-1.5 text-violet-400 font-normal normal-case tracking-normal">
+                  {tagIds.length} selected
+                </span>
+              )}
+            </label>
 
-            {/* Pill grid */}
-            <div className="flex flex-wrap gap-2 p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+            {/* Tag pill row */}
+            <div className="flex flex-wrap gap-1.5">
               {tags.map((tag) => {
-                const isSelected  = tagIds.includes(tag.id);
-                const isRenaming  = renamingId === tag.id;
-                const activeStyle = TAG_ACTIVE[tag.color] ?? TAG_ACTIVE.violet;
-                const dotClass    = COLOR_PALETTE.find((c) => c.value === tag.color)?.dot ?? "bg-slate-500";
-
-                if (isRenaming) {
-                  return (
-                    <div
-                      key={tag.id}
-                      className="flex items-center gap-1 pl-2 pr-1.5 py-1 rounded-full border border-violet-500/50 bg-violet-600/10"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotClass}`} />
-                      <input
-                        autoFocus
-                        value={renameVal}
-                        onChange={(e) => setRenameVal(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") commitRename(tag.id);
-                          if (e.key === "Escape") setRenamingId(null);
-                        }}
-                        className="w-20 text-xs bg-transparent text-white outline-none"
-                      />
-                      <button
-                        onClick={() => commitRename(tag.id)}
-                        className="text-violet-400 hover:text-violet-200 transition-colors"
-                      >
-                        <Check className="w-3 h-3" />
-                      </button>
-                    </div>
-                  );
-                }
+                const isSelected = tagIds.includes(tag.id);
+                const isEditing  = editingTagId === tag.id;
+                const dot  = COLOR_PALETTE.find((c) => c.value === tag.color)?.dot ?? "bg-slate-500";
+                const pill = TAG_ACTIVE[tag.color] ?? TAG_ACTIVE.violet;
+                const cm   = PTAG_COLORS.find((c) => c.name === tag.color) ?? PTAG_COLORS[0];
 
                 return (
-                  <div
-                    key={tag.id}
-                    onClick={() => toggleTag(tag.id)}
-                    className={`group relative flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full border text-xs font-medium cursor-pointer select-none transition-all duration-150 ${
-                      isSelected ? activeStyle : "bg-white/[0.04] text-slate-400 border border-white/[0.05] hover:border-white/[0.12] hover:text-slate-300"
-                    }`}
-                  >
-                    {/* Color dot */}
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotClass}`} />
-                    {/* Label */}
-                    <span className="leading-none">{tag.label}</span>
-                    {/* Rename icon — always present, fades in on hover */}
+                  <div key={tag.id} className="relative">
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRenamingId(tag.id);
-                        setRenameVal(tag.label);
+                      type="button"
+                      onClick={() => {
+                        if (isEditing) { setEditingTagId(null); return; }
+                        if (isSelected) {
+                          setEditingTagId(tag.id);
+                          setEditTagName(tag.label);
+                          setEditTagColor(tag.color);
+                        } else {
+                          setTagIds((prev) => [...prev, tag.id]);
+                        }
                       }}
-                      className="ml-0.5 opacity-0 group-hover:opacity-50 hover:!opacity-100 text-current transition-all duration-100"
-                      title="Rename"
+                      className={`flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full border text-[11px] font-medium transition-all duration-150 cursor-pointer select-none ${
+                        isSelected
+                          ? `${pill} ${isEditing ? `ring-1 ring-offset-1 ring-offset-[#0F1629] ${cm.ring}` : ""}`
+                          : "bg-white/[0.04] text-slate-400 border-white/[0.05] hover:border-white/[0.12] hover:text-slate-300"
+                      }`}
                     >
-                      <Pencil className="w-2.5 h-2.5" />
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+                      {tag.label}
+                      {isSelected && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTagIds((prev) => prev.filter((x) => x !== tag.id));
+                            if (isEditing) setEditingTagId(null);
+                          }}
+                          className="ml-0.5 w-3.5 h-3.5 flex items-center justify-center rounded-full opacity-60 hover:opacity-100 hover:bg-white/10 transition-all"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </span>
+                      )}
                     </button>
-                    {/* Delete icon — hover-reveal at right edge */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteTag(tag.id); }}
-                      className="opacity-0 group-hover:opacity-40 hover:!opacity-100 text-current hover:text-red-400 transition-all duration-100"
-                      title="Delete tag"
-                    >
-                      <Trash2 className="w-2.5 h-2.5" />
-                    </button>
+
+                    {/* Edit popover */}
+                    {isEditing && (
+                      <div className="absolute bottom-full left-0 mb-1 z-30 w-52 rounded-xl border border-white/[0.12] bg-[#0B0F1C] shadow-2xl p-3 flex flex-col gap-2.5">
+                        <input
+                          ref={editTagRef}
+                          value={editTagName}
+                          onChange={(e) => setEditTagName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); commitEditTag(tag.id); }
+                            if (e.key === "Escape") setEditingTagId(null);
+                          }}
+                          onBlur={() => commitEditTag(tag.id)}
+                          className="h-7 px-2.5 rounded-lg bg-white/[0.06] border border-white/[0.10] text-xs text-white outline-none focus:border-violet-500/50 transition-colors"
+                        />
+                        <div className="flex items-center gap-2">
+                          {PTAG_COLORS.map((co) => (
+                            <button key={co.name} type="button"
+                              onMouseDown={(e) => { e.preventDefault(); setEditTagColor(co.name); updateTag(tag.id, { color: co.name }); }}
+                              className={`w-5 h-5 rounded-full flex-shrink-0 ${co.dot} transition-all ${
+                                editTagColor === co.name
+                                  ? `ring-2 ring-offset-[2px] ring-offset-[#0B0F1C] ${co.ring} scale-110`
+                                  : "opacity-50 hover:opacity-90 hover:scale-105"
+                              }`}
+                            />
+                          ))}
+                          <button type="button"
+                            onMouseDown={(e) => { e.preventDefault(); handleDeleteTag(tag.id); }}
+                            className="ml-auto text-[10px] text-red-400/60 hover:text-red-400 transition-colors">
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
 
-              {tags.length === 0 && (
-                <p className="text-xs text-slate-600 w-full text-center py-2">No tags yet — create one above.</p>
+              {/* + New Tag trigger */}
+              {!addingPTag && (
+                <button type="button" onClick={() => setAddingPTag(true)}
+                  className="flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full border border-dashed border-white/[0.10] bg-white/[0.02] text-[11px] text-slate-500 hover:border-emerald-500/40 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-150">
+                  <Plus className="w-2.5 h-2.5" /> New Tag
+                </button>
               )}
             </div>
 
-            {/* New tag inline form */}
-            {showNewTag && (
-              <NewTagForm
-                onAdd={handleAddTag}
-                onCancel={() => setShowNewTag(false)}
-              />
+            {/* Inline creation panel */}
+            {addingPTag && (
+              <div className="flex items-center gap-2 flex-wrap p-2 rounded-xl bg-white/[0.02] border border-white/[0.07]">
+                <input
+                  ref={newTagRef}
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); commitNewTag(); }
+                    if (e.key === "Escape") { setNewTagName(""); setNewTagColor("violet"); setAddingPTag(false); }
+                  }}
+                  onBlur={commitNewTag}
+                  placeholder="Tag name…"
+                  className="flex-1 min-w-[100px] h-7 px-2.5 rounded-lg bg-white/[0.06] border border-white/[0.10] text-[11px] text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50"
+                />
+                <div className="flex items-center gap-1.5">
+                  {PTAG_COLORS.map((co) => (
+                    <button key={co.name} type="button"
+                      onMouseDown={(e) => { e.preventDefault(); setNewTagColor(co.name); }}
+                      className={`w-4 h-4 rounded-full flex-shrink-0 ${co.dot} transition-all ${
+                        newTagColor === co.name
+                          ? `ring-2 ring-offset-[2px] ring-offset-[#0F1629] ${co.ring} scale-110`
+                          : "opacity-50 hover:opacity-80"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <button type="button"
+                  onMouseDown={(e) => { e.preventDefault(); setNewTagName(""); setNewTagColor("violet"); setAddingPTag(false); }}
+                  className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-slate-400 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
             )}
           </div>
 

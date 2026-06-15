@@ -345,14 +345,14 @@ export default function NightlyReviewModal() {
                     };
                   }
                   const mindStateClosure: MindStateClosure | undefined =
-                    dailyCheckIn?.date === reviewDate && endDelta
+                    dailyCheckIn?.date === reviewDate
                       ? {
                           morningMoodKey: dailyCheckIn.moodKey,
                           morningMood:    dailyCheckIn.mood,
                           morningTags:    dailyCheckIn.tags,
                           morningNote:    dailyCheckIn.note,
-                          endDelta,
-                          closureNote: closureNote.trim(),
+                          endDelta:       endDelta ?? "same",
+                          closureNote:    closureNote.trim(),
                         }
                       : undefined;
                   lockDay(reviewDate, velocity, recap, goalsAchieved.map((t) => t.title), activeRollovers.map((t) => t.title), taskMeta, mindStateClosure);

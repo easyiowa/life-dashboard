@@ -559,8 +559,47 @@ function reducer(state: State, action: Action): State {
       };
     }
 
-    case "SAVE_CHECK_IN":
-      return { ...state, dailyCheckIn: action.checkIn };
+    case "SAVE_CHECK_IN": {
+      const ci = action.checkIn;
+      const morningClosure: MindStateClosure = {
+        morningMoodKey: ci.moodKey,
+        morningMood:    ci.mood,
+        morningTags:    ci.tags,
+        morningNote:    ci.note,
+        endDelta:       "same",
+        closureNote:    "",
+      };
+      const existingIdx = state.historicalLogs.findIndex((l) => l.date === ci.date);
+      let updatedLogs: HistoricalLog[];
+      if (existingIdx === -1) {
+        // No historical entry yet — prepend a synthetic one so the modal shows it immediately
+        const syntheticEntry: HistoricalLog = {
+          date: ci.date, dayVelocity: 0, recap: "",
+          completedTasks: [], rolledOverTasks: [],
+          mindStateClosure: morningClosure,
+        };
+        updatedLogs = [syntheticEntry, ...state.historicalLogs];
+      } else {
+        // Entry exists — overlay new morning fields but keep any real end-of-day data
+        const prev = state.historicalLogs[existingIdx].mindStateClosure;
+        updatedLogs = state.historicalLogs.map((l, i) =>
+          i === existingIdx
+            ? {
+                ...l,
+                mindStateClosure: {
+                  morningMoodKey: morningClosure.morningMoodKey,
+                  morningMood:    morningClosure.morningMood,
+                  morningTags:    morningClosure.morningTags,
+                  morningNote:    morningClosure.morningNote,
+                  endDelta:       prev?.endDelta    ?? morningClosure.endDelta,
+                  closureNote:    prev?.closureNote ?? morningClosure.closureNote,
+                },
+              }
+            : l
+        );
+      }
+      return { ...state, dailyCheckIn: ci, historicalLogs: updatedLogs };
+    }
 
     case "LOCK_DAY": {
       const newDate = new Date().toLocaleDateString("en-CA");
@@ -973,19 +1012,16 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     && new Date().getHours() >= 20
     && dismissedDate !== today;
 
-  // Auto-provision default spheres for brand-new accounts.
-  // Check by name so a partial setup (e.g. only "Private" exists) never
-  // inserts a duplicate — only the missing one gets created.
-  const existingNames = new Set(spheres.map(s => s.name));
-  const DEFAULTS = [
-    { name: "Private",  labelColor: "emerald" },
-    { name: "Business", labelColor: "violet"  },
-  ];
-  const missing = DEFAULTS.filter(d => !existingNames.has(d.name));
-  if (missing.length > 0) {
-    const toInsert = missing.map((d, i) => ({
+  // Auto-provision default spheres for brand-new accounts only (zero rows).
+  // Guard by count — not by name — so renamed spheres are never re-inserted.
+  if (spheres.length === 0) {
+    const DEFAULTS = [
+      { name: "Private",  labelColor: "emerald" },
+      { name: "Business", labelColor: "violet"  },
+    ];
+    const toInsert = DEFAULTS.map((d, i) => ({
       id: crypto.randomUUID(), name: d.name, labelColor: d.labelColor,
-      sortOrder: spheres.length + i,
+      sortOrder: i,
     }));
     await Promise.all(toInsert.map(s =>
       supabase!.from("spheres").insert({ id: s.id, user_id: userId, name: s.name, label_color: s.labelColor, sort_order: s.sortOrder })
@@ -1268,6 +1304,32 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
               user_id: uid, date: checkIn.date, mood_key: checkIn.moodKey,
               mood: checkIn.mood, tags: checkIn.tags, note: checkIn.note,
             }, { onConflict: "user_id,date" }).then(() => {});
+
+            // Bridge: write morning data into historical_logs so the Mindset Journal
+            // shows this check-in without waiting for end-of-day lock.
+            const morningClosure = {
+              morningMoodKey: checkIn.moodKey,
+              morningMood:    checkIn.mood,
+              morningTags:    checkIn.tags,
+              morningNote:    checkIn.note,
+              endDelta:       "same" as const,
+              closureNote:    "",
+            };
+            db.from("historical_logs").insert({
+              user_id: uid, date: checkIn.date,
+              day_velocity: 0, recap: "",
+              completed_tasks: [], rolled_over_tasks: [], task_meta: {},
+              mind_state_closure: morningClosure,
+            }).then(({ error }) => {
+              // Row already exists (day locked or prior check-in insert) —
+              // update morning fields only for unlocked rows (velocity still 0)
+              if (error) {
+                db.from("historical_logs")
+                  .update({ mind_state_closure: morningClosure })
+                  .eq("user_id", uid).eq("date", checkIn.date).eq("day_velocity", 0)
+                  .then(() => {});
+              }
+            });
           }
         },
 

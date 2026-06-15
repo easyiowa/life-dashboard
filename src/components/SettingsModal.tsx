@@ -256,27 +256,7 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
 
         <div className="px-6 py-5 flex flex-col gap-6">
 
-          {/* ── Account info (read-only) ──────────────────────────── */}
-          <section>
-            <SectionHeading icon={Mail} label="Account Info" />
-            <div className="flex flex-col gap-2.5">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Email</span>
-                <span className="text-sm text-slate-300 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3.5 py-2.5">{email}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Member Since</span>
-                <div className="flex items-center gap-2 text-sm text-slate-400 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3.5 py-2.5">
-                  <Calendar className="w-3.5 h-3.5 text-slate-600" />
-                  {memberSince}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <div className="h-px bg-white/[0.06]" />
-
-          {/* ── Display name ─────────────────────────────────────── */}
+          {/* ── 1. Profile ────────────────────────────────────────── */}
           {isConfigured && (
             <section>
               <SectionHeading icon={User} label="Profile" />
@@ -307,43 +287,87 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
             </section>
           )}
 
-          {isConfigured && !isOAuthUser && <div className="h-px bg-white/[0.06]" />}
-
-          {/* ── Change password (email accounts only) ────────────── */}
+          {/* ── Security (email accounts only — bundled divider) ── */}
           {isConfigured && !isOAuthUser && (
-            <section>
-              <SectionHeading icon={Lock} label="Security" />
-              <div className="flex flex-col gap-3">
-                <PwdField
-                  label="New Password"
-                  value={newPwd}
-                  onChange={setNewPwd}
-                  placeholder="Min 8 characters"
-                  autoComplete="new-password"
-                />
-                <PwdField
-                  label="Confirm New Password"
-                  value={confirmPwd}
-                  onChange={setConfirmPwd}
-                  placeholder="Repeat new password"
-                  autoComplete="new-password"
-                />
-                <ToastBanner toast={pwdToast} />
-                <button
-                  onClick={handleChangePassword}
-                  disabled={pwdLoading || !newPwd}
-                  className="h-9 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
-                  style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
-                >
-                  {pwdLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update Password"}
-                </button>
-              </div>
-            </section>
+            <>
+              <div className="h-px bg-white/[0.06]" />
+              <section>
+                <SectionHeading icon={Lock} label="Security" />
+                <div className="flex flex-col gap-3">
+                  <PwdField
+                    label="New Password"
+                    value={newPwd}
+                    onChange={setNewPwd}
+                    placeholder="Min 8 characters"
+                    autoComplete="new-password"
+                  />
+                  <PwdField
+                    label="Confirm New Password"
+                    value={confirmPwd}
+                    onChange={setConfirmPwd}
+                    placeholder="Repeat new password"
+                    autoComplete="new-password"
+                  />
+                  <ToastBanner toast={pwdToast} />
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={pwdLoading || !newPwd}
+                    className="h-9 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                    style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+                  >
+                    {pwdLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update Password"}
+                  </button>
+                </div>
+              </section>
+            </>
           )}
 
           <div className="h-px bg-white/[0.06]" />
 
-          {/* ── Local screen lock ─────────────────────────────────── */}
+          {/* ── 2. Dashboard ──────────────────────────────────────── */}
+          <section>
+            <SectionHeading icon={LayoutGrid} label="Dashboard" />
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setWidgetMarketplaceOpen(true)}
+                className="w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2.5 px-4"
+              >
+                <LayoutGrid className="w-4 h-4 text-violet-400 shrink-0" />
+                <span>Manage Active Widgets</span>
+                <span className="ml-auto text-[10px] text-slate-600">{pendingWidgets.length} active</span>
+              </button>
+              <button
+                onClick={() => setBlueprintOpen(true)}
+                className="w-full h-10 rounded-xl border border-violet-500/25 bg-violet-500/[0.06] hover:bg-violet-500/[0.12] text-sm font-medium text-violet-300 hover:text-violet-200 transition-all flex items-center gap-2.5 px-4"
+              >
+                <span className="text-base leading-none shrink-0">🧩</span>
+                <span>Rearrange Grid Layout</span>
+                <span className="ml-auto text-[10px] text-violet-600">Blueprint Mode</span>
+              </button>
+            </div>
+          </section>
+
+          {/* ── 3. Admin (founder only — bundled divider) ─────────── */}
+          {isFounder && (
+            <>
+              <div className="h-px bg-white/[0.06]" />
+              <section>
+                <SectionHeading icon={Crown} label="Admin" />
+                <button
+                  onClick={() => setFounderOpen(true)}
+                  className="w-full h-10 rounded-xl border border-purple-500/30 bg-purple-500/[0.07] hover:bg-purple-500/[0.14] text-sm font-semibold text-purple-300 hover:text-purple-200 transition-all flex items-center gap-2.5 px-4"
+                >
+                  <Crown className="w-4 h-4 shrink-0" />
+                  <span>Founder Dashboard</span>
+                  <span className="ml-auto text-[10px] text-purple-700">private</span>
+                </button>
+              </section>
+            </>
+          )}
+
+          <div className="h-px bg-white/[0.06]" />
+
+          {/* ── 4. Local Screen Lock ──────────────────────────────── */}
           <section>
             <SectionHeading icon={KeyRound} label="Local Screen Lock" />
             <div className="flex flex-col gap-3">
@@ -392,56 +416,39 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
 
           <div className="h-px bg-white/[0.06]" />
 
-          {/* ── Manage active widgets + Blueprint Mode ────────────── */}
+          {/* ── 5. Account Info (read-only) ───────────────────────── */}
           <section>
-            <SectionHeading icon={LayoutGrid} label="Dashboard" />
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => setWidgetMarketplaceOpen(true)}
-                className="w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2.5 px-4"
-              >
-                <LayoutGrid className="w-4 h-4 text-violet-400 shrink-0" />
-                <span>Manage Active Widgets</span>
-                <span className="ml-auto text-[10px] text-slate-600">{pendingWidgets.length} active</span>
-              </button>
-              <button
-                onClick={() => setBlueprintOpen(true)}
-                className="w-full h-10 rounded-xl border border-violet-500/25 bg-violet-500/[0.06] hover:bg-violet-500/[0.12] text-sm font-medium text-violet-300 hover:text-violet-200 transition-all flex items-center gap-2.5 px-4"
-              >
-                <span className="text-base leading-none shrink-0">🧩</span>
-                <span>Rearrange Grid Layout</span>
-                <span className="ml-auto text-[10px] text-violet-600">Blueprint Mode</span>
-              </button>
+            <SectionHeading icon={Mail} label="Account Info" />
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Email</span>
+                <span className="text-sm text-slate-300 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3.5 py-2.5">{email}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Member Since</span>
+                <div className="flex items-center gap-2 text-sm text-slate-400 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3.5 py-2.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                  {memberSince}
+                </div>
+              </div>
             </div>
           </section>
 
           <div className="h-px bg-white/[0.06]" />
 
-          {/* ── Sign out ──────────────────────────────────────────── */}
+          {/* ── 6. Session ────────────────────────────────────────── */}
           <section>
             <SectionHeading icon={LogOut} label="Session" />
-            <div className="flex flex-col gap-2">
-              {isFounder && (
-                <button
-                  onClick={() => setFounderOpen(true)}
-                  className="w-full h-10 rounded-xl border border-purple-500/30 bg-purple-500/[0.07] hover:bg-purple-500/[0.14] text-sm font-semibold text-purple-300 hover:text-purple-200 transition-all flex items-center gap-2.5 px-4"
-                >
-                  <Crown className="w-4 h-4 shrink-0" />
-                  <span>Founder Dashboard</span>
-                  <span className="ml-auto text-[10px] text-purple-700">private</span>
-                </button>
-              )}
-              <button
-                onClick={handleSignOut}
-                disabled={signOutLoading}
-                className="w-full h-10 rounded-xl border border-red-500/30 bg-red-500/[0.07] hover:bg-red-500/[0.14] text-sm font-semibold text-red-400 hover:text-red-300 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {signOutLoading
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <><LogOut className="w-4 h-4" /> Log Out</>
-                }
-              </button>
-            </div>
+            <button
+              onClick={handleSignOut}
+              disabled={signOutLoading}
+              className="w-full h-10 rounded-xl border border-red-500/30 bg-red-500/[0.07] hover:bg-red-500/[0.14] text-sm font-semibold text-red-400 hover:text-red-300 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {signOutLoading
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <><LogOut className="w-4 h-4" /> Log Out</>
+              }
+            </button>
           </section>
 
         </div>

@@ -79,7 +79,7 @@ export default function MindfulCheckIn() {
   const [saved,       setSaved]       = useState(!!existingToday);
   const [showTrends,  setShowTrends]  = useState(false);
 
-  // Keep form in sync if context changes (e.g. after day lock)
+  // Keep form in sync if context changes (e.g. after day lock or async DB load)
   useEffect(() => {
     const ci = dailyCheckIn?.date === currentTrackingDate ? dailyCheckIn : null;
     if (!ci) {
@@ -87,6 +87,11 @@ export default function MindfulCheckIn() {
       setActiveTags([]);
       setNote("");
       setSaved(false);
+    } else {
+      setActiveMood(ci.moodKey as MoodKey);
+      setActiveTags(ci.tags);
+      setNote(ci.note);
+      setSaved(true);
     }
   }, [currentTrackingDate, dailyCheckIn]);
 

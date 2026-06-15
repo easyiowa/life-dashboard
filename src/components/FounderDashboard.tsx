@@ -220,6 +220,17 @@ function UpdatesTab() {
     }
   }
 
+  async function deleteUpdate(id: string) {
+    if (!supabase) return;
+    const { error: err } = await supabase
+      .from("workbench_updates")
+      .delete()
+      .eq("id", id);
+    if (!err) {
+      setItems(prev => prev.filter(u => u.id !== id));
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
 
@@ -337,6 +348,16 @@ function UpdatesTab() {
                   }`}
                 >
                   {item.status === "published" ? "Unpublish" : "Publish"}
+                </button>
+                <span className="text-slate-800">·</span>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm("Are you sure you want to permanently delete this update?")) return;
+                    await deleteUpdate(item.id);
+                  }}
+                  className="text-[10px] text-red-500 hover:text-red-400 cursor-pointer transition-colors"
+                >
+                  Delete
                 </button>
               </div>
             </div>
