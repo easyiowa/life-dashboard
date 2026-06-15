@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, RefreshCw } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
+import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 
 interface Props {
   isOpen: boolean;
@@ -98,12 +99,13 @@ export default function AddRecurringTaskModal({ isOpen, onClose }: Props) {
           {/* Notes */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notes</label>
-            <textarea
+            <AutoExpandingTextarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optional context or reminders…"
-              rows={2}
-              className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors resize-none"
+              minRows={2}
+              maxHeightVariant="modal"
+              className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
             />
           </div>
 

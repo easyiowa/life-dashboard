@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect, type ReactNode } from "react";
+import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
 import { NotebookPen, Trash2, X, Search, Zap, ChevronDown } from "lucide-react";
 import { useDashboard, type QuickNote, type Sphere } from "@/context/DashboardContext";
+import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 import { areaColor } from "@/lib/areaColors";
 import TaskModal from "@/components/TaskModal";
 import {
@@ -633,6 +634,11 @@ export default function QuickNotesCard() {
     return spheres[0]?.id ?? ALL_TAB;
   });
 
+  // Tracks whether the user has explicitly clicked a tab. Used by the effect
+  // below to avoid overwriting a deliberate choice (including "All") once the
+  // user interacts with the widget.
+  const hasUserChosen = useRef(false);
+
   const [text,              setText]              = useState("");
   const [projectId,         setProjectId]         = useState("");
   const [showAllNotesModal, setShowAllNotesModal] = useState(false);
@@ -654,6 +660,19 @@ export default function QuickNotesCard() {
       return true;
     });
   }, [spheres, sphereOrder]);
+
+  // Production race condition: spheres arrive empty on first render because
+  // Supabase hasn't resolved yet, so the useState initializer above falls back
+  // to ALL_TAB. This effect fires once when orderedSpheres first populates and
+  // the tab is still on the fallback default — it advances to the first sphere
+  // automatically, mimicking what the initializer would have done if data had
+  // been available at mount time.
+  useEffect(() => {
+    if (hasUserChosen.current) return;
+    if (activeSphereId !== ALL_TAB) return;
+    if (orderedSpheres.length === 0) return;
+    setActiveSphereId(orderedSpheres[0].id);
+  }, [orderedSpheres]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Drag sensor: require 5px of movement before activating drag so clicks still fire normally
   const sensors = useSensors(
@@ -758,7 +777,7 @@ export default function QuickNotesCard() {
                   key={sphere.id}
                   sphere={sphere}
                   isActive={activeSphereObj?.id === sphere.id}
-                  onClick={() => { setActiveSphereId(sphere.id); setProjectId(""); }}
+                  onClick={() => { hasUserChosen.current = true; setActiveSphereId(sphere.id); setProjectId(""); }}
                 />
               ))}
             </SortableContext>
@@ -767,7 +786,7 @@ export default function QuickNotesCard() {
           {/* All tab — always at the far right */}
           <button
             type="button"
-            onClick={() => { setActiveSphereId(ALL_TAB); setProjectId(""); }}
+            onClick={() => { hasUserChosen.current = true; setActiveSphereId(ALL_TAB); setProjectId(""); }}
             className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
               isAll
                 ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
@@ -783,13 +802,14 @@ export default function QuickNotesCard() {
           <p className="mt-4 text-[11px] text-slate-600 flex-shrink-0">Select an area above to add a note.</p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4 flex-shrink-0">
-            <textarea
+            <AutoExpandingTextarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Capture an idea before it slips away…"
-              rows={2}
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-purple-500/50 focus:bg-white/[0.06] transition-colors resize-none"
+              minRows={2}
+              maxHeightVariant="widget"
+              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-purple-500/50 focus:bg-white/[0.06] transition-colors"
             />
             <div className="flex items-center gap-2">
               <select

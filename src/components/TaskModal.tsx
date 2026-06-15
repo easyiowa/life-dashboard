@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Plus } from "lucide-react";
+import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 import {
   useDashboard,
   type Priority,
@@ -550,9 +551,13 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
           {/* Notes */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notes</label>
-            <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              placeholder="Optional context or links…" rows={3}
-              className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors resize-none"
+            <AutoExpandingTextarea
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              placeholder="Optional context or links…"
+              minRows={3}
+              maxHeightVariant="modal"
+              className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
             />
           </div>
 

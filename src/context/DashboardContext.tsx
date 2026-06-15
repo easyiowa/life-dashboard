@@ -1012,9 +1012,23 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     && new Date().getHours() >= 20
     && dismissedDate !== today;
 
-  // Auto-provision default spheres for brand-new accounts only (zero rows).
-  // Guard by count — not by name — so renamed spheres are never re-inserted.
-  if (spheres.length === 0) {
+  // Auto-provision defaults only for a genuinely brand-new account.
+  // Two guards required:
+  //   1. No fetch error — a network/RLS failure also returns data=null, which would
+  //      trigger a ghost insert even when the user has real spheres in the DB.
+  //   2. All other tables must also be empty — if the user has any tasks, projects,
+  //      habits, notes, or history alongside zero spheres they intentionally deleted
+  //      them; re-inserting defaults would be a regression loop.
+  const isNewAccount =
+    !spheresRes.error &&
+    spheres.length === 0 &&
+    tasks.length === 0 &&
+    projects.length === 0 &&
+    habits.length === 0 &&
+    quickNotes.length === 0 &&
+    historicalLogs.length === 0;
+
+  if (isNewAccount) {
     const DEFAULTS = [
       { name: "Private",  labelColor: "emerald" },
       { name: "Business", labelColor: "violet"  },

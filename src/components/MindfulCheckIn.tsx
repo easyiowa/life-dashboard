@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Pencil } from "lucide-react";
 import { useDashboard, type DailyCheckIn } from "@/context/DashboardContext";
 import MindsetTrendsModal from "@/components/MindsetTrendsModal";
+import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 
 // ── Mood definitions ──────────────────────────────────────────────────────────
 
@@ -139,7 +140,7 @@ export default function MindfulCheckIn() {
       <>
         <div className="mb-4 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl">
           <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0">Status</span>
-          <p className="text-sm text-slate-300 flex-1 leading-none truncate">{summary}</p>
+          <p className="text-sm text-slate-300 flex-1 leading-normal truncate">{summary}</p>
           <button
             type="button"
             onClick={() => setShowTrends(true)}
@@ -216,14 +217,15 @@ export default function MindfulCheckIn() {
       </div>
 
       {/* Row 3 — Journal input */}
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
+      <div className="flex items-start gap-2">
+        <AutoExpandingTextarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSave(); } }}
           placeholder={placeholder}
-          className="flex-1 h-8 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50 transition-colors"
+          minRows={1}
+          maxHeightVariant="widget"
+          className="flex-1 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50 transition-colors"
         />
         <button
           type="button"

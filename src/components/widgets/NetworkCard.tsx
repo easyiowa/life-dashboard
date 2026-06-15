@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Users, Plus, X, Trash2, Pencil, FileText, Settings, Check, ChevronDown, CheckCircle2 } from "lucide-react";
+import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 import {
   useDashboard,
   type NetworkContact,
@@ -246,12 +247,13 @@ function ContactModal({
           {/* Notes */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notes</label>
-            <textarea
+            <AutoExpandingTextarea
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="How you know them, shared context, follow-ups…"
-              rows={3}
-              className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors resize-none"
+              minRows={3}
+              maxHeightVariant="modal"
+              className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors"
             />
           </div>
 
@@ -295,12 +297,13 @@ function ContactModal({
                     onChange={(e) => setEvtDate(e.target.value)}
                     className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white outline-none focus:border-violet-500/50 transition-colors [color-scheme:dark]"
                   />
-                  <textarea
+                  <AutoExpandingTextarea
                     value={evtNotes}
                     onChange={(e) => setEvtNotes(e.target.value)}
                     placeholder="Event notes…"
-                    rows={2}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors resize-none"
+                    minRows={2}
+                    maxHeightVariant="modal"
+                    className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
                   />
                 </div>
 
@@ -349,12 +352,13 @@ function ContactModal({
                           onChange={(e) => setEditDraft((d) => ({ ...d, date: e.target.value }))}
                           className="w-full h-8 px-2.5 rounded-md bg-white/[0.05] border border-white/[0.10] text-xs text-white outline-none focus:border-violet-500/50 transition-colors [color-scheme:dark]"
                         />
-                        <textarea
+                        <AutoExpandingTextarea
                           value={editDraft.notes}
                           onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
                           placeholder="Event notes…"
-                          rows={2}
-                          className="w-full px-2.5 py-2 rounded-md bg-white/[0.05] border border-white/[0.10] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors resize-none"
+                          minRows={2}
+                          maxHeightVariant="modal"
+                          className="px-2.5 py-2 rounded-md bg-white/[0.05] border border-white/[0.10] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
                         />
                         <div className="flex gap-2">
                           <button
