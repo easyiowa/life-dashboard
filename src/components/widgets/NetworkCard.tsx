@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Users, Plus, X, Trash2, Pencil, FileText, Settings, Check, ChevronDown, CheckCircle2 } from "lucide-react";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import DatePickerInput from "@/components/ui/DatePickerInput";
 import {
   useDashboard,
   type NetworkContact,
@@ -226,20 +227,16 @@ function ContactModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Birthday</label>
-              <input
-                type="date"
-                value={form.birthday ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, birthday: e.target.value || null }))}
-                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors [color-scheme:dark]"
+              <DatePickerInput
+                value={form.birthday ?? null}
+                onChange={(v) => setForm((f) => ({ ...f, birthday: v }))}
               />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Last Touchpoint</label>
-              <input
-                type="date"
-                value={form.lastTouchpoint ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, lastTouchpoint: e.target.value || null }))}
-                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors [color-scheme:dark]"
+              <DatePickerInput
+                value={form.lastTouchpoint ?? null}
+                onChange={(v) => setForm((f) => ({ ...f, lastTouchpoint: v }))}
               />
             </div>
           </div>
@@ -291,11 +288,9 @@ function ContactModal({
                     placeholder="Event title…"
                     className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
                   />
-                  <input
-                    type="date"
-                    value={evtDate}
-                    onChange={(e) => setEvtDate(e.target.value)}
-                    className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-white outline-none focus:border-violet-500/50 transition-colors [color-scheme:dark]"
+                  <DatePickerInput
+                    value={evtDate || null}
+                    onChange={(v) => setEvtDate(v ?? "")}
                   />
                   <AutoExpandingTextarea
                     value={evtNotes}
@@ -346,11 +341,9 @@ function ContactModal({
                           placeholder="Event title…"
                           className="w-full h-8 px-2.5 rounded-md bg-white/[0.05] border border-white/[0.10] text-xs text-white placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
                         />
-                        <input
-                          type="date"
-                          value={editDraft.date}
-                          onChange={(e) => setEditDraft((d) => ({ ...d, date: e.target.value }))}
-                          className="w-full h-8 px-2.5 rounded-md bg-white/[0.05] border border-white/[0.10] text-xs text-white outline-none focus:border-violet-500/50 transition-colors [color-scheme:dark]"
+                        <DatePickerInput
+                          value={editDraft.date || null}
+                          onChange={(v) => setEditDraft((d) => ({ ...d, date: v ?? "" }))}
                         />
                         <AutoExpandingTextarea
                           value={editDraft.notes}

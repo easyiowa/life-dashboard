@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, RefreshCw } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import DatePickerInput from "@/components/ui/DatePickerInput";
 
 interface Props {
   isOpen: boolean;
@@ -154,11 +155,9 @@ export default function AddRecurringTaskModal({ isOpen, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Start Date</label>
-              <input
-                type="date"
+              <DatePickerInput
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors [color-scheme:dark] cursor-pointer"
+                onChange={(v) => setStartDate(v ?? todayISO())}
               />
             </div>
           </div>

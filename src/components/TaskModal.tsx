@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Plus } from "lucide-react";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import DatePickerInput from "@/components/ui/DatePickerInput";
 import {
   useDashboard,
   type Priority,
@@ -538,9 +539,9 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Deadline</label>
-              <input type="date" value={form.deadline ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value || null }))}
-                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors [color-scheme:dark]"
+              <DatePickerInput
+                value={form.deadline ?? null}
+                onChange={(v) => setForm((f) => ({ ...f, deadline: v }))}
               />
             </div>
             <div className="flex flex-col gap-1.5">

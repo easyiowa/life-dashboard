@@ -6,6 +6,7 @@ import {
   useDashboard,
   type RecurringTask,
 } from "@/context/DashboardContext";
+import DatePickerInput from "@/components/ui/DatePickerInput";
 
 
 interface Props {
@@ -172,11 +173,9 @@ export default function RecurringResponsibilityModal({ task, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Start Date</label>
-              <input
-                type="date"
+              <DatePickerInput
                 value={form.startDate}
-                onChange={(e) => setForm((f) => f ? { ...f, startDate: e.target.value } : f)}
-                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors [color-scheme:dark] cursor-pointer"
+                onChange={(v) => setForm((f) => f ? { ...f, startDate: v ?? form.startDate } : f)}
               />
             </div>
           </div>

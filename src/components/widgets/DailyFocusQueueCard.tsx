@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap, Plus } from "lucide-react";
 import { useDashboard, type Task, type HistoricalLog, type DailyTrackingEntry } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
+import TaskInspectModal from "@/components/TaskInspectModal";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -30,7 +31,7 @@ const INACTIVE_PILL = "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:
 
 // ── Queue row ─────────────────────────────────────────────────────────────────
 
-function QueueRow({ task }: { task: Task }) {
+function QueueRow({ task, onInspect }: { task: Task; onInspect: (t: Task) => void }) {
   const { updateTaskDaily, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, elapsed, committedSecs, currentTrackingDate, spheres } = useDashboard();
   const ac = areaColor(spheres.find((s) => s.name === task.sphere)?.labelColor);
 
@@ -78,18 +79,21 @@ function QueueRow({ task }: { task: Task }) {
   const isComplete = task.done;
 
   return (
-    <div className={`flex flex-col gap-2 p-2.5 rounded-xl border transition-all duration-200 overflow-hidden ${
-      (isComplete || goalAchieved)
-        ? "border-emerald-500/25 bg-emerald-500/[0.03]"
-        : isMaybe
-          ? "border-dashed border-white/[0.07] bg-white/[0.01] opacity-70"
-          : "border-white/[0.05] bg-white/[0.02]"
-    }`}>
+    <div
+      onClick={() => onInspect(task)}
+      className={`flex flex-col gap-2 p-2.5 rounded-xl border transition-all duration-200 overflow-hidden cursor-pointer hover:bg-white/[0.03] ${
+        (isComplete || goalAchieved)
+          ? "border-emerald-500/25 bg-emerald-500/[0.03]"
+          : isMaybe
+            ? "border-dashed border-white/[0.07] bg-white/[0.01] opacity-70"
+            : "border-white/[0.05] bg-white/[0.02]"
+      }`}
+    >
       {/* Title row */}
       <div className="flex items-center gap-2">
         {/* Completion checkbox */}
         <button
-          onClick={() => toggleTaskComplete(task.id)}
+          onClick={(e) => { e.stopPropagation(); toggleTaskComplete(task.id); }}
           aria-label={task.done ? "Mark incomplete" : "Mark complete"}
           className={`flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer transition-all duration-150 ${
             isComplete
@@ -111,7 +115,7 @@ function QueueRow({ task }: { task: Task }) {
         )}
         {!task.done && (
           <button
-            onClick={handleStart}
+            onClick={(e) => { e.stopPropagation(); handleStart(); }}
             title={isThisTaskActive ? "Pause focus timer" : "Start focus timer"}
             className={`flex-shrink-0 flex items-center gap-1 px-2 h-6 rounded-lg text-[10px] font-medium transition-all duration-150 ${
               isThisTaskActive
@@ -124,7 +128,7 @@ function QueueRow({ task }: { task: Task }) {
           </button>
         )}
         <button
-          onClick={() => toggleTaskForToday(task.id, currentTrackingDate, "finish", null)}
+          onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, "finish", null); }}
           title="Remove from today"
           className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 transition-colors"
         >
@@ -140,7 +144,7 @@ function QueueRow({ task }: { task: Task }) {
           <span className="text-[10px] text-slate-500 flex-shrink-0">{task.project}</span>
         </div>
         {!isComplete && (
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             {INTENT_OPTIONS.map((opt) => {
               const isActive = intent === opt.value;
               if (opt.value === "time" && isActive) {
@@ -507,6 +511,7 @@ export default function DailyFocusQueueCard() {
   const [showPicker,         setShowPicker]         = useState(false);
   const [collapsed,          setCollapsed]          = useState(false);
   const [rolloverDismissed,  setRolloverDismissed]  = useState(false);
+  const [inspectTask,        setInspectTask]        = useState<Task | null>(null);
 
   const yesterdayLog = historicalLogs[0] ?? null;
 
@@ -517,6 +522,8 @@ export default function DailyFocusQueueCard() {
   const doneCount     = commitments.filter((t) => t.done).length;
 
   return (
+    <>
+    <TaskInspectModal task={inspectTask} onClose={() => setInspectTask(null)} />
     <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col gap-4">
 
       {/* Header */}
@@ -567,11 +574,11 @@ export default function DailyFocusQueueCard() {
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
-              {commitments.map((t) => <QueueRow key={t.id} task={t} />)}
+              {commitments.map((t) => <QueueRow key={t.id} task={t} onInspect={setInspectTask} />)}
               {maybes.length > 0 && (
                 <>
                   <p className="text-[10px] text-slate-600 mt-1 px-1">🎲 Bonus / Maybe</p>
-                  {maybes.map((t) => <QueueRow key={t.id} task={t} />)}
+                  {maybes.map((t) => <QueueRow key={t.id} task={t} onInspect={setInspectTask} />)}
                 </>
               )}
             </div>
@@ -604,5 +611,6 @@ export default function DailyFocusQueueCard() {
         </>
       )}
     </div>
+    </>
   );
 }

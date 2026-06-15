@@ -3,6 +3,7 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useDashboard, type CalendarJump } from "@/context/DashboardContext";
+import { areaColor, type AreaColorSet } from "@/lib/areaColors";
 
 interface Event {
   time: string;
@@ -22,19 +23,13 @@ const WEEK_EVENTS: Record<number, Event[]> = {};
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-const DEADLINE_PRIORITY_COLOR: Record<string, string> = {
-  High:  "bg-red-500/20 border-l-2 border-red-500 text-red-300",
-  Med:   "bg-amber-500/20 border-l-2 border-amber-500 text-amber-300",
-  Low:   "bg-blue-500/20 border-l-2 border-blue-500 text-blue-300",
-};
-
-const DOT_BG: Record<string, string> = {
-  pink:   "bg-pink-400",
-  violet: "bg-violet-400",
-  red:    "bg-red-400",
-  amber:  "bg-amber-400",
-  blue:   "bg-blue-400",
-};
+// Chip class builders — area/group color drives both views
+function weekChip(ac: AreaColorSet): string {
+  return `${ac.bgTint} border-l-2 ${ac.borderAccent} ${ac.text}`;
+}
+function monthChip(ac: AreaColorSet): string {
+  return `${ac.bgTint} border ${ac.border} ${ac.text}`;
+}
 
 function getMondayOfWeek(offset: number): Date {
   const today = new Date();
@@ -63,7 +58,21 @@ export default function CalendarCard() {
   const [weekOffset,   setWeekOffset]   = useState(0);
   const [monthOffset,  setMonthOffset]  = useState(0);
   const [calendarView, setCalendarView] = useState<"week" | "month">("week");
-  const { tasks, networkContacts, setCalendarJump } = useDashboard();
+  const { tasks, networkContacts, spheres, relationshipGroups, setCalendarJump } = useDashboard();
+
+  // Color resolution
+  const sphereByName = new Map(spheres.map((s) => [s.name, s]));
+  const contactById  = new Map(networkContacts.map((c) => [c.id, c]));
+  const groupByLabel = new Map(relationshipGroups.map((g) => [g.label, g]));
+
+  function getSphereAc(sphereName: string): AreaColorSet {
+    return areaColor(sphereByName.get(sphereName)?.labelColor);
+  }
+  function getContactAc(contactId: string): AreaColorSet {
+    const contact = contactById.get(contactId);
+    const group   = contact ? groupByLabel.get(contact.relationshipType) : undefined;
+    return areaColor(group?.color);
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -223,7 +232,7 @@ export default function CalendarCard() {
                   <button
                     key={`bday-${contactId}`}
                     onClick={() => setCalendarJump({ type: "contact", id: contactId })}
-                    className="rounded px-1.5 py-1 text-[9px] font-medium leading-tight bg-pink-500/15 border-l-2 border-pink-400 text-pink-300 text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all"
+                    className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getContactAc(contactId))}`}
                     title={`${name}'s Birthday`}
                   >
                     <div className="truncate">🎂 {name}&apos;s Birthday</div>
@@ -234,7 +243,7 @@ export default function CalendarCard() {
                   <button
                     key={`evt-${contactId}-${title}`}
                     onClick={() => setCalendarJump({ type: "contact", id: contactId })}
-                    className="rounded px-1.5 py-1 text-[9px] font-medium leading-tight bg-violet-500/15 border-l-2 border-violet-400 text-violet-300 text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all"
+                    className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getContactAc(contactId))}`}
                     title={title}
                   >
                     <div className="truncate">🎯 {title}</div>
@@ -252,7 +261,7 @@ export default function CalendarCard() {
                     <button
                       key={task.id}
                       onClick={() => setCalendarJump({ type: "task", id: task.id })}
-                      className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${DEADLINE_PRIORITY_COLOR[task.priority]}`}
+                      className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getSphereAc(task.sphere))}`}
                       title={task.title}
                     >
                       <div className="truncate">{task.title}</div>
@@ -298,23 +307,19 @@ export default function CalendarCard() {
                 ...birthdays.map(({ name, contactId }) => ({
                   key: `bday-${contactId}`,
                   label: `🎂 ${name}`,
-                  cls: "bg-pink-500/15 border-pink-500/25 text-pink-300",
+                  cls: monthChip(getContactAc(contactId)),
                   jump: { type: "contact" as const, id: contactId },
                 })),
                 ...contactEvts.map(({ title, contactId }) => ({
                   key: `evt-${contactId}-${title}`,
                   label: `🎯 ${title}`,
-                  cls: "bg-violet-500/10 border-violet-500/20 text-violet-300",
+                  cls: monthChip(getContactAc(contactId)),
                   jump: { type: "contact" as const, id: contactId },
                 })),
                 ...deadlines.map((t) => ({
                   key: `dl-${t.id}`,
                   label: t.title,
-                  cls: t.priority === "High"
-                    ? "bg-red-500/10 border-red-500/20 text-red-300"
-                    : t.priority === "Med"
-                      ? "bg-amber-500/10 border-amber-500/20 text-amber-300"
-                      : "bg-blue-500/10 border-blue-500/20 text-blue-300",
+                  cls: monthChip(getSphereAc(t.sphere)),
                   jump: { type: "task" as const, id: t.id },
                 })),
               ];
