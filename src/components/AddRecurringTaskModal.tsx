@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, RefreshCw } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
 
@@ -33,6 +33,14 @@ export default function AddRecurringTaskModal({ isOpen, onClose }: Props) {
   const [sphere,        setSphere]        = useState<string>(() => spheres[0]?.name ?? "");
   const [err,           setErr]           = useState(false);
 
+  // The lazy initializer above runs at mount, before Supabase spheres are loaded (initial state
+  // is []). When the modal first opens, sync sphere to the first loaded sphere if it's still unset.
+  useEffect(() => {
+    if (isOpen && sphere === "" && spheres.length > 0) {
+      setSphere(spheres[0].name);
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function reset() {
     setTitle(""); setNotes(""); setIntervalDays(30); setIntervalLabel("Every Month");
     setStartDate(todayISO()); setSphere(spheres[0]?.name ?? ""); setErr(false);
@@ -49,7 +57,7 @@ export default function AddRecurringTaskModal({ isOpen, onClose }: Props) {
       intervalDays,
       intervalLabel,
       startDate,
-      sphere,
+      sphere: sphere || spheres[0]?.name || "",
       lastDoneDate: null,
     });
     handleClose();

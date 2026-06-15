@@ -40,6 +40,20 @@ export function computeCountdown(task: RecurringTask): {
   today.setHours(0, 0, 0, 0);
   const todayMs = today.getTime();
 
+  // Tasks whose start date is still in the future have not begun their first cycle.
+  // Show a "Starts in X days" label rather than a misleading cycle-progress number.
+  if (task.startDate) {
+    const start = new Date(task.startDate + "T00:00:00");
+    if (start.getTime() > todayMs) {
+      const daysUntilStart = Math.ceil((start.getTime() - todayMs) / 86_400_000);
+      const label =
+        daysUntilStart === 1  ? "Starts tomorrow"
+        : daysUntilStart < 14 ? `Starts in ${daysUntilStart} days`
+        : `Starts ${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+      return { daysLeft: daysUntilStart, progress: 0, label, urgency: "fresh" };
+    }
+  }
+
   // Derive anchorDay from startDate if not set explicitly (monthly only)
   const effectiveAnchorDay: number | undefined =
     task.anchorDay ??

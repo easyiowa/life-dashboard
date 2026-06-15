@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   FolderKanban,
   CheckSquare,
@@ -386,6 +387,8 @@ function TaskRow({
   const isQueued         = (task.queuedDate ?? null) === currentTrackingDate;
   const timeLabel        = fmtDuration(loggedSeconds);
   const hasNote          = !!(task.notes && task.notes.trim().length > 0);
+  const noteIconRef      = useRef<HTMLSpanElement>(null);
+  const [notePos, setNotePos] = useState<{ top: number; left: number } | null>(null);
 
   return (
     <div
@@ -443,19 +446,29 @@ function TaskRow({
             </span>
           )}
 
-          {/* Note indicator — CSS group-hover tooltip */}
+          {/* Note indicator — portal tooltip so it escapes all overflow/stacking contexts */}
           {hasNote && (
-            <div
-              className="relative flex-shrink-0 group/note"
+            <span
+              ref={noteIconRef}
+              className="flex-shrink-0 flex items-center justify-center p-1 text-slate-500 hover:text-purple-400 cursor-pointer transition-colors"
               onClick={(e) => e.stopPropagation()}
+              onMouseEnter={() => {
+                const r = noteIconRef.current?.getBoundingClientRect();
+                if (r) setNotePos({ top: r.bottom + 8, left: r.left + r.width / 2 });
+              }}
+              onMouseLeave={() => setNotePos(null)}
             >
-              <span className="flex items-center justify-center p-1 text-slate-500 hover:text-purple-400 cursor-pointer transition-colors">
-                <FileText className="w-3.5 h-3.5" />
-              </span>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover/note:block w-max max-w-xs bg-slate-900/95 border border-white/[0.08] text-slate-200 text-xs rounded-lg px-3 py-2.5 shadow-2xl backdrop-blur-md z-50 whitespace-pre-wrap break-words leading-relaxed pointer-events-none">
-                {task.notes}
-              </div>
-            </div>
+              <FileText className="w-3.5 h-3.5" />
+            </span>
+          )}
+          {notePos && hasNote && createPortal(
+            <div
+              style={{ position: "fixed", top: notePos.top, left: notePos.left, transform: "translateX(-50%)", zIndex: 9999 }}
+              className="w-max max-w-xs bg-slate-900/95 border border-white/[0.08] text-slate-200 text-xs rounded-lg px-3 py-2.5 shadow-2xl backdrop-blur-md whitespace-pre-wrap break-words leading-relaxed pointer-events-none"
+            >
+              {task.notes}
+            </div>,
+            document.body
           )}
 
           {/* Queue toggle — always visible when queued, hover-reveal when not */}
