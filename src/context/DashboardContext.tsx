@@ -1008,9 +1008,7 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
   const dismissedDate = typeof window !== "undefined"
     ? localStorage.getItem("ld_nightly_review_dismissed") ?? ""
     : "";
-  const showNightlyReview = savedTrackingDate !== today
-    && new Date().getHours() >= 20
-    && dismissedDate !== today;
+  const showNightlyReview = savedTrackingDate !== today && dismissedDate !== today;
 
   // Auto-provision defaults only for a genuinely brand-new account.
   // Two guards required:

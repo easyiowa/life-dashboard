@@ -2,8 +2,9 @@
 
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { useDashboard, type CalendarJump } from "@/context/DashboardContext";
+import { useDashboard, type CalendarJump, type RecurringTask } from "@/context/DashboardContext";
 import { areaColor, type AreaColorSet } from "@/lib/areaColors";
+import { computeCountdown } from "@/components/widgets/RecurringCard";
 
 interface Event {
   time: string;
@@ -58,7 +59,7 @@ export default function CalendarCard() {
   const [weekOffset,   setWeekOffset]   = useState(0);
   const [monthOffset,  setMonthOffset]  = useState(0);
   const [calendarView, setCalendarView] = useState<"week" | "month">("week");
-  const { tasks, networkContacts, spheres, relationshipGroups, setCalendarJump } = useDashboard();
+  const { tasks, networkContacts, spheres, relationshipGroups, recurringTasks, setCalendarJump } = useDashboard();
 
   // Color resolution
   const sphereByName = new Map(spheres.map((s) => [s.name, s]));
@@ -102,6 +103,15 @@ export default function CalendarCard() {
         contactEventMap.set(evt.date, [...(contactEventMap.get(evt.date) ?? []), { title, contactId: contact.id }]);
       }
     }
+  }
+
+  const recurringDateMap = new Map<string, RecurringTask[]>();
+  for (const rt of recurringTasks) {
+    const { daysLeft } = computeCountdown(rt);
+    const dueDay = new Date(today);
+    dueDay.setDate(today.getDate() + Math.max(daysLeft, 0));
+    const key = dueDay.toLocaleDateString("en-CA");
+    recurringDateMap.set(key, [...(recurringDateMap.get(key) ?? []), rt]);
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────────
@@ -198,9 +208,10 @@ export default function CalendarCard() {
             const deadlines   = deadlineMap.get(dayKey) ?? [];
             const birthdays   = birthdayMap.get(`${mm}-${dd}`) ?? [];
             const contactEvts = contactEventMap.get(dayKey) ?? [];
-            const visible     = deadlines.slice(0, 2);
-            const overflow    = deadlines.length - visible.length;
-            const hasContent  = calEvents.length > 0 || deadlines.length > 0 || birthdays.length > 0 || contactEvts.length > 0;
+            const recurringItems = recurringDateMap.get(dayKey) ?? [];
+            const visible        = deadlines.slice(0, 2);
+            const overflow       = deadlines.length - visible.length;
+            const hasContent     = calEvents.length > 0 || deadlines.length > 0 || birthdays.length > 0 || contactEvts.length > 0 || recurringItems.length > 0;
 
             return (
               <div
@@ -247,6 +258,16 @@ export default function CalendarCard() {
                     title={title}
                   >
                     <div className="truncate">🎯 {title}</div>
+                  </button>
+                ))}
+
+                {recurringItems.map((rt) => (
+                  <button
+                    key={`rt-${rt.id}`}
+                    className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getSphereAc(rt.sphere))}`}
+                    title={rt.title}
+                  >
+                    <div className="truncate">♻️ {rt.title}</div>
                   </button>
                 ))}
 
@@ -300,7 +321,8 @@ export default function CalendarCard() {
               const isToday     = day.getTime() === today.getTime();
               const deadlines   = deadlineMap.get(dayKey) ?? [];
               const birthdays   = birthdayMap.get(mmdd) ?? [];
-              const contactEvts = contactEventMap.get(dayKey) ?? [];
+              const contactEvts    = contactEventMap.get(dayKey) ?? [];
+              const recurringItems = recurringDateMap.get(dayKey) ?? [];
 
               type EventBadge = { key: string; label: string; cls: string; jump: CalendarJump | null };
               const badges: EventBadge[] = [
@@ -315,6 +337,12 @@ export default function CalendarCard() {
                   label: `🎯 ${title}`,
                   cls: monthChip(getContactAc(contactId)),
                   jump: { type: "contact" as const, id: contactId },
+                })),
+                ...recurringItems.map((rt) => ({
+                  key: `rt-${rt.id}`,
+                  label: `♻️ ${rt.title}`,
+                  cls: monthChip(getSphereAc(rt.sphere)),
+                  jump: null,
                 })),
                 ...deadlines.map((t) => ({
                   key: `dl-${t.id}`,

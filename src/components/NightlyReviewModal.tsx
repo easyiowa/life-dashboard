@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, CheckCircle2, Flame, Clock, AlertTriangle, Rocket, TrendingUp, Moon, Brain } from "lucide-react";
-import { useDashboard, type Task, type TaskArchiveMeta, type MindStateClosure } from "@/context/DashboardContext";
+import { X, Check, CheckCircle2, Flame, Clock, AlertTriangle, Rocket, TrendingUp, Moon, Brain } from "lucide-react";
+import { useDashboard, type Task, type TaskArchiveMeta, type MindStateClosure, type NetworkContact, type RecurringTask } from "@/context/DashboardContext";
+import { computeCountdown } from "@/components/widgets/RecurringCard";
 
 // ── Velocity helpers ──────────────────────────────────────────────────────────
 
@@ -30,7 +31,7 @@ function fmtMins(m: number): string {
   return `${m}m`;
 }
 
-// ── Category section ──────────────────────────────────────────────────────────
+// ── Category section (for standard Task objects) ──────────────────────────────
 
 function Section({
   emoji, title, color, tasks, emptyText,
@@ -57,7 +58,6 @@ function Section({
                 <span className="text-xs text-slate-300 flex-1 leading-none truncate">{t.title}</span>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {intent === "time" && target > 0 ? (
-                    // "1m / 9m goal" — shows both progress and target in one badge
                     <span className="text-[10px] font-mono text-slate-500 flex items-center gap-0.5">
                       <Clock className="w-2.5 h-2.5" />
                       {totalMins > 0 ? `${totalMins}m` : "0m"} / {target}m goal
@@ -90,9 +90,119 @@ function Section({
   );
 }
 
+// ── Birthday checklist section ────────────────────────────────────────────────
+
+function BirthdaySection({
+  contacts, doneIds, onToggle,
+}: {
+  contacts: NetworkContact[];
+  doneIds: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  if (contacts.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <span>🎂</span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-pink-400">Birthdays Today</span>
+        <span className="text-[10px] text-slate-600">({contacts.length})</span>
+      </div>
+      <div className="flex flex-col gap-1">
+        {contacts.map((c) => {
+          const done = doneIds.has(c.id);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onToggle(c.id)}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-left transition-all duration-150 ${
+                done
+                  ? "bg-emerald-500/[0.06] border-emerald-500/20"
+                  : "bg-white/[0.02] border-white/[0.04] hover:border-white/[0.10]"
+              }`}
+            >
+              <span className={`flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                done ? "bg-emerald-500/25 border-emerald-400/60" : "border-slate-600"
+              }`}>
+                {done && <Check className="w-2 h-2 text-emerald-300" />}
+              </span>
+              <span className={`text-xs flex-1 leading-none truncate ${done ? "line-through text-emerald-300/60" : "text-slate-300"}`}>
+                🎂 {c.name}
+              </span>
+              <span className="text-[10px] text-slate-600 flex-shrink-0">Birthday</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Recurring checklist section ───────────────────────────────────────────────
+
+function RecurringSection({
+  tasks, doneIds, onToggle,
+}: {
+  tasks: RecurringTask[];
+  doneIds: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  if (tasks.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <span>♻️</span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-cyan-400">Recurring Due Today</span>
+        <span className="text-[10px] text-slate-600">({tasks.length})</span>
+      </div>
+      <div className="flex flex-col gap-1">
+        {tasks.map((rt) => {
+          const done = doneIds.has(rt.id);
+          return (
+            <button
+              key={rt.id}
+              type="button"
+              onClick={() => onToggle(rt.id)}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-left transition-all duration-150 ${
+                done
+                  ? "bg-emerald-500/[0.06] border-emerald-500/20"
+                  : "bg-white/[0.02] border-white/[0.04] hover:border-white/[0.10]"
+              }`}
+            >
+              <span className={`flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                done ? "bg-emerald-500/25 border-emerald-400/60" : "border-slate-600"
+              }`}>
+                {done && <Check className="w-2 h-2 text-emerald-300" />}
+              </span>
+              <span className={`text-xs flex-1 leading-none truncate ${done ? "line-through text-emerald-300/60" : "text-slate-300"}`}>
+                ♻️ {rt.title}
+              </span>
+              <span className="text-[10px] text-slate-600 flex-shrink-0 tabular-nums">{rt.intervalLabel}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Velocity gauge ────────────────────────────────────────────────────────────
 
-function VelocityGauge({ score }: { score: number }) {
+function VelocityGauge({ score, hasAnyPlanned }: { score: number; hasAnyPlanned: boolean }) {
+  if (!hasAnyPlanned) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-end justify-between">
+          <span className="text-xs text-slate-500">Day Velocity</span>
+          <span className="text-xs text-slate-500">Free day — no commitments</span>
+        </div>
+        <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
+          <div className="h-full rounded-full bg-slate-700/50" style={{ width: "100%" }} />
+        </div>
+      </div>
+    );
+  }
+
   const color = score >= 80 ? "from-emerald-600 to-emerald-400"
     : score >= 50            ? "from-violet-600 to-violet-400"
     : score >= 25            ? "from-amber-600 to-amber-400"
@@ -140,28 +250,46 @@ function generateRecap(velocity: number, wins: number, total: number, rollovers:
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export default function NightlyReviewModal() {
-  const { tasks, currentTrackingDate, showNightlyReview, transitionToNextDay, dismissNightlyReview, lockDay, dailyCheckIn } =
-    useDashboard();
+  const {
+    tasks, recurringTasks, networkContacts,
+    currentTrackingDate, showNightlyReview,
+    dismissNightlyReview, lockDay, dailyCheckIn,
+  } = useDashboard();
 
-  const [endDelta,    setEndDelta]    = useState<"better" | "same" | "worse" | null>(null);
-  const [closureNote, setClosureNote] = useState("");
+  const [endDelta,      setEndDelta]      = useState<"better" | "same" | "worse" | null>(null);
+  const [closureNote,   setClosureNote]   = useState("");
+  const [birthdayDone,  setBirthdayDone]  = useState<Set<string>>(new Set());
+  const [recurringDone, setRecurringDone] = useState<Set<string>>(new Set());
 
   if (!showNightlyReview) return null;
 
-  const reviewDate   = currentTrackingDate;
-  const reviewTasks  = tasks.filter((t) => (t.queuedDate ?? null) === reviewDate);
+  const reviewDate    = currentTrackingDate;
+  const today         = new Date().toLocaleDateString("en-CA");
+  const isRetroactive = reviewDate !== today;
+  const reviewTasks   = tasks.filter((t) => (t.queuedDate ?? null) === reviewDate);
 
-  // ── Velocity score ──────────────────────────────────────────────────────────
-  const commitments = reviewTasks.filter((t) => (t.intent ?? "finish") !== "maybe");
-  const wins        = commitments.filter(isWin);
-  const velocity    = commitments.length > 0 ? Math.round((wins.length / commitments.length) * 100) : 100;
+  // ── Multi-source items ──────────────────────────────────────────────────────
+  const mmdd           = reviewDate.slice(5);
+  const todayBirthdays = networkContacts.filter((c) => c.birthday?.slice(5) === mmdd);
+  const todayRecurring = recurringTasks.filter((rt) => computeCountdown(rt).daysLeft <= 0);
+
+  // ── Velocity score (all sources) ────────────────────────────────────────────
+  const commitments      = reviewTasks.filter((t) => (t.intent ?? "finish") !== "maybe");
+  const wins             = commitments.filter(isWin);
+  const checkedBirthdays = todayBirthdays.filter((c) => birthdayDone.has(c.id));
+  const checkedRecurring = todayRecurring.filter((rt) => recurringDone.has(rt.id));
+
+  const totalItems  = commitments.length + todayBirthdays.length + todayRecurring.length;
+  const totalWins   = wins.length + checkedBirthdays.length + checkedRecurring.length;
+  const velocity    = totalItems > 0 ? Math.round((totalWins / totalItems) * 100) : 0;
+  const hasAnyPlanned = totalItems > 0;
 
   // ── Bonus momentum ──────────────────────────────────────────────────────────
   const bonusTasks = reviewTasks.filter(
     (t) => (t.intent ?? "finish") === "maybe" && (t.done || (t.timeSpentMinutes ?? 0) > 0)
   );
 
-  // ── 4 categories ───────────────────────────────────────────────────────────
+  // ── 4 standard-task categories ──────────────────────────────────────────────
   const accomplished = reviewTasks.filter(
     (t) => t.done && (t.intent ?? "finish") !== "maybe"
   );
@@ -181,9 +309,70 @@ export default function NightlyReviewModal() {
 
   const totalTimeMinutes = reviewTasks.reduce((s, t) => s + (t.timeSpentMinutes ?? 0), 0);
 
+  function toggleBirthday(id: string) {
+    setBirthdayDone((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleRecurring(id: string) {
+    setRecurringDone((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  // Shared lock logic used by both the confirm button and the retroactive dismiss/seal paths.
+  const handleLockDay = () => {
+    const recap = generateRecap(velocity, totalWins, totalItems, activeRollovers.length);
+
+    // Build completed titles — standard tasks + checked birthdays + checked recurring
+    const goalsAchieved = [...accomplished, ...deepWork];
+    const completedTitles: string[] = [
+      ...goalsAchieved.map((t) => t.title),
+      ...checkedBirthdays.map((c) => `🎂 ${c.name}`),
+      ...checkedRecurring.map((rt) => `♻️ ${rt.title}`),
+    ];
+
+    const taskMeta: Record<string, TaskArchiveMeta> = {};
+    for (const t of reviewTasks) {
+      taskMeta[t.title] = {
+        intent:  t.intent ?? "finish",
+        target:  t.dailyTargetMinutes ?? null,
+        minutes: (t.timeSpentMinutes ?? 0) + (t.manualMinutes ?? 0),
+        goalMet: isWin(t),
+      };
+    }
+
+    const mindStateClosure: MindStateClosure | undefined =
+      dailyCheckIn?.date === reviewDate
+        ? {
+            morningMoodKey: dailyCheckIn.moodKey,
+            morningMood:    dailyCheckIn.mood,
+            morningTags:    dailyCheckIn.tags,
+            morningNote:    dailyCheckIn.note,
+            endDelta:       endDelta ?? "same",
+            closureNote:    closureNote.trim(),
+          }
+        : undefined;
+
+    // Birthdays never roll over — only standard task rollovers cascade forward.
+    // Recurring tasks have their own independent tracking system; they also don't roll over here.
+    lockDay(
+      reviewDate, velocity, recap,
+      completedTitles,
+      activeRollovers.map((t) => t.title),
+      taskMeta,
+      mindStateClosure,
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={dismissNightlyReview} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={isRetroactive ? handleLockDay : dismissNightlyReview} />
 
       <div className="relative bg-[#0B0F1A] border border-white/[0.08] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
 
@@ -197,7 +386,7 @@ export default function NightlyReviewModal() {
             </div>
           </div>
           <button
-            onClick={dismissNightlyReview}
+            onClick={isRetroactive ? handleLockDay : dismissNightlyReview}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
           >
             <X className="w-4 h-4" />
@@ -206,13 +395,25 @@ export default function NightlyReviewModal() {
 
         <div className="p-6 flex flex-col gap-6">
 
+          {/* Retroactive recovery notice */}
+          {isRetroactive && (
+            <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/20">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-amber-300/80 leading-relaxed">
+                Hey, yesterday&apos;s day wasn&apos;t wrapped up properly, so here is your chance to wrap it up as usual and record your evening state!
+              </p>
+            </div>
+          )}
+
           {/* Velocity + time summary */}
           <div className="flex flex-col gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-            <VelocityGauge score={velocity} />
+            <VelocityGauge score={velocity} hasAnyPlanned={hasAnyPlanned} />
             <div className="flex items-center gap-4 text-[10px] text-slate-500 border-t border-white/[0.05] pt-3">
               <span className="flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
                 {commitments.length} commitment{commitments.length !== 1 ? "s" : ""}
+                {todayBirthdays.length > 0 && ` · ${todayBirthdays.length} birthday${todayBirthdays.length !== 1 ? "s" : ""}`}
+                {todayRecurring.length > 0 && ` · ${todayRecurring.length} recurring`}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -227,7 +428,7 @@ export default function NightlyReviewModal() {
             </div>
           </div>
 
-          {/* 4 category sections */}
+          {/* Standard task sections */}
           <Section
             emoji="✅" title="Accomplished" color="text-emerald-400"
             tasks={accomplished}
@@ -247,6 +448,20 @@ export default function NightlyReviewModal() {
             emoji="⚠️" title="Friction Alerts" color="text-rose-400"
             tasks={frictionAlerts}
             emptyText="No stuck items — great!"
+          />
+
+          {/* Birthday checklist — unchecked items gracefully clear, never roll over */}
+          <BirthdaySection
+            contacts={todayBirthdays}
+            doneIds={birthdayDone}
+            onToggle={toggleBirthday}
+          />
+
+          {/* Recurring checklist — managed by their own tracking system, no rollover */}
+          <RecurringSection
+            tasks={todayRecurring}
+            doneIds={recurringDone}
+            onToggle={toggleRecurring}
           />
 
           {/* Bonus momentum */}
@@ -321,42 +536,21 @@ export default function NightlyReviewModal() {
           {/* CTA */}
           <div className="flex flex-col gap-3 pt-2 border-t border-white/[0.06]">
             <p className="text-[10px] text-slate-500 text-center leading-relaxed">
-              Clicking <span className="text-white font-medium">Lock Day & Advance</span> will roll over
-              incomplete commitments, reset today&apos;s queue, and advance your tracking date to today.
+              {isRetroactive ? (
+                <>Locking yesterday&apos;s day will archive the record, roll over incomplete commitments, and advance your tracking date to today.</>
+              ) : (
+                <>Clicking <span className="text-white font-medium">Lock Day & Advance</span> will roll over incomplete commitments, reset today&apos;s queue, and advance your tracking date to today.</>
+              )}
             </p>
             <div className="flex gap-3">
               <button
-                onClick={dismissNightlyReview}
+                onClick={isRetroactive ? handleLockDay : dismissNightlyReview}
                 className="flex-1 h-10 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
               >
-                Review Later
+                {isRetroactive ? "Seal & Close" : "Review Later"}
               </button>
               <button
-                onClick={() => {
-                  const recap = generateRecap(velocity, wins.length, commitments.length, activeRollovers.length);
-                  const goalsAchieved = [...accomplished, ...deepWork];
-                  const taskMeta: Record<string, TaskArchiveMeta> = {};
-                  for (const t of reviewTasks) {
-                    taskMeta[t.title] = {
-                      intent:  t.intent ?? "finish",
-                      target:  t.dailyTargetMinutes ?? null,
-                      minutes: (t.timeSpentMinutes ?? 0) + (t.manualMinutes ?? 0),
-                      goalMet: isWin(t),
-                    };
-                  }
-                  const mindStateClosure: MindStateClosure | undefined =
-                    dailyCheckIn?.date === reviewDate
-                      ? {
-                          morningMoodKey: dailyCheckIn.moodKey,
-                          morningMood:    dailyCheckIn.mood,
-                          morningTags:    dailyCheckIn.tags,
-                          morningNote:    dailyCheckIn.note,
-                          endDelta:       endDelta ?? "same",
-                          closureNote:    closureNote.trim(),
-                        }
-                      : undefined;
-                  lockDay(reviewDate, velocity, recap, goalsAchieved.map((t) => t.title), activeRollovers.map((t) => t.title), taskMeta, mindStateClosure);
-                }}
+                onClick={handleLockDay}
                 className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.4)] flex items-center justify-center gap-2"
               >
                 <Flame className="w-4 h-4" />

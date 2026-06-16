@@ -5,6 +5,7 @@ import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap
 import { useDashboard, type Task, type HistoricalLog, type DailyTrackingEntry } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
 import TaskInspectModal from "@/components/TaskInspectModal";
+import { computeCountdown } from "@/components/widgets/RecurringCard";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -273,9 +274,15 @@ function ArchiveDayRow({ log }: { log: HistoricalLog }) {
         <span className="text-[11px] font-semibold text-white flex-1 text-left">
           {fmtArchiveDate(log.date)}
         </span>
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${velocityBadgeClass(log.dayVelocity)}`}>
-          {log.dayVelocity}% Velocity
-        </span>
+        {log.completedTasks.length === 0 && log.rolledOverTasks.length === 0 ? (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-400 border border-slate-500/30">
+            ☕ Chill day
+          </span>
+        ) : (
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${velocityBadgeClass(log.dayVelocity)}`}>
+            {log.dayVelocity}% Velocity
+          </span>
+        )}
         <ChevronDown className={`w-3 h-3 text-slate-600 ml-1 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       <div
@@ -504,14 +511,188 @@ function RolloverWidget({ log, onDismiss }: { log: HistoricalLog; onDismiss: () 
   );
 }
 
+// ── Persistent per-day suggestion dismissals ──────────────────────────────────
+// Key format: dismissed_suggestions_YYYY-MM-DD — auto-expires when date changes.
+
+function useDayDismissed(date: string): [Set<string>, (key: string) => void] {
+  const storageKey = `dismissed_suggestions_${date}`;
+
+  const [dismissed, setDismissed] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set<string>();
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set<string>();
+    } catch {
+      return new Set<string>();
+    }
+  });
+
+  function dismiss(key: string) {
+    setDismissed((prev) => {
+      const next = new Set(prev);
+      next.add(key);
+      try { localStorage.setItem(storageKey, JSON.stringify([...next])); } catch { /* quota */ }
+      return next;
+    });
+  }
+
+  return [dismissed, dismiss];
+}
+
+// ── Birthday auto-inject rows ─────────────────────────────────────────────────
+
+function BirthdayRows() {
+  const { networkContacts, currentTrackingDate } = useDashboard();
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [dismissed, dismiss]        = useDayDismissed(currentTrackingDate);
+
+  const todayBirthdays = networkContacts.filter(
+    (c) => c.birthday && c.birthday.slice(5) === currentTrackingDate.slice(5) && !dismissed.has(`bday-${c.id}`)
+  );
+  if (todayBirthdays.length === 0) return null;
+
+  function toggle(id: string) {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <>
+      {todayBirthdays.map((c) => {
+        const done = checkedIds.has(c.id);
+        return (
+          <div key={c.id} className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all duration-200 ${done ? "border-emerald-500/25 bg-emerald-500/[0.03]" : "border-white/[0.05] bg-white/[0.02]"}`}>
+            <button
+              type="button"
+              onClick={() => toggle(c.id)}
+              className={`flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-150 ${done ? "bg-emerald-500/25 border-emerald-400/60 shadow-[0_0_8px_rgba(52,211,153,0.35)]" : "border-slate-600 hover:border-pink-400"}`}
+            >
+              {done && <Check className="w-2.5 h-2.5 text-emerald-300" />}
+            </button>
+            <span className={`flex-1 text-sm leading-none truncate ${done ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
+              🎂 {c.name}
+            </span>
+            <button
+              type="button"
+              onClick={() => dismiss(`bday-${c.id}`)}
+              title="Dismiss"
+              className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+// ── Today's aggregation suggestions ──────────────────────────────────────────
+
+function TodaySuggestions({ onDismiss }: { onDismiss: () => void }) {
+  const { tasks, recurringTasks, currentTrackingDate, toggleTaskForToday, spheres } = useDashboard();
+  const [dismissed, dismiss] = useDayDismissed(currentTrackingDate);
+
+  const today = currentTrackingDate;
+
+  const deadlineSuggestions = tasks.filter((t) =>
+    t.deadline === today &&
+    !t.done &&
+    (t.queuedDate ?? null) !== today &&
+    !dismissed.has(`task-${t.id}`)
+  );
+
+  const recurringSuggestions = recurringTasks.filter((rt) => {
+    if (dismissed.has(`rt-${rt.id}`)) return false;
+    return computeCountdown(rt).daysLeft <= 0;
+  });
+
+  const hasAny = deadlineSuggestions.length > 0 || recurringSuggestions.length > 0;
+  if (!hasAny) return null;
+
+  return (
+    <div className="rounded-xl border border-violet-500/20 bg-violet-600/[0.04] p-3 flex flex-col gap-2.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm leading-none">✨</span>
+          <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-widest">
+            Today&apos;s Aggregation
+          </span>
+        </div>
+        <button type="button" onClick={onDismiss} className="text-slate-600 hover:text-slate-400 transition-colors">
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        {/* Recurring responsibilities due today */}
+        {recurringSuggestions.map((rt) => {
+          const ac = areaColor(spheres.find((s) => s.name === rt.sphere)?.labelColor);
+          return (
+            <div key={rt.id} className="flex items-center gap-2 px-2 py-2 rounded-lg bg-white/[0.02]">
+              <span className={`flex-1 min-w-0 text-xs leading-normal truncate ${ac.text}`}>
+                ♻️ {rt.title}
+              </span>
+              <span className="text-[9px] text-slate-600 flex-shrink-0 tabular-nums">{rt.intervalLabel}</span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); dismiss(`rt-${rt.id}`); }}
+                title="Dismiss"
+                className="p-1.5 rounded-lg bg-white/[0.04] text-slate-500 border border-white/[0.06] hover:bg-white/[0.1] transition-all duration-200 cursor-pointer flex-shrink-0"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          );
+        })}
+
+        {/* Tasks with deadline today — addable directly to today's queue */}
+        {deadlineSuggestions.map((t) => {
+          const ac = areaColor(spheres.find((s) => s.name === t.sphere)?.labelColor);
+          return (
+            <div key={t.id} className="flex items-center gap-2 px-2 py-2 rounded-lg bg-white/[0.02]">
+              <span className={`flex-1 min-w-0 text-xs leading-normal truncate ${ac.text}`}>
+                📅 {t.title}
+              </span>
+              <span className="text-[9px] text-slate-600 flex-shrink-0">Due today</span>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); toggleTaskForToday(t.id, today, "finish", null); dismiss(`task-${t.id}`); }}
+                  title="Add to today's focus"
+                  className="p-1.5 rounded-lg bg-violet-500/20 text-violet-400 border border-violet-500/30 hover:bg-violet-500 hover:text-white transition-all cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); dismiss(`task-${t.id}`); }}
+                  title="Dismiss"
+                  className="p-1.5 rounded-lg bg-white/[0.04] text-slate-500 border border-white/[0.06] hover:bg-red-500 hover:text-white hover:border-red-600 transition-all duration-200 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Card ──────────────────────────────────────────────────────────────────────
 
 export default function DailyFocusQueueCard() {
   const { tasks, currentTrackingDate, requestNightlyReview, historicalLogs } = useDashboard();
   const [showPicker,         setShowPicker]         = useState(false);
   const [collapsed,          setCollapsed]          = useState(false);
-  const [rolloverDismissed,  setRolloverDismissed]  = useState(false);
-  const [inspectTask,        setInspectTask]        = useState<Task | null>(null);
+  const [rolloverDismissed,    setRolloverDismissed]    = useState(false);
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
+  const [inspectTask,          setInspectTask]          = useState<Task | null>(null);
 
   const yesterdayLog = historicalLogs[0] ?? null;
 
@@ -584,12 +765,20 @@ export default function DailyFocusQueueCard() {
             </div>
           )}
 
+          {/* Birthday auto-inject rows */}
+          <BirthdayRows />
+
           {/* Rollover suggestion */}
           {!rolloverDismissed && yesterdayLog && yesterdayLog.rolledOverTasks.length > 0 && (
             <RolloverWidget
               log={yesterdayLog}
               onDismiss={() => setRolloverDismissed(true)}
             />
+          )}
+
+          {/* Today's aggregation suggestions */}
+          {!suggestionsDismissed && (
+            <TodaySuggestions onDismiss={() => setSuggestionsDismissed(true)} />
           )}
 
           {/* Picker + Add button */}

@@ -24,6 +24,9 @@ function velocityBarClass(v: number): string {
 
 function humanizedMessage(v: number, completedCount: number, rolledCount: number): string {
   const name = "Olaf";
+  if (completedCount === 0 && rolledCount === 0) {
+    return "☕ A relaxed, chill day yesterday! No tasks were planned, allowing for a clean reset. Today is a brand new canvas.";
+  }
   if (v === 100) {
     return `${name}, you absolute legend — 100% velocity. Every single goal hit, nothing left on the table. Clean sweep, zero excuses. Today's going to feel easy by comparison.`;
   }
@@ -53,8 +56,9 @@ export default function MorningRecapBanner() {
 
   if (!yesterdayRecap || dismissed || !log) return null;
 
-  const emoji   = velocityEmoji(log.dayVelocity);
-  const message = humanizedMessage(log.dayVelocity, log.completedTasks.length, log.rolledOverTasks.length);
+  const isChillDay = log.completedTasks.length === 0 && log.rolledOverTasks.length === 0;
+  const emoji      = isChillDay ? "☕" : velocityEmoji(log.dayVelocity);
+  const message    = humanizedMessage(log.dayVelocity, log.completedTasks.length, log.rolledOverTasks.length);
 
   return (
     <div className="mb-4 rounded-xl border border-violet-500/25 bg-violet-600/[0.06] backdrop-blur-xl overflow-hidden">
@@ -94,13 +98,17 @@ export default function MorningRecapBanner() {
           {/* Velocity mini-bar */}
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-semibold text-violet-300/80 uppercase tracking-widest flex-shrink-0 w-24">
-              {log.dayVelocity}% velocity
+              {isChillDay ? "Chill day" : `${log.dayVelocity}% velocity`}
             </span>
             <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
-              <div
-                className={`h-full rounded-full bg-gradient-to-r ${velocityBarClass(log.dayVelocity)} transition-all duration-700`}
-                style={{ width: `${log.dayVelocity}%` }}
-              />
+              {isChillDay ? (
+                <div className="h-full rounded-full bg-slate-700/50" style={{ width: "100%" }} />
+              ) : (
+                <div
+                  className={`h-full rounded-full bg-gradient-to-r ${velocityBarClass(log.dayVelocity)} transition-all duration-700`}
+                  style={{ width: `${log.dayVelocity}%` }}
+                />
+              )}
             </div>
           </div>
 
