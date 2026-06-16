@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
 import {
-  X, Check, ChevronLeft, ChevronRight, Sparkles, Flame,
+  X, Check, Sparkles, Flame,
   CalendarDays, FolderKanban, Timer, NotebookPen, Target,
   Activity, TrendingUp, RefreshCw, Users,
 } from "lucide-react";
@@ -783,16 +783,9 @@ interface Props {
 export default function ActiveWidgetsModal({ isOpen, onClose, initialSelected, onSave }: Props) {
   // userPicked = what the user explicitly toggled; selected = userPicked + forced deps
   const [userPicked, setUserPicked] = useState<Set<string>>(new Set());
-  const [previewId,  setPreviewId]  = useState(WIDGETS[0].id);
-  const [slideIdx,   setSlideIdx]   = useState(0);
-  const [hoveredId,  setHoveredId]  = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setUserPicked(new Set(initialSelected));
-      setPreviewId(WIDGETS[0].id);
-      setSlideIdx(0);
-    }
+    if (isOpen) setUserPicked(new Set(initialSelected));
   }, [isOpen, initialSelected]);
 
   if (!isOpen) return null;
@@ -804,19 +797,11 @@ export default function ActiveWidgetsModal({ isOpen, onClose, initialSelected, o
     while (queue.length > 0) {
       const id = queue.pop()!;
       for (const dep of FORCED_DEPS[id] ?? []) {
-        if (!result.has(dep)) {
-          result.add(dep);
-          queue.push(dep); // expand deps of deps
-        }
+        if (!result.has(dep)) { result.add(dep); queue.push(dep); }
       }
     }
     return [...result];
   })();
-
-  const activeWidget = WIDGETS.find(w => w.id === previewId) ?? WIDGETS[0];
-  const slides       = activeWidget.slides;
-  const Slide        = slides[slideIdx];
-  const ActiveIcon   = activeWidget.Icon;
 
   // Amber glow: synergy partners + suggestion target cards (both unselected only)
   const glowSet = new Set<string>([
@@ -824,48 +809,22 @@ export default function ActiveWidgetsModal({ isOpen, onClose, initialSelected, o
     ...selected.flatMap(id => SUGGESTIONS[id]?.partners ?? []),
   ]);
 
-  // Widgets in selected but NOT in userPicked — forced ON by a dependency rule.
-  // These display a "required" badge; clicking them adds to userPicked (independence endorsement).
+  // Widgets forced ON by a dependency rule — not explicitly chosen by the user.
   const forcedSet = new Set<string>(selected.filter(id => !userPicked.has(id)));
 
-  // Synergy match message (shown when both partners are active)
-  const synergyMsg = (() => {
-    for (const id of selected) {
-      const r = SYNERGY[id];
-      if (r && selected.includes(r.partner)) return r.message;
-    }
-    return null;
-  })();
-
-  // Contextual suggestion: hovered widget takes priority, then selected widgets
-  const suggestionMsg = (() => {
-    if (hoveredId && SUGGESTIONS[hoveredId]) return SUGGESTIONS[hoveredId].message;
-    for (const id of selected) {
-      if (SUGGESTIONS[id]) return SUGGESTIONS[id].message;
-    }
-    return null;
-  })();
-
-  function setPreview(id: string) {
-    setPreviewId(id);
-    setSlideIdx(0);
-  }
-
   function toggleWidget(id: string) {
+    if (userPicked.has(id)) {
+      const widget = WIDGETS.find(w => w.id === id)!;
+      const confirmed = window.confirm(
+        `Are you sure you want to remove the ${widget.label} widget? This will permanently delete all associated data, history, and logs. This cannot be undone.`
+      );
+      if (!confirmed) return;
+    }
     setUserPicked(prev => {
       const next = new Set(prev);
-      // Toggle explicit user intent — forced deps are derived, never stored here.
-      // Removing a parent automatically drops its forced dep from `selected`
-      // (unless the dep also exists in userPicked independently).
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
       return next;
     });
-    setPreviewId(id);
-    setSlideIdx(0);
   }
 
   function handleSave() {
@@ -881,7 +840,7 @@ export default function ActiveWidgetsModal({ isOpen, onClose, initialSelected, o
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.06] shrink-0">
-          <h2 className="text-base font-semibold text-white tracking-tight">Widget Marketplace</h2>
+          <h2 className="text-base font-semibold text-white tracking-tight">Widgets</h2>
           <button
             onClick={onClose}
             className="w-7 h-7 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors flex items-center justify-center"
@@ -898,81 +857,6 @@ export default function ActiveWidgetsModal({ isOpen, onClose, initialSelected, o
               Pick the widgets that work for your life. Changes apply to your dashboard instantly.
             </p>
 
-            {/* Pro-tip — low-profile, right under the subtitle */}
-            <div className="bg-purple-950/20 border border-purple-500/15 rounded-lg px-3 py-2.5">
-              <p className="text-xs leading-relaxed text-purple-300/75">
-                💡 <span className="font-medium">Pro-tip:</span> Turn them all on first — it&apos;s easier to remove what you don&apos;t need once you&apos;ve seen everything in action.
-              </p>
-            </div>
-
-            {/* Live preview panel */}
-            <div className="bg-[#0F1629] border border-white/[0.07] rounded-2xl p-5">
-
-              {/* Widget name + tagline */}
-              <div className="flex items-center gap-3 mb-4">
-                <ActiveIcon className="w-5 h-5 text-violet-400 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-white leading-none">{activeWidget.label}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{activeWidget.tagline}</p>
-                </div>
-              </div>
-
-              {/* Preview slide */}
-              <div className="min-h-[150px] flex items-center justify-center">
-                <div className="w-full"><Slide /></div>
-              </div>
-
-              {/* Carousel controls */}
-              <div className="flex items-center justify-between mt-4">
-                <button
-                  onClick={() => setSlideIdx(i => (i - 1 + slides.length) % slides.length)}
-                  className="w-6 h-6 rounded-md bg-white/[0.05] hover:bg-white/[0.09] flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-
-                <div className="flex gap-1.5 items-center">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSlideIdx(i)}
-                      className={`rounded-full transition-all duration-200 ${
-                        i === slideIdx ? "w-4 h-1.5 bg-violet-400" : "w-1.5 h-1.5 bg-white/[0.18] hover:bg-white/[0.30]"
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setSlideIdx(i => (i + 1) % slides.length)}
-                  className="w-6 h-6 rounded-md bg-white/[0.05] hover:bg-white/[0.09] flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Tab strip */}
-              <div className="flex gap-1.5 mt-4 overflow-x-auto pb-1 scrollbar-none">
-                {WIDGETS.map(w => {
-                  const WIcon = w.Icon;
-                  return (
-                    <button
-                      key={w.id}
-                      onClick={() => setPreview(w.id)}
-                      className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        previewId === w.id
-                          ? "bg-violet-600/30 text-violet-300 border border-violet-500/40"
-                          : "text-slate-500 hover:text-slate-300 border border-transparent hover:border-white/[0.06]"
-                      }`}
-                    >
-                      <WIcon className="w-3 h-3 shrink-0" />
-                      {w.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Selection grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {WIDGETS.map(w => {
@@ -984,8 +868,6 @@ export default function ActiveWidgetsModal({ isOpen, onClose, initialSelected, o
                   <button
                     key={w.id}
                     onClick={() => toggleWidget(w.id)}
-                    onMouseEnter={() => setHoveredId(w.id)}
-                    onMouseLeave={() => setHoveredId(null)}
                     className={`relative flex flex-col gap-2 p-4 rounded-2xl border text-left transition-all ${
                       isSel
                         ? "bg-violet-600/15 border-violet-500/50 shadow-[0_0_16px_rgba(139,92,246,0.25)]"
@@ -1019,22 +901,6 @@ export default function ActiveWidgetsModal({ isOpen, onClose, initialSelected, o
                 );
               })}
             </div>
-
-            {/* Synergy banner — shown when both partners are active */}
-            {synergyMsg && (
-              <div className="rounded-xl bg-amber-500/[0.08] border border-amber-500/20 px-4 py-3 text-xs text-amber-300 leading-relaxed flex items-start gap-2">
-                <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
-                <span><span className="font-semibold">Smart Match —</span> {synergyMsg}</span>
-              </div>
-            )}
-
-            {/* Contextual suggestion — driven by hover or selection */}
-            {suggestionMsg && (
-              <div className="rounded-xl bg-violet-500/[0.07] border border-violet-500/20 px-4 py-3 text-xs text-violet-300 leading-relaxed flex items-start gap-2">
-                <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-violet-400" />
-                <span>{suggestionMsg}</span>
-              </div>
-            )}
 
           </div>
         </div>

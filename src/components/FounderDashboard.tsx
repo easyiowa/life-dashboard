@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   X, Crown, MessageSquare, FileText, CheckCircle2,
-  Circle, Loader2, Plus, Send, RefreshCw, AlertCircle,
+  Loader2, Plus, Send, RefreshCw, AlertCircle, Trash2,
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { WorkbenchFeedback, WorkbenchUpdate } from "@/types/workbench";
@@ -32,13 +32,26 @@ function StatusBadge({ status }: { status: "draft" | "published" }) {
   );
 }
 
+const SCREENSHOT_BUCKET = "feedback-screenshots";
+
+// Extracts the storage object path from a public Supabase storage URL.
+function extractStoragePath(url: string): string | null {
+  try {
+    const marker = `/object/public/${SCREENSHOT_BUCKET}/`;
+    const idx = url.indexOf(marker);
+    return idx === -1 ? null : url.slice(idx + marker.length);
+  } catch {
+    return null;
+  }
+}
+
 // ── Tab: Feedback ─────────────────────────────────────────────────────────────
 
 function FeedbackTab() {
-  const [items,   setItems]   = useState<WorkbenchFeedback[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState<string | null>(null);
-  const [toggling, setToggling] = useState<string | null>(null);
+  const [items,    setItems]    = useState<WorkbenchFeedback[]>([]);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -58,17 +71,40 @@ function FeedbackTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  async function toggleResolved(item: WorkbenchFeedback) {
+  // Option A: resolve = delete row + delete screenshot from storage
+  async function resolveAndDelete(item: WorkbenchFeedback) {
     if (!supabase) return;
-    setToggling(item.id);
-    const { error: err } = await supabase
+    if (!window.confirm("Resolve & permanently delete this feedback entry?")) return;
+
+    setDeleting(item.id);
+
+    // 1. Delete the DB row
+    const { error: dbErr } = await supabase
       .from("workbench_feedback")
-      .update({ is_resolved: !item.is_resolved })
+      .delete()
       .eq("id", item.id);
-    if (!err) {
-      setItems(prev => prev.map(f => f.id === item.id ? { ...f, is_resolved: !f.is_resolved } : f));
+
+    if (dbErr) {
+      setError(`Failed to delete: ${dbErr.message}`);
+      setDeleting(null);
+      return;
     }
-    setToggling(null);
+
+    // 2. Delete the screenshot from storage (best-effort — non-fatal)
+    if (item.screenshot_url) {
+      const path = extractStoragePath(item.screenshot_url);
+      if (path) {
+        const { error: storageErr } = await supabase.storage
+          .from(SCREENSHOT_BUCKET)
+          .remove([path]);
+        if (storageErr) {
+          console.warn("[FounderDashboard] Storage cleanup failed:", storageErr.message);
+        }
+      }
+    }
+
+    setItems((prev) => prev.filter((f) => f.id !== item.id));
+    setDeleting(null);
   }
 
   if (loading) return (
@@ -94,17 +130,13 @@ function FeedbackTab() {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] text-slate-600">{items.length} note{items.length !== 1 ? "s" : ""} total · {items.filter(i => !i.is_resolved).length} open</span>
+        <span className="text-[10px] text-slate-600">{items.length} note{items.length !== 1 ? "s" : ""} total</span>
         <button onClick={load} className="w-6 h-6 flex items-center justify-center text-slate-700 hover:text-slate-400 transition-colors">
           <RefreshCw className="w-3 h-3" />
         </button>
       </div>
       {items.map(item => (
-        <div key={item.id} className={`rounded-xl border p-3.5 flex flex-col gap-2 transition-all ${
-          item.is_resolved
-            ? "border-white/[0.05] bg-white/[0.01] opacity-50"
-            : "border-white/[0.08] bg-white/[0.03]"
-        }`}>
+        <div key={item.id} className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="text-[11px] font-semibold text-slate-300 truncate">
@@ -113,20 +145,54 @@ function FeedbackTab() {
               <span className="text-[9px] text-slate-700">{reltime(item.created_at)}</span>
             </div>
             <button
-              onClick={() => toggleResolved(item)}
-              disabled={toggling === item.id}
-              className="shrink-0 mt-0.5 text-slate-600 hover:text-slate-300 transition-colors disabled:opacity-40"
-              title={item.is_resolved ? "Reopen" : "Mark resolved"}
+              onClick={() => void resolveAndDelete(item)}
+              disabled={deleting === item.id}
+              className="shrink-0 mt-0.5 text-slate-700 hover:text-emerald-400 transition-colors disabled:opacity-40"
+              title="Resolve & delete"
             >
-              {toggling === item.id
+              {deleting === item.id
                 ? <Loader2 className="w-4 h-4 animate-spin" />
-                : item.is_resolved
-                  ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  : <Circle className="w-4 h-4" />
+                : <CheckCircle2 className="w-4 h-4" />
               }
             </button>
           </div>
+
           <p className="text-xs text-slate-300 leading-relaxed">{item.message}</p>
+
+          {/* Screenshot thumbnail */}
+          {item.screenshot_url && (
+            <a
+              href={item.screenshot_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-0.5 group relative w-fit"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.screenshot_url}
+                alt="Attached screenshot"
+                className="h-20 w-auto max-w-[160px] rounded-lg object-cover border border-white/[0.10] group-hover:border-purple-500/40 transition-colors"
+              />
+              <span className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <span className="opacity-0 group-hover:opacity-100 text-[10px] text-white font-medium transition-opacity">Open ↗</span>
+              </span>
+            </a>
+          )}
+
+          {/* Destructive resolve action */}
+          <div className="flex items-center gap-1 pt-0.5">
+            <button
+              onClick={() => void resolveAndDelete(item)}
+              disabled={deleting === item.id}
+              className="flex items-center gap-1 text-[10px] text-slate-700 hover:text-rose-400 transition-colors disabled:opacity-40"
+            >
+              <Trash2 className="w-2.5 h-2.5" />
+              Resolve &amp; Delete
+            </button>
+            {item.screenshot_url && (
+              <span className="text-[9px] text-slate-700 ml-1">(+ screenshot)</span>
+            )}
+          </div>
         </div>
       ))}
     </div>
@@ -226,9 +292,11 @@ function UpdatesTab() {
       .from("workbench_updates")
       .delete()
       .eq("id", id);
-    if (!err) {
-      setItems(prev => prev.filter(u => u.id !== id));
+    if (err) {
+      setError(`Delete failed: ${err.message}`);
+      return;
     }
+    setItems(prev => prev.filter(u => u.id !== id));
   }
 
   return (

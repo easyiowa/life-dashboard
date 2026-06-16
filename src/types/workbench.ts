@@ -1,9 +1,10 @@
 export interface WorkbenchFeedback {
-  id:            string;
-  user_nickname: string | null;
-  message:       string;
-  created_at:    string;
-  is_resolved:   boolean;
+  id:             string;
+  user_nickname:  string | null;
+  message:        string;
+  created_at:     string;
+  is_resolved:    boolean;
+  screenshot_url: string | null;
 }
 
 export interface WorkbenchUpdate {

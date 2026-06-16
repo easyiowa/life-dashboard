@@ -25,6 +25,15 @@
   animation: ping-once 0.4s ease-out forwards;
 }
 
+@keyframes card-pulse {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.8), 0 0 18px rgba(168, 85, 247, 0.4); }
+}
+
+.animate-card-pulse {
+  animation: card-pulse 0.9s ease-in-out;
+}
+
 body {
   background: #0B0F19;
   color: #e2e8f0;

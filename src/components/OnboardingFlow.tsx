@@ -3,7 +3,8 @@
 import { useState } from "react";
 import type { ComponentType } from "react";
 import {
-  ArrowRight, Check, Loader2, Sparkles, ChevronLeft, ChevronRight, Flame,
+  ArrowRight, Check, Loader2, Flame,
+  ChevronLeft, ChevronRight,
   CalendarDays, FolderKanban, Timer, NotebookPen, Target,
   Activity, TrendingUp, RefreshCw, Users,
 } from "lucide-react";
@@ -717,24 +718,116 @@ function NetworkUpcomingSlide() {
 // ── Widget registry ────────────────────────────────────────────────────────────
 
 interface WidgetDef {
-  id:      string;
-  label:   string;
-  tagline: string;
-  Icon:    ComponentType<{ className?: string }>;
-  slides:  ComponentType[];
+  id:               string;
+  label:            string;
+  tagline:          string;
+  shortDescription: string;
+  bulletPoints:     string[];
+  Icon:             ComponentType<{ className?: string }>;
+  slides:           ComponentType[];
 }
 
 const WIDGETS: WidgetDef[] = [
-  { id: "calendar",     label: "Calendar",     tagline: "See your week at a glance",    Icon: CalendarDays, slides: [CalendarWeekSlide,    CalendarMonthSlide,      CalendarAgendaSlide]        },
-  { id: "habits",       label: "Habits",       tagline: "Build streaks that stick",     Icon: Flame,        slides: [HabitsCheckSlide,     HabitsHeatmapSlide,      HabitsStreakSlide]           },
-  { id: "projects",     label: "Projects",     tagline: "Track work from idea to done", Icon: FolderKanban, slides: [ProjectsListSlide,    ProjectsKanbanSlide,     ProjectsStatsSlide]          },
-  { id: "time-tracker", label: "Focus Timer",  tagline: "Work in deep, focused blocks", Icon: Timer,        slides: [TimerRingSlide,       TimerSessionsSlide,      TimerStatsSlide]             },
-  { id: "quick-notes",  label: "Quick Notes",  tagline: "Capture thoughts instantly",   Icon: NotebookPen,  slides: [NotesListSlide,       NotesPinnedSlide,        NotesRecentSlide]            },
-  { id: "daily-focus",  label: "Daily Focus",  tagline: "Queue your top priorities",    Icon: Target,       slides: [FocusQueueSlide,      FocusActiveSlide,        FocusDoneSlide]              },
-  { id: "activity-log", label: "Activity Log", tagline: "See what you've accomplished", Icon: Activity,     slides: [ActivityFeedSlide,    ActivityCategoriesSlide, ActivitySummarySlide]        },
-  { id: "progress",     label: "Progress",     tagline: "Track your momentum",          Icon: TrendingUp,   slides: [ProgressGoalsSlide,   ProgressChartSlide,      ProgressWeekSlide]           },
-  { id: "recurring",    label: "Recurring",    tagline: "Never miss what repeats",      Icon: RefreshCw,    slides: [RecurringListSlide,   RecurringDueSlide,       RecurringRatesSlide]         },
-  { id: "network",      label: "Network",      tagline: "Stay close to your people",    Icon: Users,        slides: [NetworkContactsSlide, NetworkInteractionsSlide,NetworkUpcomingSlide]        },
+  {
+    id: "calendar", label: "Calendar", tagline: "See your week at a glance",
+    shortDescription: "Your time, fully visualized",
+    bulletPoints: [
+      "Switch between week, month and agenda layouts",
+      "Colour-coded event blocks with time-of-day awareness",
+      "Recurring tasks appear automatically on due dates",
+    ],
+    Icon: CalendarDays, slides: [CalendarWeekSlide, CalendarMonthSlide, CalendarAgendaSlide],
+  },
+  {
+    id: "habits", label: "Habits", tagline: "Build streaks that stick",
+    shortDescription: "Build routines that actually compound",
+    bulletPoints: [
+      "One-tap daily check-in with instant streak feedback",
+      "Heatmap reveals your consistency patterns over time",
+      "Top-streaks leaderboard keeps momentum visible",
+    ],
+    Icon: Flame, slides: [HabitsCheckSlide, HabitsHeatmapSlide, HabitsStreakSlide],
+  },
+  {
+    id: "projects", label: "Projects", tagline: "Track work from idea to done",
+    shortDescription: "From backlog to shipped",
+    bulletPoints: [
+      "Manage tasks across multiple concurrent projects",
+      "Kanban, list and stats views in a single widget",
+      "Live progress bar tracks milestone completion",
+    ],
+    Icon: FolderKanban, slides: [ProjectsListSlide, ProjectsKanbanSlide, ProjectsStatsSlide],
+  },
+  {
+    id: "time-tracker", label: "Focus Timer", tagline: "Work in deep, focused blocks",
+    shortDescription: "Protect your deep-work blocks",
+    bulletPoints: [
+      "Pomodoro-style sessions with a live countdown ring",
+      "Session history and total daily focus time logged",
+      "Pairs directly with your active task queue",
+    ],
+    Icon: Timer, slides: [TimerRingSlide, TimerSessionsSlide, TimerStatsSlide],
+  },
+  {
+    id: "quick-notes", label: "Quick Notes", tagline: "Capture thoughts instantly",
+    shortDescription: "Capture it before it vanishes",
+    bulletPoints: [
+      "Drop a thought in seconds — no categories, no friction",
+      "Pin key notes to always keep them above the fold",
+      "Recent and pinned views adapt to how you work",
+    ],
+    Icon: NotebookPen, slides: [NotesListSlide, NotesPinnedSlide, NotesRecentSlide],
+  },
+  {
+    id: "daily-focus", label: "Daily Focus", tagline: "Queue your top priorities",
+    shortDescription: "Queue your top priorities each morning",
+    bulletPoints: [
+      "Ranked task list built fresh every day",
+      "Intent tags — Finish, Time Goal and Maybe",
+      "Evening velocity recap shows what you actually shipped",
+    ],
+    Icon: Target, slides: [FocusQueueSlide, FocusActiveSlide, FocusDoneSlide],
+  },
+  {
+    id: "activity-log", label: "Activity Log", tagline: "See what you've accomplished",
+    shortDescription: "A full record of what you've done",
+    bulletPoints: [
+      "Auto-logs completions, sessions and habit checks",
+      "Visual breakdown by category and time of day",
+      "Searchable history across the whole dashboard",
+    ],
+    Icon: Activity, slides: [ActivityFeedSlide, ActivityCategoriesSlide, ActivitySummarySlide],
+  },
+  {
+    id: "progress", label: "Progress", tagline: "Track your momentum",
+    shortDescription: "Watch your goals compound over time",
+    bulletPoints: [
+      "Goal-percentage bars update in real time",
+      "Weekly comparison vs. the period before",
+      "Clean single-screen view across all active goals",
+    ],
+    Icon: TrendingUp, slides: [ProgressGoalsSlide, ProgressChartSlide, ProgressWeekSlide],
+  },
+  {
+    id: "recurring", label: "Recurring", tagline: "Never miss what repeats",
+    shortDescription: "Never let a responsibility slip",
+    bulletPoints: [
+      "Schedule tasks on daily, weekly or monthly cycles",
+      "Countdown clock shows exactly when each is due",
+      "Completion-rate trend keeps you accountable",
+    ],
+    Icon: RefreshCw, slides: [RecurringListSlide, RecurringDueSlide, RecurringRatesSlide],
+  },
+  {
+    id: "network", label: "Network", tagline: "Stay close to your people",
+    shortDescription: "Stay genuinely close to your people",
+    bulletPoints: [
+      "Contact log with last-touchpoint tracking",
+      "Automatic birthday and follow-up reminders",
+      "Interaction history and upcoming events at a glance",
+    ],
+    Icon: Users, slides: [NetworkContactsSlide, NetworkInteractionsSlide, NetworkUpcomingSlide],
+  },
 ];
 
 // ── Combination rules ──────────────────────────────────────────────────────────
@@ -763,6 +856,121 @@ const SUGGESTIONS: Record<string, { partners: string[]; message: string }> = {
     message:  "✨ Smart Combo: Highly suggest adding Daily Focus and Focus Timer to seamlessly schedule and execute your milestone tasks day by day.",
   },
 };
+
+// ── Widget card (per-card carousel + body + CTA) ──────────────────────────────
+
+interface WidgetCardProps {
+  widget:     WidgetDef;
+  isSelected: boolean;
+  isForced:   boolean;
+  hasGlow:    boolean;
+  isFlashing: boolean;
+  onToggle:   () => void;
+  onHover:    (id: string | null) => void;
+}
+
+function WidgetCard({ widget, isSelected, isForced, hasGlow, isFlashing, onToggle, onHover }: WidgetCardProps) {
+  const [slideIdx, setSlideIdx] = useState(0);
+  const Slide = widget.slides[slideIdx];
+
+  return (
+    <div
+      id={`widget-card-${widget.id}`}
+      onMouseEnter={() => onHover(widget.id)}
+      onMouseLeave={() => onHover(null)}
+      className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-200 ${isFlashing ? "animate-card-pulse" : ""} ${
+        isSelected
+          ? "border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.18)]"
+          : hasGlow
+            ? "border-amber-500/35 shadow-[0_0_14px_rgba(251,191,36,0.12)]"
+            : "border-white/[0.07] hover:border-white/[0.15]"
+      }`}
+    >
+      {/* 16:9 live preview carousel */}
+      <div className="relative aspect-video overflow-hidden bg-[#080B14] group">
+        <div className="absolute inset-0 p-4 flex items-center justify-center overflow-hidden">
+          <div className="w-full"><Slide /></div>
+        </div>
+
+        {/* Chevron arrows — left */}
+        {widget.slides.length > 1 && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setSlideIdx(i => (i - 1 + widget.slides.length) % widget.slides.length); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-150"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Chevron arrows — right */}
+        {widget.slides.length > 1 && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setSlideIdx(i => (i + 1) % widget.slides.length); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-150"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Dot navigation — always visible */}
+        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+          {widget.slides.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setSlideIdx(i); }}
+              className={`rounded-full transition-all duration-200 ${
+                i === slideIdx ? "w-3.5 h-1.5 bg-violet-400/90" : "w-1.5 h-1.5 bg-white/30 hover:bg-white/55"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="flex flex-col flex-1 bg-[#0D1120] px-4 pt-4 pb-3 gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <widget.Icon className="w-4 h-4 shrink-0 text-slate-400" />
+            <h3 className="text-sm font-semibold text-white leading-tight">{widget.label}</h3>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{widget.shortDescription}</p>
+        </div>
+        <ul className="flex flex-col gap-1.5">
+          {widget.bulletPoints.map((bp, i) => (
+            <li key={i} className="flex items-start gap-2">
+              <div className="w-1 h-1 rounded-full bg-violet-500 mt-[5px] shrink-0" />
+              <span className="text-[11px] text-slate-400 leading-snug">{bp}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Selection footer */}
+      <div className="bg-[#0D1120] px-4 pb-4">
+        <button
+          type="button"
+          onClick={onToggle}
+          className={`w-full h-9 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+            isSelected
+              ? "bg-violet-600/30 border border-violet-500/50 text-violet-300 hover:bg-violet-600/40"
+              : "bg-white/[0.04] border border-white/[0.09] text-slate-400 hover:text-white hover:border-white/[0.22] hover:bg-white/[0.07]"
+          }`}
+        >
+          {isSelected ? <><Check className="w-3 h-3" /> Selected</> : "Choose"}
+        </button>
+        {isForced && (
+          <p className="text-[9px] text-violet-500 mt-1.5 text-center font-medium">required</p>
+        )}
+        {hasGlow && !isSelected && !isForced && (
+          <p className="text-[9px] text-amber-500/70 mt-1.5 text-center font-medium">suggested</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ── Step 1: Identity ───────────────────────────────────────────────────────────
 
@@ -808,9 +1016,8 @@ function MarketplaceStep({
   onFinish: (widgets: string[]) => Promise<void>;
 }) {
   const [userPicked, setUserPicked] = useState<Set<string>>(new Set());
-  const [previewId,  setPreviewId]  = useState(WIDGETS[0].id);
-  const [slideIdx,   setSlideIdx]   = useState(0);
   const [hoveredId,  setHoveredId]  = useState<string | null>(null);
+  const [flashedId,  setFlashedId]  = useState<string | null>(null);
   const [loading,    setLoading]    = useState(false);
 
   // Expand userPicked transitively — daily-focus → projects → progress resolves in one pass.
@@ -826,11 +1033,6 @@ function MarketplaceStep({
     return [...result];
   })();
 
-  const activeWidget = WIDGETS.find(w => w.id === previewId) ?? WIDGETS[0];
-  const slides       = activeWidget.slides;
-  const Slide        = slides[slideIdx];
-  const ActiveIcon   = activeWidget.Icon;
-
   const forcedSet = new Set<string>(selected.filter(id => !userPicked.has(id)));
 
   const glowSet = new Set<string>([
@@ -838,25 +1040,12 @@ function MarketplaceStep({
     ...selected.flatMap(id => SUGGESTIONS[id]?.partners ?? []),
   ]);
 
-  const synergyMsg = (() => {
-    for (const id of selected) {
-      const r = SYNERGY[id];
-      if (r && selected.includes(r.partner)) return r.message;
-    }
-    return null;
-  })();
 
-  const suggestionMsg = (() => {
-    if (hoveredId && SUGGESTIONS[hoveredId]) return SUGGESTIONS[hoveredId].message;
-    for (const id of selected) {
-      if (SUGGESTIONS[id]) return SUGGESTIONS[id].message;
-    }
-    return null;
-  })();
-
-  function setPreview(id: string) {
-    setPreviewId(id);
-    setSlideIdx(0);
+  function scrollToCard(id: string) {
+    const el = document.getElementById(`widget-card-${id}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setFlashedId(id);
+    setTimeout(() => setFlashedId(null), 1000);
   }
 
   function toggleWidget(id: string) {
@@ -865,8 +1054,6 @@ function MarketplaceStep({
       if (next.has(id)) { next.delete(id); } else { next.add(id); }
       return next;
     });
-    setPreviewId(id);
-    setSlideIdx(0);
   }
 
   async function finish() {
@@ -875,7 +1062,7 @@ function MarketplaceStep({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-2xl font-bold text-white tracking-tight">
           Hey {nickname} — build your dashboard
@@ -892,135 +1079,52 @@ function MarketplaceStep({
         </p>
       </div>
 
-      {/* Live preview panel */}
-      <div className="bg-[#0F1629] border border-white/[0.07] rounded-2xl p-5">
-
-        {/* Widget name + tagline */}
-        <div className="flex items-center gap-3 mb-4">
-          <ActiveIcon className="w-5 h-5 text-violet-400 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-white leading-none">{activeWidget.label}</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">{activeWidget.tagline}</p>
-          </div>
-        </div>
-
-        {/* Preview slide */}
-        <div className="min-h-[150px] flex items-center justify-center">
-          <div className="w-full"><Slide /></div>
-        </div>
-
-        {/* Carousel controls */}
-        <div className="flex items-center justify-between mt-4">
-          <button
-            onClick={() => setSlideIdx(i => (i - 1 + slides.length) % slides.length)}
-            className="w-6 h-6 rounded-md bg-white/[0.05] hover:bg-white/[0.09] flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="flex gap-1.5 items-center">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setSlideIdx(i)}
-                className={`rounded-full transition-all duration-200 ${
-                  i === slideIdx ? "w-4 h-1.5 bg-violet-400" : "w-1.5 h-1.5 bg-white/[0.18] hover:bg-white/[0.30]"
-                }`}
-              />
-            ))}
-          </div>
-
-          <button
-            onClick={() => setSlideIdx(i => (i + 1) % slides.length)}
-            className="w-6 h-6 rounded-md bg-white/[0.05] hover:bg-white/[0.09] flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Tab strip */}
-        <div className="flex gap-1.5 mt-4 overflow-x-auto pb-1 scrollbar-none">
-          {WIDGETS.map(w => {
-            const WIcon = w.Icon;
-            return (
-              <button
-                key={w.id}
-                onClick={() => setPreview(w.id)}
-                className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  previewId === w.id
-                    ? "bg-violet-600/30 text-violet-300 border border-violet-500/40"
-                    : "text-slate-500 hover:text-slate-300 border border-transparent hover:border-white/[0.06]"
-                }`}
-              >
-                <WIcon className="w-3 h-3 shrink-0" />
-                {w.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Selection grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {/* Expanded widget grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
         {WIDGETS.map(w => {
           const isSel    = selected.includes(w.id);
+          const isForced = forcedSet.has(w.id) && isSel;
           const hasGlow  = glowSet.has(w.id) && !isSel;
-          const isLocked = forcedSet.has(w.id) && isSel;
-          const WIcon    = w.Icon;
           return (
-            <button
+            <WidgetCard
               key={w.id}
-              onClick={() => toggleWidget(w.id)}
-              onMouseEnter={() => setHoveredId(w.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              className={`relative flex flex-col gap-2 p-4 rounded-2xl border text-left transition-all ${
-                isSel
-                  ? "bg-violet-600/15 border-violet-500/50 shadow-[0_0_16px_rgba(139,92,246,0.25)]"
-                  : hasGlow
-                    ? "bg-white/[0.04] border-amber-500/40 shadow-[0_0_14px_rgba(251,191,36,0.18)]"
-                    : "bg-white/[0.03] border-white/[0.07] hover:border-white/[0.14] hover:bg-white/[0.05]"
-              }`}
-            >
-              {isLocked ? (
-                <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-violet-800/60 flex items-center justify-center" title="Required by another widget">
-                  <Check className="w-2.5 h-2.5 text-violet-300" />
-                </div>
-              ) : isSel ? (
-                <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center">
-                  <Check className="w-2.5 h-2.5 text-white" />
-                </div>
-              ) : hasGlow ? (
-                <Sparkles className="absolute top-2.5 right-2.5 w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              ) : null}
-
-              <WIcon className="w-5 h-5 text-slate-400" />
-              <div>
-                <p className="text-xs font-semibold text-white">{w.label}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{w.tagline}</p>
-                {isLocked && (
-                  <p className="text-[9px] text-violet-500 mt-1 font-medium">required</p>
-                )}
-              </div>
-            </button>
+              widget={w}
+              isSelected={isSel}
+              isForced={isForced}
+              hasGlow={hasGlow}
+              isFlashing={flashedId === w.id}
+              onToggle={() => toggleWidget(w.id)}
+              onHover={setHoveredId}
+            />
           );
         })}
       </div>
 
-      {/* Synergy banner */}
-      {synergyMsg && (
-        <div className="rounded-xl bg-amber-500/[0.08] border border-amber-500/20 px-4 py-3 text-xs text-amber-300 leading-relaxed flex items-start gap-2">
-          <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
-          <span><span className="font-semibold">Smart Match —</span> {synergyMsg}</span>
-        </div>
-      )}
-
-      {/* Suggestion banner */}
-      {suggestionMsg && (
-        <div className="rounded-xl bg-violet-500/[0.07] border border-violet-500/20 px-4 py-3 text-xs text-violet-300 leading-relaxed flex items-start gap-2">
-          <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-violet-400" />
-          <span>{suggestionMsg}</span>
-        </div>
-      )}
+      {/* Widget index navigation — three tiers */}
+      <div className="flex flex-wrap gap-2">
+        {WIDGETS.map(w => {
+          const isSel  = selected.includes(w.id);
+          const isGlow = glowSet.has(w.id) && !isSel;
+          const WIcon  = w.Icon;
+          return (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() => scrollToCard(w.id)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                isSel
+                  ? "bg-violet-600/20 border-violet-500/40 text-violet-300 hover:bg-violet-600/30"
+                  : isGlow
+                    ? "bg-amber-500/[0.10] border-amber-500/35 text-amber-400/80 hover:bg-amber-500/[0.16]"
+                    : "bg-white/[0.03] border-white/[0.09] text-slate-500 hover:border-white/[0.18] hover:text-slate-300"
+              }`}
+            >
+              <WIcon className={`w-3 h-3 shrink-0 ${isSel ? "text-violet-400" : isGlow ? "text-amber-400" : "text-slate-500"}`} />
+              {w.label}
+            </button>
+          );
+        })}
+      </div>
 
       <button
         onClick={() => void finish()}
@@ -1065,19 +1169,30 @@ export default function OnboardingFlow() {
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-violet-600/[0.07] blur-[120px]" />
       </div>
 
-      <div className="relative w-full max-w-lg">
+      <div className={`relative w-full ${step === "marketplace" ? "max-w-7xl" : "max-w-lg"}`}>
 
         {/* Step dots */}
-        <div className="flex items-center justify-center gap-3 mb-10">
-          {[0, 1].map(i => (
-            <div key={i} className={`rounded-full transition-all duration-300 ${
-              i === stepIndex
-                ? "w-6 h-2 bg-violet-500"
-                : i < stepIndex
-                  ? "w-2 h-2 bg-violet-500/40"
-                  : "w-2 h-2 bg-white/[0.12]"
-            }`} />
-          ))}
+        <div className="relative flex items-center justify-center min-h-[40px] mb-10">
+          {step === "marketplace" && (
+            <button
+              type="button"
+              onClick={() => setStep("identity")}
+              className="absolute left-0 top-1/2 -translate-y-1/2 md:hidden w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div className="flex items-center gap-3">
+            {[0, 1].map(i => (
+              <div key={i} className={`rounded-full transition-all duration-300 ${
+                i === stepIndex
+                  ? "w-6 h-2 bg-violet-500"
+                  : i < stepIndex
+                    ? "w-2 h-2 bg-violet-500/40"
+                    : "w-2 h-2 bg-white/[0.12]"
+              }`} />
+            ))}
+          </div>
         </div>
 
         {step === "identity" ? (
