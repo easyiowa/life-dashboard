@@ -50,7 +50,7 @@
       "deadline": null,
       "notes": "- when adding first task without having a project yet, dont show the (Auto-route to Random), better show \"Create first Project ☝🏼\", so we help user to think about creating projects. if the user still dont do it, it will auto route to \"Random\"\n- make note field expandable when text become longer\n- make text convertions into dot bullet points and to do checkboxes\n- tag creation/editing needs fixes",
       "manualMinutes": 0,
-      "queuedDate": null,
+      "queuedDate": "2026-06-18",
       "timeSpentMinutes": 0,
       "intent": "finish",
       "dailyTargetMinutes": null,
@@ -60,6 +60,11 @@
           "intent": "time",
           "timeSpentMinutes": 0,
           "dailyTargetMinutes": 3
+        },
+        "2026-06-18": {
+          "timeSpentMinutes": 0,
+          "intent": "finish",
+          "dailyTargetMinutes": null
         }
       }
     },
@@ -254,36 +259,6 @@
       "dailyTracking": {}
     },
     {
-      "id": "5a2fd7b4-105e-4370-a9b9-5ee60db58fbe",
-      "sphere": "iowa",
-      "project": "Health",
-      "title": "Synlab appointment",
-      "priority": "Low",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": "2026-06-17",
-      "notes": "pwofncewäpafn\nwefvfweja\nfvpjfwea\nfopvj\nfweav",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 1,
-      "dailyTracking": {
-        "2026-06-13": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-15": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 25
-        }
-      }
-    },
-    {
       "id": "590d40a9-a442-45b8-92c0-c192e6731f11",
       "sphere": "siin",
       "project": "Brand",
@@ -379,31 +354,6 @@
       "dailyTracking": {}
     },
     {
-      "id": "78555e27-1765-4d0c-a6e7-821de8c3c945",
-      "sphere": "iowa",
-      "project": "Health",
-      "title": "Ernie just SUCKS",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": "2026-06-16",
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {
-        "2026-06-16": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      }
-    },
-    {
       "id": "2c61f0b5-17e2-431c-95d5-e9a1e115d8e8",
       "sphere": "irishot",
       "project": "Clients",
@@ -427,6 +377,109 @@
           "dailyTargetMinutes": null
         }
       }
+    },
+    {
+      "id": "735676dd-a086-405f-bb85-dafaf8043515",
+      "sphere": "iowa",
+      "project": "Health",
+      "title": "OWEImngfpiowemgewGF",
+      "priority": "High",
+      "energy": "Quick",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "öowergn¨pweognw\n'eg",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {}
+    },
+    {
+      "id": "5a2fd7b4-105e-4370-a9b9-5ee60db58fbe",
+      "sphere": "iowa",
+      "project": "Health",
+      "title": "Synlab appointment",
+      "priority": "Low",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": "2026-06-17",
+      "notes": "pwofncewäpafn\nwefvfweja\nfvpjfwea\nfopvj\nfweav",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 2,
+      "dailyTracking": {
+        "2026-06-13": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-15": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 25
+        },
+        "2026-06-17": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 2
+        }
+      }
+    },
+    {
+      "id": "78555e27-1765-4d0c-a6e7-821de8c3c945",
+      "sphere": "iowa",
+      "project": "Health",
+      "title": "Ernie just SUCKS",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": "2026-06-16",
+      "notes": "",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1,
+      "dailyTracking": {
+        "2026-06-16": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-17": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        }
+      }
+    },
+    {
+      "id": "74ec8894-82ab-473d-9008-0eb098efacc1",
+      "sphere": "dashboard",
+      "project": "Database",
+      "title": "Migration",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "- once ready to create proper admins panel, migrate data to supabase\n",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {}
     }
   ],
   "habits": [
@@ -694,6 +747,17 @@
       ],
       "status": "on-track",
       "milestone": "In progress"
+    },
+    {
+      "id": "d5c02396-808f-4d0e-b22b-0b25b004318d",
+      "sphere": "dashboard",
+      "name": "Database",
+      "emoji": "📁",
+      "tagIds": [
+        "7b0b47fe-792e-4ce4-992b-6eba83585e42"
+      ],
+      "status": "on-track",
+      "milestone": "In progress"
     }
   ],
   "spheres": [
@@ -767,6 +831,55 @@
   ],
   "quickNotes": [
     {
+      "id": "089086fa-9355-4772-908a-04451a0e246a",
+      "text": "oerhgnioer",
+      "sphere": "iowa",
+      "createdAt": "2026-06-17 18:50",
+      "isImportant": false
+    },
+    {
+      "id": "591cce8a-d347-4d4c-9a8f-cc66ee61bcc4",
+      "text": "e\nthe\naheah\nearh",
+      "sphere": "iowa",
+      "createdAt": "2026-06-17 18:50",
+      "isImportant": false
+    },
+    {
+      "id": "1ca3a7a8-f1d4-46f4-abcf-7b3f79e440ba",
+      "text": "eargaergera\ng",
+      "sphere": "iowa",
+      "createdAt": "2026-06-17 18:48",
+      "isImportant": false
+    },
+    {
+      "id": "5a8a4dae-82a6-4eda-b540-683171aa3ec4",
+      "text": "erag\naer\ng",
+      "sphere": "iowa",
+      "createdAt": "2026-06-17 18:48",
+      "isImportant": false
+    },
+    {
+      "id": "77e7812b-1115-492d-9a79-80352493de7e",
+      "text": "efrgfaegqe",
+      "sphere": "iowa",
+      "createdAt": "2026-06-17 17:06",
+      "isImportant": false
+    },
+    {
+      "id": "5c95a730-e556-4c9c-9edc-1aa1be6ca727",
+      "text": "Ivan camera!",
+      "sphere": "iowa",
+      "createdAt": "2026-06-17 10:34",
+      "isImportant": false
+    },
+    {
+      "id": "4649714f-14cc-4c90-b549-6727e589df36",
+      "text": "Karjase program + prints",
+      "sphere": "siin",
+      "createdAt": "2026-06-17 10:24",
+      "isImportant": false
+    },
+    {
       "id": "d0da2be7-3626-4f55-94c3-77e5f2489c17",
       "text": "Create an md file for Claude/gemini, important!!!",
       "sphere": "dashboard",
@@ -788,5 +901,5 @@
       "isImportant": false
     }
   ],
-  "currentTrackingDate": "2026-06-16"
+  "currentTrackingDate": "2026-06-18"
 }

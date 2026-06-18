@@ -830,6 +830,12 @@ const WIDGETS: WidgetDef[] = [
   },
 ];
 
+// Shared with FounderDashboard's insights table — same icons/labels, no duplicate registry.
+export const WIDGET_ICON_MAP: Record<string, ComponentType<{ className?: string }>> =
+  Object.fromEntries(WIDGETS.map(w => [w.id, w.Icon]));
+export const WIDGET_LABEL_MAP: Record<string, string> =
+  Object.fromEntries(WIDGETS.map(w => [w.id, w.label]));
+
 // ── Combination rules ──────────────────────────────────────────────────────────
 
 const SYNERGY: Record<string, { partner: string; message: string }> = {
@@ -1006,6 +1012,199 @@ function IdentityStep({ onNext }: { onNext: (name: string) => void }) {
   );
 }
 
+// ── Step 2: Intent ─────────────────────────────────────────────────────────────
+
+type Intent = "personal" | "projects";
+
+const INDUSTRIES: { id: string; label: string; emoji: string }[] = [
+  { id: "startups",    label: "Startups",    emoji: "🚀" },
+  { id: "creative",    label: "Creative",    emoji: "🎨" },
+  { id: "events",      label: "Events",      emoji: "📅" },
+  { id: "health",      label: "Health",      emoji: "🩺" },
+  { id: "finance",     label: "Finance",     emoji: "💰" },
+  { id: "media",       label: "Media",       emoji: "📺" },
+  { id: "marketing",   label: "Marketing",   emoji: "📈" },
+  { id: "education",   label: "Education",   emoji: "🎓" },
+  { id: "legal",       label: "Legal",       emoji: "⚖️" },
+  { id: "real-estate", label: "Real Estate", emoji: "🏢" },
+  { id: "gastro",      label: "Gastro",      emoji: "🍳" },
+  { id: "retail",      label: "Retail",      emoji: "🛍️" },
+];
+
+function IntentStep({
+  nickname,
+  onNext,
+}: {
+  nickname: string;
+  onNext: (intents: Intent[], industries: string[], customIndustry: string) => void;
+}) {
+  const [masters,        setMasters]        = useState<Set<Intent>>(new Set());
+  const [industries,     setIndustries]     = useState<Set<string>>(new Set());
+  const [customIndustry, setCustomIndustry] = useState("");
+  const [customOpen,     setCustomOpen]     = useState(false);
+  const [customText,     setCustomText]     = useState("");
+
+  function toggleMaster(intent: Intent) {
+    setMasters(prev => {
+      const next = new Set(prev);
+      if (next.has(intent)) { next.delete(intent); } else { next.add(intent); }
+      return next;
+    });
+  }
+
+  function toggleIndustry(label: string) {
+    setIndustries(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) { next.delete(label); } else { next.add(label); }
+      return next;
+    });
+  }
+
+  function addCustom() {
+    const v = customText.trim();
+    if (!v) return;
+    setCustomIndustry(v);
+    setCustomText("");
+    setCustomOpen(false);
+  }
+
+  const canContinue = masters.size > 0
+    && (!masters.has("projects") || industries.size > 0 || customIndustry.trim().length > 0);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-white tracking-tight">
+          What brings you here, {nickname}?
+        </h2>
+        <p className="text-sm text-slate-500 mt-2 max-w-xs mx-auto">
+          This just helps us tailor your starter widgets. Pick as many as apply.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={masters.has("personal")}
+          onClick={() => toggleMaster("personal")}
+          className={`relative flex flex-col items-center gap-3 rounded-2xl border px-4 py-6 transition-all ${
+            masters.has("personal")
+              ? "border-violet-500/50 bg-violet-500/[0.08] shadow-[0_0_20px_rgba(139,92,246,0.18)]"
+              : "border-white/[0.09] bg-white/[0.03] hover:border-white/[0.18]"
+          }`}
+        >
+          {masters.has("personal") && (
+            <Check className="absolute top-2.5 right-2.5 w-3.5 h-3.5 text-violet-300" />
+          )}
+          <Activity className={`w-7 h-7 ${masters.has("personal") ? "text-violet-300" : "text-slate-400"}`} />
+          <span className={`text-sm font-semibold ${masters.has("personal") ? "text-white" : "text-slate-300"}`}>
+            My Personal Life
+          </span>
+        </button>
+
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={masters.has("projects")}
+          onClick={() => toggleMaster("projects")}
+          className={`relative flex flex-col items-center gap-3 rounded-2xl border px-4 py-6 transition-all ${
+            masters.has("projects")
+              ? "border-violet-500/50 bg-violet-500/[0.08] shadow-[0_0_20px_rgba(139,92,246,0.18)]"
+              : "border-white/[0.09] bg-white/[0.03] hover:border-white/[0.18]"
+          }`}
+        >
+          {masters.has("projects") && (
+            <Check className="absolute top-2.5 right-2.5 w-3.5 h-3.5 text-violet-300" />
+          )}
+          <FolderKanban className={`w-7 h-7 ${masters.has("projects") ? "text-violet-300" : "text-slate-400"}`} />
+          <span className={`text-sm font-semibold ${masters.has("projects") ? "text-white" : "text-slate-300"}`}>
+            My Projects
+          </span>
+        </button>
+      </div>
+
+      {masters.has("projects") && (
+        <div className="flex flex-col gap-3">
+          <p className="text-xs text-slate-500">Which industries are closest to your work?</p>
+          <div className="flex flex-wrap gap-2">
+            {INDUSTRIES.map(ind => {
+              const isSel = industries.has(ind.label);
+              return (
+                <button
+                  key={ind.id}
+                  type="button"
+                  onClick={() => toggleIndustry(ind.label)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                    isSel
+                      ? "bg-violet-600/20 border-violet-500/40 text-violet-300"
+                      : "bg-white/[0.03] border-white/[0.09] text-slate-400 hover:border-white/[0.18] hover:text-slate-200"
+                  }`}
+                >
+                  <span>{ind.emoji}</span>{ind.label}
+                </button>
+              );
+            })}
+
+            {customIndustry && (
+              <button
+                type="button"
+                onClick={() => setCustomIndustry("")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-violet-600/20 border-violet-500/40 text-violet-300"
+              >
+                {customIndustry}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setCustomOpen(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                customOpen
+                  ? "bg-violet-600/20 border-violet-500/40 text-violet-300"
+                  : "bg-white/[0.03] border-white/[0.09] text-slate-400 hover:border-white/[0.18] hover:text-slate-200"
+              }`}
+            >
+              + Custom
+            </button>
+          </div>
+
+          {customOpen && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={customText}
+                onChange={e => setCustomText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") addCustom(); }}
+                placeholder="Type your field..."
+                autoFocus
+                className="flex-1 h-9 px-3 rounded-xl bg-white/[0.05] border border-white/[0.09] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={addCustom}
+                disabled={!customText.trim()}
+                className="h-9 px-3 rounded-xl text-xs font-semibold text-violet-300 bg-violet-600/20 border border-violet-500/40 disabled:opacity-40 transition-all"
+              >
+                Add
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <button
+        onClick={() => onNext([...masters], [...industries], customIndustry)}
+        disabled={!canContinue}
+        className="w-full h-12 rounded-xl font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-40 transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)]"
+        style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+      >
+        Continue <ArrowRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 // ── Step 2: Marketplace ────────────────────────────────────────────────────────
 
 function MarketplaceStep({
@@ -1145,8 +1344,11 @@ function MarketplaceStep({
 
 export default function OnboardingFlow() {
   const { user } = useAuth();
-  const [step,     setStep]     = useState<"identity" | "marketplace">("identity");
-  const [nickname, setNickname] = useState("");
+  const [step,           setStep]           = useState<"identity" | "intent" | "marketplace">("identity");
+  const [nickname,       setNickname]       = useState("");
+  const [intents,        setIntents]        = useState<Intent[]>([]);
+  const [industries,     setIndustries]     = useState<string[]>([]);
+  const [customIndustry, setCustomIndustry] = useState("");
 
   async function handleFinish(selectedWidgets: string[]) {
     if (!supabase || !user) return;
@@ -1154,13 +1356,38 @@ export default function OnboardingFlow() {
       data: {
         is_onboarded:  true,
         display_name:  nickname,
+        intents,
+        industries,
+        custom_industry: customIndustry || null,
         widget_layout: selectedWidgets,
       },
     });
+
+    // Best-effort — onboarding still completes even if this insert fails.
+    // All widgets chosen during onboarding activate "now", which coincides with
+    // created_at — so none of them show up as a newly-added widget later.
+    const nowIso = new Date().toISOString();
+    const { error } = await supabase
+      .from("user_insights")
+      .upsert({
+        id:                  user.id,
+        display_name:        nickname,
+        intents,
+        industries,
+        custom_industry:     customIndustry || null,
+        selected_widgets:    selectedWidgets,
+        widget_activated_at: Object.fromEntries(selectedWidgets.map(id => [id, nowIso])),
+      });
+    if (error) console.warn("[OnboardingFlow] user_insights upsert failed:", error.message);
     // onAuthStateChange fires → AuthContext updates user → AuthGate stops rendering this flow
   }
 
-  const stepIndex = step === "identity" ? 0 : 1;
+  const stepIndex = step === "identity" ? 0 : step === "intent" ? 1 : 2;
+
+  function goBack() {
+    if (step === "intent")      setStep("identity");
+    else if (step === "marketplace") setStep("intent");
+  }
 
   return (
     <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4 relative overflow-hidden">
@@ -1173,17 +1400,17 @@ export default function OnboardingFlow() {
 
         {/* Step dots */}
         <div className="relative flex items-center justify-center min-h-[40px] mb-10">
-          {step === "marketplace" && (
+          {step !== "identity" && (
             <button
               type="button"
-              onClick={() => setStep("identity")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 md:hidden w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all"
+              onClick={goBack}
+              className="block md:hidden absolute left-0 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
           <div className="flex items-center gap-3">
-            {[0, 1].map(i => (
+            {[0, 1, 2].map(i => (
               <div key={i} className={`rounded-full transition-all duration-300 ${
                 i === stepIndex
                   ? "w-6 h-2 bg-violet-500"
@@ -1196,7 +1423,17 @@ export default function OnboardingFlow() {
         </div>
 
         {step === "identity" ? (
-          <IdentityStep onNext={name => { setNickname(name); setStep("marketplace"); }} />
+          <IdentityStep onNext={name => { setNickname(name); setStep("intent"); }} />
+        ) : step === "intent" ? (
+          <IntentStep
+            nickname={nickname}
+            onNext={(selectedIntents, selectedIndustries, selectedCustomIndustry) => {
+              setIntents(selectedIntents);
+              setIndustries(selectedIndustries);
+              setCustomIndustry(selectedCustomIndustry);
+              setStep("marketplace");
+            }}
+          />
         ) : (
           <MarketplaceStep nickname={nickname} onFinish={handleFinish} />
         )}

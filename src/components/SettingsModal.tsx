@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown } from "lucide-react";
+import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import DashboardBlueprintModal from "@/components/DashboardBlueprintModal";
 import ActiveWidgetsModal from "@/components/ActiveWidgetsModal";
-import FounderDashboard from "@/components/FounderDashboard";
-
-const FOUNDER_EMAIL = "iowa.olaf@googlemail.com";
+import FounderDashboard from "@/components/admin/FounderDashboard";
+import { syncWidgetActivation } from "@/lib/widgetActivation";
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
@@ -109,6 +108,28 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
   const [pendingWidgets,        setPendingWidgets]        = useState<string[]>(ALL_IDS);
   const [blueprintOpen,         setBlueprintOpen]         = useState(false);
   const [founderOpen,           setFounderOpen]           = useState(false);
+  const [founderMode,           setFounderMode]           = useState<"workbench" | "insights" | "admins">("workbench");
+  const [isAdmin,                setIsAdmin]               = useState(false);
+
+  // Membership check against the real admins whitelist — replaces the old
+  // hardcoded single-email gate so newly added co-founders see the Admin section too.
+  useEffect(() => {
+    if (!isOpen || !isSupabaseConfigured || !supabase || !user?.email) { setIsAdmin(false); return; }
+    let active = true;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("admins")
+          .select("email")
+          .eq("email", user.email)
+          .maybeSingle();
+        if (active) setIsAdmin(!!data);
+      } catch {
+        if (active) setIsAdmin(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [isOpen, user?.email]);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -170,7 +191,7 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
     user?.app_metadata?.provider === "google" ||
     (user?.identities as { provider: string }[] | undefined)?.some(id => id.provider === "google") === true;
 
-  const isFounder = user?.email === FOUNDER_EMAIL;
+  const isFounder = isAdmin;
 
   async function handleSaveName() {
     if (!displayName.trim()) { setNameToast({ type: "error", message: "Display name cannot be empty." }); return; }
@@ -213,6 +234,7 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
     window.dispatchEvent(new CustomEvent("ld:widget-layout", { detail: layout }));
     if (isSupabaseConfigured && supabase && user) {
       supabase.auth.updateUser({ data: { widget_layout: layout } }).catch(console.error);
+      void syncWidgetActivation(user.id, layout);
     }
   }
 
@@ -353,14 +375,32 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
               <div className="h-px bg-white/[0.06]" />
               <section>
                 <SectionHeading icon={Crown} label="Admin" />
-                <button
-                  onClick={() => setFounderOpen(true)}
-                  className="w-full h-10 rounded-xl border border-purple-500/30 bg-purple-500/[0.07] hover:bg-purple-500/[0.14] text-sm font-semibold text-purple-300 hover:text-purple-200 transition-all flex items-center gap-2.5 px-4"
-                >
-                  <Crown className="w-4 h-4 shrink-0" />
-                  <span>Founder Dashboard</span>
-                  <span className="ml-auto text-[10px] text-purple-700">private</span>
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => { setFounderMode("workbench"); setFounderOpen(true); }}
+                    className="w-full h-10 rounded-xl border border-purple-500/30 bg-purple-500/[0.07] hover:bg-purple-500/[0.14] text-sm font-semibold text-purple-300 hover:text-purple-200 transition-all flex items-center gap-2.5 px-4"
+                  >
+                    <Crown className="w-4 h-4 shrink-0" />
+                    <span>Workbench</span>
+                    <span className="ml-auto text-[10px] text-purple-700">private</span>
+                  </button>
+                  <button
+                    onClick={() => { setFounderMode("insights"); setFounderOpen(true); }}
+                    className="w-full h-10 rounded-xl border border-purple-500/20 bg-purple-500/[0.04] hover:bg-purple-500/[0.10] text-sm font-medium text-purple-300/90 hover:text-purple-200 transition-all flex items-center gap-2.5 px-4"
+                  >
+                    <Users className="w-4 h-4 shrink-0" />
+                    <span>User Insights</span>
+                    <span className="ml-auto text-[10px] text-purple-700">private</span>
+                  </button>
+                  <button
+                    onClick={() => { setFounderMode("admins"); setFounderOpen(true); }}
+                    className="w-full h-10 rounded-xl border border-purple-500/20 bg-purple-500/[0.04] hover:bg-purple-500/[0.10] text-sm font-medium text-purple-300/90 hover:text-purple-200 transition-all flex items-center gap-2.5 px-4"
+                  >
+                    <Shield className="w-4 h-4 shrink-0" />
+                    <span>Manage Admins</span>
+                    <span className="ml-auto text-[10px] text-purple-700">private</span>
+                  </button>
+                </div>
               </section>
             </>
           )}
@@ -458,6 +498,7 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
       <FounderDashboard
         isOpen={founderOpen}
         onClose={() => setFounderOpen(false)}
+        mode={founderMode}
       />
 
       {/* Widget Marketplace — z-[60] overlays on top of this modal (z-50) */}
