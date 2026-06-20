@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import MorningRecapBanner  from "@/components/MorningRecapBanner";
-import MindfulCheckIn      from "@/components/MindfulCheckIn";
-import DashboardHeader     from "@/components/DashboardHeader";
-import DashboardGrid       from "@/components/DashboardGrid";
-import WorldClockCard      from "@/components/widgets/WorldClockCard";
-import NightlyReviewModal  from "@/components/NightlyReviewModal";
+import MorningRecapBanner   from "@/components/MorningRecapBanner";
+import MindfulCheckIn       from "@/components/MindfulCheckIn";
+import DashboardHeader      from "@/components/DashboardHeader";
+import DashboardGrid        from "@/components/DashboardGrid";
+import WorldClockCard       from "@/components/widgets/WorldClockCard";
+import NightlyReviewModal   from "@/components/NightlyReviewModal";
+import QuickActionsMenu     from "@/components/ui/QuickActionsMenu";
+import GlobalTaskModalMount from "@/components/GlobalTaskModalMount";
 
 export default function DashboardPage() {
   return (
@@ -20,6 +22,8 @@ export default function DashboardPage() {
         </div>
       </div>
       <NightlyReviewModal />
+      <QuickActionsMenu />
+      <GlobalTaskModalMount />
     </main>
   );
 }

@@ -1123,6 +1123,9 @@ interface DashboardContextType {
   completeRecurringTask: (id: string) => void;
   calendarJump: CalendarJump | null;
   setCalendarJump: (j: CalendarJump | null) => void;
+  taskModalOpen: boolean;
+  openTaskModal: () => void;
+  closeTaskModal: () => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | null>(null);
@@ -1132,6 +1135,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured);
   const [calendarJump, setCalendarJump] = useState<CalendarJump | null>(null);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
@@ -1760,6 +1764,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         },
 
         calendarJump, setCalendarJump,
+        taskModalOpen,
+        openTaskModal:  () => setTaskModalOpen(true),
+        closeTaskModal: () => setTaskModalOpen(false),
       }}
     >
       {children}

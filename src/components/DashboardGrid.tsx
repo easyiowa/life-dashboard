@@ -175,7 +175,7 @@ export default function DashboardGrid() {
             if (!def) return null;
             const Widget = def.component;
             return (
-              <SortableWidget key={id} id={id} colSpan={def.colSpan}>
+              <SortableWidget key={id} id={id} label={def.label} colSpan={def.colSpan}>
                 <Widget />
               </SortableWidget>
             );

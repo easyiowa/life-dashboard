@@ -105,12 +105,17 @@ export default function UpdatesTab() {
 
   async function deleteUpdate(id: string) {
     if (!supabase) return;
-    const { error: err } = await supabase
+    const { error: err, count } = await supabase
       .from("workbench_updates")
-      .delete()
+      .delete({ count: "exact" })
       .eq("id", id);
     if (err) {
       setError(`Delete failed: ${err.message}`);
+      return;
+    }
+    if (!count) {
+      // RLS can silently delete 0 rows without raising an error.
+      setError("Delete failed: no matching row was deleted (check permissions).");
       return;
     }
     setItems(prev => prev.filter(u => u.id !== id));

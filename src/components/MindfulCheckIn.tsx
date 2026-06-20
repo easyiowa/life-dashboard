@@ -169,25 +169,27 @@ export default function MindfulCheckIn() {
 
       {/* Row 1 — Label + trends link + mood pills */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0 mr-1">
+        <span className="order-1 md:order-1 text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0 mr-1">
           How&apos;s your headspace?
         </span>
-        {MOODS.map((m) => (
-          <button
-            key={m.key}
-            type="button"
-            onClick={() => handleMoodSelect(m.key)}
-            className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-              activeMood === m.key ? m.pillActive : m.pillInactive
-            }`}
-          >
-            {m.emoji} {m.label}
-          </button>
-        ))}
+        <div className="order-3 md:order-2 basis-full md:basis-auto flex items-center gap-2 flex-wrap">
+          {MOODS.map((m) => (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => handleMoodSelect(m.key)}
+              className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                activeMood === m.key ? m.pillActive : m.pillInactive
+              }`}
+            >
+              {m.emoji} {m.label}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => setShowTrends(true)}
-          className="ml-auto text-[11px] text-violet-400/50 hover:text-violet-300 transition-colors flex-shrink-0 whitespace-nowrap"
+          className="order-2 md:order-3 ml-auto text-[11px] text-violet-400/50 hover:text-violet-300 transition-colors flex-shrink-0 whitespace-nowrap"
         >
           View Headspace Trends →
         </button>
@@ -217,7 +219,7 @@ export default function MindfulCheckIn() {
       </div>
 
       {/* Row 3 — Journal input */}
-      <div className="flex items-start gap-2">
+      <div className="flex flex-col md:flex-row md:items-start gap-2">
         <AutoExpandingTextarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -225,13 +227,13 @@ export default function MindfulCheckIn() {
           placeholder={placeholder}
           minRows={1}
           maxHeightVariant="widget"
-          className="flex-1 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50 transition-colors"
+          className="w-full md:w-auto md:flex-1 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50 transition-colors"
         />
         <button
           type="button"
           onClick={handleSave}
           disabled={!activeMood}
-          className="px-4 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-white font-medium transition-all flex-shrink-0"
+          className="w-full md:w-auto px-4 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-white font-medium transition-all md:flex-shrink-0"
         >
           Save Check-In
         </button>

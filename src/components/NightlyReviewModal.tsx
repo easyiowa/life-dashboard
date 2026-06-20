@@ -381,7 +381,7 @@ export default function NightlyReviewModal() {
           <div className="flex items-center gap-2.5">
             <Moon className="w-4 h-4 text-violet-400" />
             <div>
-              <h2 className="text-sm font-semibold text-white">Nightly Review</h2>
+              <h2 className="text-sm font-semibold text-white">Call it a day!</h2>
               <p className="text-[10px] text-slate-500 mt-0.5">{fmtDate(reviewDate)}</p>
             </div>
           </div>

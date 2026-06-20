@@ -1,7 +1,8 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDashboard, type CalendarJump, type RecurringTask } from "@/context/DashboardContext";
 import { areaColor, type AreaColorSet } from "@/lib/areaColors";
 import { computeCountdown } from "@/components/widgets/RecurringCard";
@@ -55,11 +56,44 @@ function getMonthGrid(monthOffset: number): (Date | null)[] {
   return cells;
 }
 
+// Same grid logic, but anchored to an arbitrary date (used by the mobile month picker)
+function getMonthGridFor(base: Date): (Date | null)[] {
+  const year     = base.getFullYear();
+  const month    = base.getMonth();
+  const first    = new Date(year, month, 1);
+  const last     = new Date(year, month + 1, 0);
+  const startDow = (first.getDay() + 6) % 7; // Mon = 0
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= last.getDate(); d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
 export default function CalendarCard() {
   const [weekOffset,   setWeekOffset]   = useState(0);
   const [monthOffset,  setMonthOffset]  = useState(0);
   const [calendarView, setCalendarView] = useState<"week" | "month">("week");
   const { tasks, networkContacts, spheres, relationshipGroups, recurringTasks, setCalendarJump } = useDashboard();
+
+  // ── Mobile-only state ─────────────────────────────────────────────────────────
+  const [mobileActiveDate, setMobileActiveDate] = useState(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [mobileDayCount,   setMobileDayCount]   = useState<1 | 2 | 3>(1);
+  const [monthPickerOpen,  setMonthPickerOpen]  = useState(false);
+  const [columnMenuOpen,   setColumnMenuOpen]   = useState(false);
+  const [pickerMonthDate,  setPickerMonthDate]  = useState(() => new Date());
+
+  // Dropdowns are portaled to <body> so their z-index isn't trapped inside this
+  // card's own backdrop-blur stacking context (which would otherwise lose to
+  // later sibling widget cards regardless of z-index value).
+  const monthBtnRef     = useRef<HTMLButtonElement>(null);
+  const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
+  const [monthPickerPos, setMonthPickerPos] = useState({ top: 0, left: 0 });
+  const [columnMenuPos,  setColumnMenuPos]  = useState({ top: 0, left: 0 });
 
   // Color resolution
   const sphereByName = new Map(spheres.map((s) => [s.name, s]));
@@ -140,17 +174,125 @@ export default function CalendarCard() {
 
   const displayLabel = calendarView === "week" ? weekLabel : monthLabel;
 
+  // ── Mobile column view ────────────────────────────────────────────────────────
+
+  const mobileDays = Array.from({ length: mobileDayCount }, (_, i) => {
+    const d = new Date(mobileActiveDate);
+    d.setDate(mobileActiveDate.getDate() + i);
+    return d;
+  });
+  const mobileGridColsClass = mobileDayCount === 1 ? "grid-cols-1" : mobileDayCount === 2 ? "grid-cols-2" : "grid-cols-3";
+
+  function renderDayColumn(day: Date) {
+    const dow          = (day.getDay() + 6) % 7; // Mon = 0
+    const isToday       = day.getTime() === today.getTime();
+    const calEvents     = (weekOffset === 0 ? WEEK_EVENTS[dow] : []) ?? [];
+    const yyyy          = day.getFullYear();
+    const mm            = String(day.getMonth() + 1).padStart(2, "0");
+    const dd            = String(day.getDate()).padStart(2, "0");
+    const dayKey        = `${yyyy}-${mm}-${dd}`;
+    const deadlines     = deadlineMap.get(dayKey) ?? [];
+    const birthdays     = birthdayMap.get(`${mm}-${dd}`) ?? [];
+    const contactEvts   = contactEventMap.get(dayKey) ?? [];
+    const recurringItems = recurringDateMap.get(dayKey) ?? [];
+    const visible        = deadlines.slice(0, 2);
+    const overflow        = deadlines.length - visible.length;
+    const hasContent      = calEvents.length > 0 || deadlines.length > 0 || birthdays.length > 0 || contactEvts.length > 0 || recurringItems.length > 0;
+
+    return (
+      <div
+        key={dayKey}
+        className={`flex flex-col gap-2 rounded-xl p-2.5 border transition-all duration-200 min-w-0 ${
+          isToday
+            ? "border-violet-500/40 bg-violet-600/10"
+            : hasContent
+              ? "border-white/[0.08] bg-white/[0.03]"
+              : "border-transparent bg-white/[0.02]"
+        }`}
+      >
+        <div className="text-center">
+          <p className={`text-[10px] font-medium uppercase tracking-wider ${isToday ? "text-violet-400" : "text-slate-600"}`}>
+            {DAYS[dow]}
+          </p>
+          <p className={`text-lg font-semibold leading-tight mt-0.5 ${isToday ? "text-white" : "text-slate-400"}`}>
+            {day.getDate()}
+          </p>
+        </div>
+
+        {isToday && (
+          <div className="flex justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
+          </div>
+        )}
+
+        {birthdays.map(({ name, contactId }) => (
+          <button
+            key={`bday-${contactId}`}
+            onClick={() => setCalendarJump({ type: "contact", id: contactId })}
+            className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getContactAc(contactId))}`}
+            title={`${name}'s Birthday`}
+          >
+            <div className="truncate">🎂 {name}&apos;s Birthday</div>
+          </button>
+        ))}
+
+        {contactEvts.map(({ title, contactId }) => (
+          <button
+            key={`evt-${contactId}-${title}`}
+            onClick={() => setCalendarJump({ type: "contact", id: contactId })}
+            className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getContactAc(contactId))}`}
+            title={title}
+          >
+            <div className="truncate">🎯 {title}</div>
+          </button>
+        ))}
+
+        {recurringItems.map((rt) => (
+          <button
+            key={`rt-${rt.id}`}
+            className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getSphereAc(rt.sphere))}`}
+            title={rt.title}
+          >
+            <div className="truncate">♻️ {rt.title}</div>
+          </button>
+        ))}
+
+        <div className="flex flex-col gap-1">
+          {calEvents.map((evt, j) => (
+            <button key={j} className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${EVENT_COLOR[evt.color]}`}>
+              <div className="text-slate-400 text-[8px] mb-0.5">{evt.time}</div>
+              <div className="truncate">{evt.title}</div>
+            </button>
+          ))}
+          {visible.map((task) => (
+            <button
+              key={task.id}
+              onClick={() => setCalendarJump({ type: "task", id: task.id })}
+              className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getSphereAc(task.sphere))}`}
+              title={task.title}
+            >
+              <div className="truncate">{task.title}</div>
+            </button>
+          ))}
+          {overflow > 0 && <div className="text-[9px] text-slate-600 pl-1">+{overflow} more</div>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col gap-4">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative">
         <div className="flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-violet-400" />
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Calendar</h2>
-          <span className="text-xs text-slate-600 ml-1">{displayLabel}</span>
+          <span className="hidden sm:inline text-xs text-slate-600 ml-1">{displayLabel}</span>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Desktop controls */}
+        <div className="hidden sm:flex items-center gap-2">
 
           {/* Segmented control */}
           <div className="flex rounded-lg border border-white/[0.07] overflow-hidden">
@@ -193,106 +335,132 @@ export default function CalendarCard() {
             </button>
           </div>
         </div>
+
+        {/* Mobile controls — month selector + column-count hamburger */}
+        <div className="flex sm:hidden items-center gap-2">
+          <button
+            ref={monthBtnRef}
+            onClick={() => {
+              const rect = monthBtnRef.current?.getBoundingClientRect();
+              if (rect) setMonthPickerPos({ top: rect.bottom + 8, left: rect.right - 256 });
+              setPickerMonthDate(new Date(mobileActiveDate));
+              setColumnMenuOpen(false);
+              setMonthPickerOpen((o) => !o);
+            }}
+            className="px-2.5 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-slate-300 text-xs font-medium transition-all duration-150"
+          >
+            {mobileActiveDate.toLocaleDateString("en-US", { month: "long" })}
+          </button>
+
+          <button
+            ref={hamburgerBtnRef}
+            onClick={() => {
+              const rect = hamburgerBtnRef.current?.getBoundingClientRect();
+              if (rect) setColumnMenuPos({ top: rect.bottom + 8, left: rect.right - 112 });
+              setMonthPickerOpen(false);
+              setColumnMenuOpen((o) => !o);
+            }}
+            className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center justify-center transition-all duration-150"
+          >
+            <Menu className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+        </div>
       </div>
+
+      {/* Dropdowns are portaled to <body> — see note above the refs/state for why. */}
+      {monthPickerOpen && createPortal(
+        <>
+          <div className="fixed inset-0 z-[100]" onClick={() => setMonthPickerOpen(false)} />
+          <div
+            className="fixed z-[110] w-64 bg-[#0d1426] border border-white/[0.12] rounded-xl shadow-2xl p-3 flex flex-col gap-2"
+            style={{ top: monthPickerPos.top, left: monthPickerPos.left }}
+          >
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setPickerMonthDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
+                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-violet-300 hover:bg-white/[0.06] transition-all duration-150"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-xs font-medium text-slate-300">
+                {pickerMonthDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+              </span>
+              <button
+                onClick={() => setPickerMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
+                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-violet-300 hover:bg-white/[0.06] transition-all duration-150"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {DAYS.map((d) => (
+                <div key={d} className="text-center text-[9px] font-semibold text-slate-600 uppercase">
+                  {d[0]}
+                </div>
+              ))}
+              {getMonthGridFor(pickerMonthDate).map((day, idx) => {
+                if (!day) return <div key={idx} className="h-7" />;
+                const isSel   = day.getTime() === mobileActiveDate.getTime();
+                const isToday = day.getTime() === today.getTime();
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => { setMobileActiveDate(day); setMonthPickerOpen(false); }}
+                    className={`h-7 rounded-md text-[10px] font-medium transition-all duration-150 ${
+                      isSel
+                        ? "bg-violet-600/30 text-violet-300 border border-violet-500/40"
+                        : isToday
+                          ? "text-violet-400 border border-violet-500/20"
+                          : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+                    }`}
+                  >
+                    {day.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {columnMenuOpen && createPortal(
+        <>
+          <div className="fixed inset-0 z-[100]" onClick={() => setColumnMenuOpen(false)} />
+          <div
+            className="fixed z-[110] w-28 bg-[#0d1426] border border-white/[0.12] rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5"
+            style={{ top: columnMenuPos.top, left: columnMenuPos.left }}
+          >
+            {([1, 2, 3] as const).map((n) => (
+              <button
+                key={n}
+                onClick={() => { setMobileDayCount(n); setColumnMenuOpen(false); }}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-all duration-150 ${
+                  mobileDayCount === n
+                    ? "bg-violet-600/25 text-violet-300"
+                    : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+                }`}
+              >
+                {n} day{n > 1 ? "s" : ""}
+              </button>
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ── MOBILE COLUMN VIEW ───────────────────────────────────────────────────── */}
+      <div className={`grid ${mobileGridColsClass} gap-2 sm:hidden`}>
+        {mobileDays.map((day) => renderDayColumn(day))}
+      </div>
+
+      {/* ── DESKTOP VIEWS ─────────────────────────────────────────────────────────── */}
+      <div className="hidden sm:flex sm:flex-col sm:gap-4">
 
       {/* ── WEEK VIEW ─────────────────────────────────────────────────────────── */}
       {calendarView === "week" && (
         <div className="grid grid-cols-7 gap-2 overflow-x-auto">
-          {weekDays.map((day, i) => {
-            const isToday     = day.getTime() === today.getTime();
-            const calEvents   = (weekOffset === 0 ? WEEK_EVENTS[i] : []) ?? [];
-            const yyyy        = day.getFullYear();
-            const mm          = String(day.getMonth() + 1).padStart(2, "0");
-            const dd          = String(day.getDate()).padStart(2, "0");
-            const dayKey      = `${yyyy}-${mm}-${dd}`;
-            const deadlines   = deadlineMap.get(dayKey) ?? [];
-            const birthdays   = birthdayMap.get(`${mm}-${dd}`) ?? [];
-            const contactEvts = contactEventMap.get(dayKey) ?? [];
-            const recurringItems = recurringDateMap.get(dayKey) ?? [];
-            const visible        = deadlines.slice(0, 2);
-            const overflow       = deadlines.length - visible.length;
-            const hasContent     = calEvents.length > 0 || deadlines.length > 0 || birthdays.length > 0 || contactEvts.length > 0 || recurringItems.length > 0;
-
-            return (
-              <div
-                key={i}
-                className={`flex flex-col gap-2 rounded-xl p-2.5 border transition-all duration-200 min-w-0 ${
-                  isToday
-                    ? "border-violet-500/40 bg-violet-600/10"
-                    : hasContent
-                      ? "border-white/[0.08] bg-white/[0.03]"
-                      : "border-transparent bg-white/[0.02]"
-                }`}
-              >
-                <div className="text-center">
-                  <p className={`text-[10px] font-medium uppercase tracking-wider ${isToday ? "text-violet-400" : "text-slate-600"}`}>
-                    {DAYS[i]}
-                  </p>
-                  <p className={`text-lg font-semibold leading-tight mt-0.5 ${isToday ? "text-white" : "text-slate-400"}`}>
-                    {day.getDate()}
-                  </p>
-                </div>
-
-                {isToday && (
-                  <div className="flex justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
-                  </div>
-                )}
-
-                {birthdays.map(({ name, contactId }) => (
-                  <button
-                    key={`bday-${contactId}`}
-                    onClick={() => setCalendarJump({ type: "contact", id: contactId })}
-                    className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getContactAc(contactId))}`}
-                    title={`${name}'s Birthday`}
-                  >
-                    <div className="truncate">🎂 {name}&apos;s Birthday</div>
-                  </button>
-                ))}
-
-                {contactEvts.map(({ title, contactId }) => (
-                  <button
-                    key={`evt-${contactId}-${title}`}
-                    onClick={() => setCalendarJump({ type: "contact", id: contactId })}
-                    className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getContactAc(contactId))}`}
-                    title={title}
-                  >
-                    <div className="truncate">🎯 {title}</div>
-                  </button>
-                ))}
-
-                {recurringItems.map((rt) => (
-                  <button
-                    key={`rt-${rt.id}`}
-                    className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getSphereAc(rt.sphere))}`}
-                    title={rt.title}
-                  >
-                    <div className="truncate">♻️ {rt.title}</div>
-                  </button>
-                ))}
-
-                <div className="flex flex-col gap-1">
-                  {calEvents.map((evt, j) => (
-                    <button key={j} className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${EVENT_COLOR[evt.color]}`}>
-                      <div className="text-slate-400 text-[8px] mb-0.5">{evt.time}</div>
-                      <div className="truncate">{evt.title}</div>
-                    </button>
-                  ))}
-                  {visible.map((task) => (
-                    <button
-                      key={task.id}
-                      onClick={() => setCalendarJump({ type: "task", id: task.id })}
-                      className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getSphereAc(task.sphere))}`}
-                      title={task.title}
-                    >
-                      <div className="truncate">{task.title}</div>
-                    </button>
-                  ))}
-                  {overflow > 0 && <div className="text-[9px] text-slate-600 pl-1">+{overflow} more</div>}
-                </div>
-              </div>
-            );
-          })}
+          {weekDays.map((day) => renderDayColumn(day))}
         </div>
       )}
 
@@ -387,6 +555,8 @@ export default function CalendarCard() {
           </div>
         </div>
       )}
+
+      </div>
 
     </div>
   );

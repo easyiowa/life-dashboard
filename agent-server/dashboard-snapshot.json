@@ -39,36 +39,6 @@
       "dailyTracking": {}
     },
     {
-      "id": "b5d79301-29c4-4110-8d83-5dddcbeda25d",
-      "sphere": "dashboard",
-      "project": "Polishing",
-      "title": "Projects & Tasks",
-      "priority": "High",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "- when adding first task without having a project yet, dont show the (Auto-route to Random), better show \"Create first Project ☝🏼\", so we help user to think about creating projects. if the user still dont do it, it will auto route to \"Random\"\n- make note field expandable when text become longer\n- make text convertions into dot bullet points and to do checkboxes\n- tag creation/editing needs fixes",
-      "manualMinutes": 0,
-      "queuedDate": "2026-06-18",
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 1,
-      "dailyTracking": {
-        "2026-06-13": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 3
-        },
-        "2026-06-18": {
-          "timeSpentMinutes": 0,
-          "intent": "finish",
-          "dailyTargetMinutes": null
-        }
-      }
-    },
-    {
       "id": "5eb4ad57-799d-4e45-975b-b83ddc002de3",
       "sphere": "irishot",
       "project": "File Management",
@@ -379,60 +349,6 @@
       }
     },
     {
-      "id": "735676dd-a086-405f-bb85-dafaf8043515",
-      "sphere": "iowa",
-      "project": "Health",
-      "title": "OWEImngfpiowemgewGF",
-      "priority": "High",
-      "energy": "Quick",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "öowergn¨pweognw\n'eg",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {}
-    },
-    {
-      "id": "5a2fd7b4-105e-4370-a9b9-5ee60db58fbe",
-      "sphere": "iowa",
-      "project": "Health",
-      "title": "Synlab appointment",
-      "priority": "Low",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": "2026-06-17",
-      "notes": "pwofncewäpafn\nwefvfweja\nfvpjfwea\nfopvj\nfweav",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 2,
-      "dailyTracking": {
-        "2026-06-13": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-15": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 25
-        },
-        "2026-06-17": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 2
-        }
-      }
-    },
-    {
       "id": "78555e27-1765-4d0c-a6e7-821de8c3c945",
       "sphere": "iowa",
       "project": "Health",
@@ -463,6 +379,106 @@
       }
     },
     {
+      "id": "b5d79301-29c4-4110-8d83-5dddcbeda25d",
+      "sphere": "dashboard",
+      "project": "Polishing",
+      "title": "Projects & Tasks",
+      "priority": "High",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "- when adding first task without having a project yet, dont show the (Auto-route to Random), better show \"Create first Project ☝🏼\", so we help user to think about creating projects. if the user still dont do it, it will auto route to \"Random\"\n- make note field expandable when text become longer\n- make text convertions into dot bullet points and to do checkboxes\n- tag creation/editing needs fixes",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 3,
+      "dailyTracking": {
+        "2026-06-13": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 3
+        },
+        "2026-06-18": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-19": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        }
+      }
+    },
+    {
+      "id": "5a2fd7b4-105e-4370-a9b9-5ee60db58fbe",
+      "sphere": "iowa",
+      "project": "Health",
+      "title": "Synlab appointment",
+      "priority": "Low",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "done": true,
+      "deadline": "2026-06-17",
+      "notes": "pwofncewäpafn\nwefvfweja\nfvpjfwea\nfopvj\nfweav",
+      "manualMinutes": 0,
+      "queuedDate": "2026-06-19",
+      "timeSpentMinutes": 8,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 2,
+      "dailyTracking": {
+        "2026-06-13": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-15": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 25
+        },
+        "2026-06-17": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 2
+        },
+        "2026-06-19": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 2
+        }
+      }
+    },
+    {
+      "id": "735676dd-a086-405f-bb85-dafaf8043515",
+      "sphere": "iowa",
+      "project": "Health",
+      "title": "OWEImngfpiowemgewGF",
+      "priority": "High",
+      "energy": "Quick",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "öowergn¨pweognw\n'eg",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1,
+      "dailyTracking": {
+        "2026-06-19": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        }
+      }
+    },
+    {
       "id": "74ec8894-82ab-473d-9008-0eb098efacc1",
       "sphere": "dashboard",
       "project": "Database",
@@ -480,6 +496,38 @@
       "dailyTargetMinutes": null,
       "rolloverCount": 0,
       "dailyTracking": {}
+    },
+    {
+      "id": "cfb82ede-086a-44de-8842-5504f42f1688",
+      "sphere": "iowa",
+      "project": "Health",
+      "title": "hui",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": "2026-06-19",
+      "notes": "åoj\n",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {}
+    },
+    {
+      "sphere": "iowa",
+      "project": "Health",
+      "title": "HUIIIIIII",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "done": false,
+      "id": "d0acbe34-3689-4798-8f81-a64b095b85a0"
     }
   ],
   "habits": [
@@ -518,7 +566,12 @@
       "targetCount": 7,
       "emoji": "🚭",
       "notes": "",
-      "history": {}
+      "history": {
+        "2026-06-17": true,
+        "2026-06-18": true,
+        "2026-06-19": true,
+        "2026-06-20": true
+      }
     },
     {
       "id": "1d8dc86b-2655-4bd7-aa5a-1943a52353b5",
@@ -532,6 +585,17 @@
       "history": {
         "2026-06-15": true
       }
+    },
+    {
+      "id": "082dce45-a088-435d-a51b-9670e29ef317",
+      "title": "laptop",
+      "type": "start",
+      "routine": "evening",
+      "frequency": "daily",
+      "targetCount": 5,
+      "emoji": "💻",
+      "notes": "",
+      "history": {}
     }
   ],
   "projects": [
@@ -784,6 +848,11 @@
       "name": "irishot",
       "labelColor": "indigo",
       "description": "All eyes on me!"
+    },
+    {
+      "id": "2457d2d1-20c3-4e74-b736-1d24adcc3c52",
+      "name": "ö98t98ty",
+      "labelColor": "pink"
     }
   ],
   "recurringTasks": [
@@ -827,9 +896,47 @@
       "lastDoneDate": null,
       "completionCount": 0,
       "history": []
+    },
+    {
+      "id": "7def23ea-d6e7-4e49-858c-cbb50263e044",
+      "title": "öoiughpohj",
+      "notes": "-lihäoihj",
+      "intervalDays": 7,
+      "intervalLabel": "Every Week",
+      "startDate": "2026-06-20",
+      "sphere": "iowa",
+      "lastDoneDate": null,
+      "completionCount": 0,
+      "history": []
     }
   ],
   "quickNotes": [
+    {
+      "text": "не откладывай на завтра то, что можно забыть сегодня",
+      "sphere": "iowa",
+      "createdAt": "2026-06-20 13:18",
+      "id": "a2f11bed-e17d-43fd-b7dc-57d255aacf0f"
+    },
+    {
+      "text": "Не бойся, когда ты один. Бойся, когда ты два.",
+      "sphere": "iowa",
+      "createdAt": "2026-06-20 13:16",
+      "id": "874a7ad0-bc8d-4f76-89cf-e1c745fc65c9"
+    },
+    {
+      "id": "4c283848-3775-4a35-8fba-45fdd7b4e1fa",
+      "text": ",iufliugfsbsrtnwrtn",
+      "sphere": "iowa",
+      "createdAt": "2026-06-19 22:09",
+      "isImportant": false
+    },
+    {
+      "id": "5053df29-499f-435f-acb2-18f4a27d96df",
+      "text": "Vhjhhjbb\nJuli\nZu",
+      "sphere": "iowa",
+      "createdAt": "2026-06-19 15:09",
+      "isImportant": true
+    },
     {
       "id": "089086fa-9355-4772-908a-04451a0e246a",
       "text": "oerhgnioer",
@@ -901,5 +1008,5 @@
       "isImportant": false
     }
   ],
-  "currentTrackingDate": "2026-06-18"
+  "currentTrackingDate": "2026-06-20"
 }

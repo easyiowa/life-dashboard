@@ -39,8 +39,9 @@ export default function DashboardHeader() {
             <p className="text-slate-500 text-xs font-medium tracking-widest uppercase mb-1">
               {date}
             </p>
-            <h1 className="text-3xl font-semibold text-white tracking-tight">
-              {greeting}, {displayName}
+            <h1 className="flex flex-col md:flex-row md:gap-2 text-2xl md:text-3xl font-semibold text-white tracking-tight">
+              <span>{greeting},</span>
+              <span>{displayName}</span>
             </h1>
           </div>
 

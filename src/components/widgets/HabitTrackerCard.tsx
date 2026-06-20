@@ -127,11 +127,11 @@ function HabitMonthAnalytics({
           const ds       = mds(year, month, day);
           const isFuture = ds > todayStr;
 
-          // Dot colour — untouched
+          // Dot colour
           const dotClass = isFuture
             ? "bg-white/[0.06]"
             : isStop
-              ? habit.history[ds] === false
+              ? habit.history[ds] === true
                 ? "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]"
                 : "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]"
               : habit.history[ds] === true

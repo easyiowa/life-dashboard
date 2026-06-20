@@ -565,9 +565,9 @@ export default function ProjectsCard() {
           .reduce((sum, s) => sum + s.durationSeconds, 0);
       }
 
-      const allTagObjs = (project.tagIds ?? []).length > 0
-        ? (project.tagIds ?? []).map((id) => tags.find((t) => t.id === id) ?? { id, label: "—", color: "violet" })
-        : [{ id: "", label: "—", color: "violet" }];
+      const allTagObjs = (project.tagIds ?? []).map(
+        (id) => tags.find((t) => t.id === id) ?? { id, label: "—", color: "violet" }
+      );
 
       // Composite urgency rank: urgent×high=10, urgent×med=5, urgent×low=2, else 0
       const openTasks    = projectTasks.filter((t) => !t.done);

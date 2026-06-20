@@ -6,8 +6,14 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import DashboardBlueprintModal from "@/components/DashboardBlueprintModal";
 import ActiveWidgetsModal from "@/components/ActiveWidgetsModal";
+import QuickActionsConfigModal from "@/components/QuickActionsConfigModal";
 import FounderDashboard from "@/components/admin/FounderDashboard";
 import { syncWidgetActivation } from "@/lib/widgetActivation";
+import {
+  loadQuickActionsConfig,
+  persistQuickActionsConfig,
+  type QuickActionConfigItem,
+} from "@/lib/quickActions";
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
@@ -107,6 +113,8 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
   const [widgetMarketplaceOpen, setWidgetMarketplaceOpen] = useState(false);
   const [pendingWidgets,        setPendingWidgets]        = useState<string[]>(ALL_IDS);
   const [blueprintOpen,         setBlueprintOpen]         = useState(false);
+  const [quickActionsOpen,      setQuickActionsOpen]      = useState(false);
+  const [quickActionsConfig,    setQuickActionsConfig]    = useState<QuickActionConfigItem[]>([]);
   const [founderOpen,           setFounderOpen]           = useState(false);
   const [founderMode,           setFounderMode]           = useState<"workbench" | "insights" | "admins">("workbench");
   const [isAdmin,                setIsAdmin]               = useState(false);
@@ -155,6 +163,9 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
       })();
       const initial = savedLayout ?? fromStorage ?? ALL_IDS;
       setPendingWidgets(initial.filter(id => ALL_IDS.includes(id)));
+
+      setQuickActionsConfig(loadQuickActionsConfig(user));
+      setQuickActionsOpen(false);
 
       setTimeout(() => nameInputRef.current?.focus(), 50);
     }
@@ -246,6 +257,11 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
   function handleBlueprintApply(newOrder: string[]) {
     setPendingWidgets(newOrder);
     persistWidgets(newOrder);
+  }
+
+  function handleQuickActionsSave(config: QuickActionConfigItem[]) {
+    setQuickActionsConfig(config);
+    persistQuickActionsConfig(config, user);
   }
 
   async function handleSignOut() {
@@ -365,6 +381,16 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
                 <span className="text-base leading-none shrink-0">🧩</span>
                 <span>Rearrange Grid Layout</span>
                 <span className="ml-auto text-[10px] text-violet-600">Blueprint Mode</span>
+              </button>
+              <button
+                onClick={() => setQuickActionsOpen(true)}
+                className="w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2.5 px-4"
+              >
+                <LayoutGrid className="w-4 h-4 text-violet-400 shrink-0" />
+                <span>Edit Quick Actions</span>
+                <span className="ml-auto text-[10px] text-slate-600">
+                  {quickActionsConfig.filter(c => c.enabled).length} active
+                </span>
               </button>
             </div>
           </section>
@@ -515,6 +541,14 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
         onClose={() => setBlueprintOpen(false)}
         initialOrder={pendingWidgets}
         onApply={handleBlueprintApply}
+      />
+
+      {/* Edit Quick Actions — z-[60] overlays on top of this modal (z-50) */}
+      <QuickActionsConfigModal
+        isOpen={quickActionsOpen}
+        onClose={() => setQuickActionsOpen(false)}
+        initialConfig={quickActionsConfig}
+        onSave={handleQuickActionsSave}
       />
     </div>
   );

@@ -7,6 +7,7 @@ import { GripVertical } from "lucide-react";
 
 interface Props {
   id: string;
+  label?: string;
   colSpan?: 1 | 2 | 3;
   children: React.ReactNode;
 }
@@ -17,7 +18,7 @@ const SPAN: Record<number, string> = {
   3: "md:col-span-3",
 };
 
-export default function SortableWidget({ id, colSpan = 1, children }: Props) {
+export default function SortableWidget({ id, label, colSpan = 1, children }: Props) {
   const {
     attributes,
     listeners,
@@ -31,8 +32,11 @@ export default function SortableWidget({ id, colSpan = 1, children }: Props) {
   return (
     <div
       ref={setNodeRef}
+      id={`widget-${id}`}
+      data-widget-id={id}
+      data-widget-label={label ?? id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`col-span-1 ${SPAN[colSpan]} ${isDragging ? "opacity-40" : ""} transition-opacity`}
+      className={`col-span-1 ${SPAN[colSpan]} rounded-2xl ${isDragging ? "opacity-40" : ""} transition-opacity`}
     >
       <div
         className="relative group h-full"
