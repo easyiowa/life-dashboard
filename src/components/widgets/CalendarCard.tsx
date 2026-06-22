@@ -434,7 +434,7 @@ export default function CalendarCard() {
         <div
           ref={mobileCarouselRef}
           onScroll={handleMobileCarouselScroll}
-          className="flex overflow-x-auto snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden"
+          className="flex overflow-x-auto snap-x snap-mandatory touch-auto [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: "none" }}
         >
           {([1, 2, 3] as const).map((n) => (

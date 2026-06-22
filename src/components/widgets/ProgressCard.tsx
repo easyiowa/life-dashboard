@@ -602,7 +602,7 @@ export default function ProgressCard() {
           <div
             ref={scrollRef}
             onScroll={handleMobileScroll}
-            className="flex overflow-x-auto snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden"
+            className="flex overflow-x-auto snap-x snap-mandatory touch-auto [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: "none" }}
           >
             <div className="w-full flex-shrink-0 snap-center">

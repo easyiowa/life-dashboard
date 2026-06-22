@@ -515,7 +515,7 @@ export default function HabitTrackerCard() {
             <div
               ref={scrollRef}
               onScroll={handleMobileScroll}
-              className="flex items-start overflow-x-auto snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden"
+              className="flex items-start overflow-x-auto snap-x snap-mandatory touch-auto [&::-webkit-scrollbar]:hidden"
               style={{ scrollbarWidth: "none" }}
             >
               <div ref={checklistPageRef} className="w-full flex-shrink-0 snap-center">
