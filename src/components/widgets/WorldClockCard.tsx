@@ -226,7 +226,7 @@ export default function WorldClockCard() {
               onClick={addClock}
               className="flex items-center gap-1 h-8 px-3 rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all"
             >
-              <Plus className="w-3 h-3" /> Add
+              <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
             </button>
           </div>
         )}

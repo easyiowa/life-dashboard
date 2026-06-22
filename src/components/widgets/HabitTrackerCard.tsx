@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { Flame, Trash2, Plus, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { useDashboard, type Habit } from "@/context/DashboardContext";
 import HabitModal from "@/components/HabitModal";
@@ -216,18 +216,23 @@ function HabitRow({
       {/* Row header */}
       <div className="flex items-center gap-2">
         <span className="text-base leading-none flex-shrink-0">{habit.emoji}</span>
-        <span className="text-sm font-medium text-white flex-1 leading-none truncate">{habit.title}</span>
+        <span
+          onClick={() => onEdit(habit)}
+          className="text-sm font-medium text-white flex-1 leading-none truncate md:cursor-default cursor-pointer active:opacity-70 transition-opacity duration-100"
+        >
+          {habit.title}
+        </span>
         <span className="text-[10px] text-slate-600 flex-shrink-0">{headerTag}</span>
         <button
           onClick={() => onEdit(habit)}
-          className="flex-shrink-0 opacity-0 group-hover:opacity-100 w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors duration-150"
+          className="hidden md:flex flex-shrink-0 opacity-0 group-hover:opacity-100 w-5 h-5 rounded items-center justify-center text-slate-500 hover:text-slate-300 transition-colors duration-150"
           title="Edit habit"
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => deleteHabit(habit.id)}
-          className="flex-shrink-0 opacity-0 group-hover:opacity-100 w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-red-400 transition-all duration-150"
+          className="hidden md:flex flex-shrink-0 opacity-0 group-hover:opacity-100 w-5 h-5 rounded items-center justify-center text-slate-600 hover:text-red-400 transition-all duration-150"
           title="Delete habit"
         >
           <Trash2 className="w-3 h-3" />
@@ -287,6 +292,101 @@ function HabitRow({
   );
 }
 
+// ── Routine section list — shared between desktop single-view and mobile carousel pages ──
+
+function HabitsBody({
+  habits,
+  mode,
+  weekDates,
+  analyticsYear,
+  analyticsMonth,
+  onEdit,
+}: {
+  habits: Habit[];
+  mode: "check" | "analytics";
+  weekDates: ReturnType<typeof getWeekDates>;
+  analyticsYear: number;
+  analyticsMonth: number;
+  onEdit: (h: Habit) => void;
+}) {
+  const showAnalytics = mode === "analytics";
+  const rowProps = { weekDates, showAnalytics, analyticsYear, analyticsMonth, onEdit };
+
+  if (habits.length === 0) {
+    return (
+      <p className="text-xs text-slate-600 text-center py-6">
+        No habits yet — add one to start tracking.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {(
+        [
+          { key: "morning", label: "☀️ Morning Routine" },
+          { key: "day",     label: "🌤️ Day Routine"     },
+          { key: "evening", label: "🌙 Evening Routine"  },
+        ] as { key: NonNullable<Habit["routine"]>; label: string }[]
+      ).map(({ key, label }) => {
+        const section = habits.filter((h) => (h.routine ?? "day") === key);
+        if (section.length === 0) return null;
+
+        return (
+          <div key={key} className="flex flex-col gap-2">
+            {/* Routine section header */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-300">{label}</span>
+              <span className="flex-1 h-px bg-white/[0.05]" />
+              <span className="text-[10px] text-slate-600">
+                {section.length} habit{section.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {/* Flat habit list — type identity conveyed via left-border accent on each row */}
+            <div className="flex flex-col gap-1.5">
+              {section.map((h) => <HabitRow key={h.id} habit={h} {...rowProps} />)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Analytics month navigation — shared between desktop view and the mobile carousel page ──
+
+function MonthNav({
+  monthLabel,
+  isCurrentMonth,
+  onPrev,
+  onNext,
+}: {
+  monthLabel: string;
+  isCurrentMonth: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between px-1 -mt-2">
+      <button
+        onClick={onPrev}
+        className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.07] transition-all"
+      >
+        <ChevronLeft className="w-3.5 h-3.5" />
+      </button>
+      <span className="text-xs font-semibold text-slate-300">{monthLabel}</span>
+      <button
+        onClick={onNext}
+        disabled={isCurrentMonth}
+        className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.07] disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+      >
+        <ChevronRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 // ── Card ──────────────────────────────────────────────────────────────────────
 
 export default function HabitTrackerCard() {
@@ -315,7 +415,32 @@ export default function HabitTrackerCard() {
     if (!isCurrentMonth) setAnalyticsDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
   }
 
-  const rowProps = { weekDates, showAnalytics, analyticsYear, analyticsMonth, onEdit: setEditingHabit };
+  // ── Mobile swipe carousel (Checklist ↔ Analytics) ─────────────────────────
+  // Page 0 = Checklist, page 1 = Analytics — matches the desktop toggle order.
+  const mobileActiveIndex = viewMode === "check" ? 0 : 1;
+  const scrollRef         = useRef<HTMLDivElement>(null);
+  const checklistPageRef  = useRef<HTMLDivElement>(null);
+  const analyticsPageRef  = useRef<HTMLDivElement>(null);
+  const [carouselHeight,  setCarouselHeight] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.clientWidth * mobileActiveIndex;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-measure the active page's natural height whenever it (or its content) changes,
+  // so the carousel never gets stuck at the taller sibling's height.
+  useLayoutEffect(() => {
+    const activeEl = mobileActiveIndex === 0 ? checklistPageRef.current : analyticsPageRef.current;
+    if (activeEl) setCarouselHeight(activeEl.scrollHeight);
+  }, [mobileActiveIndex, habits, analyticsYear, analyticsMonth]);
+
+  function handleMobileScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget;
+    const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1));
+    const nextMode = index === 0 ? "check" : "analytics";
+    if (nextMode !== viewMode) setViewMode(nextMode);
+  }
 
   return (
     <>
@@ -333,8 +458,8 @@ export default function HabitTrackerCard() {
             </h2>
           </div>
 
-          {/* View mode segment control */}
-          <div className="flex rounded-lg border border-white/[0.07] overflow-hidden">
+          {/* View mode segment control — desktop only; mobile swipes between pages instead */}
+          <div className="hidden md:flex rounded-lg border border-white/[0.07] overflow-hidden">
             {(["check", "analytics"] as const).map((mode, i) => (
               <button
                 key={mode}
@@ -356,67 +481,79 @@ export default function HabitTrackerCard() {
             onClick={() => setShowModal(true)}
             className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all duration-150 flex-shrink-0"
           >
-            <Plus className="w-3 h-3" /> Add
+            <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
           </button>
         </div>
 
-        {/* Month navigation — visible in analytics mode */}
+        {/* Month navigation — desktop, visible in analytics mode */}
         {showAnalytics && (
-          <div className="flex items-center justify-between px-1 -mt-2">
-            <button
-              onClick={prevMonth}
-              className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.07] transition-all"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-xs font-semibold text-slate-300">{monthLabel}</span>
-            <button
-              onClick={nextMonth}
-              disabled={isCurrentMonth}
-              className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.07] disabled:opacity-25 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+          <div className="hidden md:block">
+            <MonthNav monthLabel={monthLabel} isCurrentMonth={isCurrentMonth} onPrev={prevMonth} onNext={nextMonth} />
           </div>
         )}
 
-        {/* ── Routine sections ────────────────────────────────────────────────── */}
-        {habits.length === 0 ? (
-          <p className="text-xs text-slate-600 text-center py-6">
-            No habits yet — add one to start tracking.
-          </p>
-        ) : (
-          <>
-            {(
-              [
-                { key: "morning", label: "☀️ Morning Routine" },
-                { key: "day",     label: "🌤️ Day Routine"     },
-                { key: "evening", label: "🌙 Evening Routine"  },
-              ] as { key: NonNullable<Habit["routine"]>; label: string }[]
-            ).map(({ key, label }) => {
-              const section = habits.filter((h) => (h.routine ?? "day") === key);
-              if (section.length === 0) return null;
+        {/* ── Desktop: single view driven by the segment control above ───────── */}
+        <div className="hidden md:block">
+          <HabitsBody
+            habits={habits}
+            mode={viewMode}
+            weekDates={weekDates}
+            analyticsYear={analyticsYear}
+            analyticsMonth={analyticsMonth}
+            onEdit={setEditingHabit}
+          />
+        </div>
 
-              return (
-                <div key={key} className="flex flex-col gap-2">
-                  {/* Routine section header */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-300">{label}</span>
-                    <span className="flex-1 h-px bg-white/[0.05]" />
-                    <span className="text-[10px] text-slate-600">
-                      {section.length} habit{section.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
+        {/* ── Mobile: swipeable carousel between Checklist and Analytics ─────── */}
+        <div className="md:hidden flex flex-col gap-3">
+          {/* Height-animated clipper — tracks only the active page's natural height,
+              so the shorter Checklist page never inherits the taller Analytics height. */}
+          <div
+            className="overflow-hidden transition-[height] duration-300 ease-in-out"
+            style={{ height: carouselHeight }}
+          >
+            <div
+              ref={scrollRef}
+              onScroll={handleMobileScroll}
+              className="flex items-start overflow-x-auto snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: "none" }}
+            >
+              <div ref={checklistPageRef} className="w-full flex-shrink-0 snap-center">
+                <HabitsBody
+                  habits={habits}
+                  mode="check"
+                  weekDates={weekDates}
+                  analyticsYear={analyticsYear}
+                  analyticsMonth={analyticsMonth}
+                  onEdit={setEditingHabit}
+                />
+              </div>
+              <div ref={analyticsPageRef} className="w-full flex-shrink-0 snap-center flex flex-col gap-3">
+                <MonthNav monthLabel={monthLabel} isCurrentMonth={isCurrentMonth} onPrev={prevMonth} onNext={nextMonth} />
+                <HabitsBody
+                  habits={habits}
+                  mode="analytics"
+                  weekDates={weekDates}
+                  analyticsYear={analyticsYear}
+                  analyticsMonth={analyticsMonth}
+                  onEdit={setEditingHabit}
+                />
+              </div>
+            </div>
+          </div>
 
-                  {/* Flat habit list — type identity conveyed via left-border accent on each row */}
-                  <div className="flex flex-col gap-1.5">
-                    {section.map((h) => <HabitRow key={h.id} habit={h} {...rowProps} />)}
-                  </div>
-                </div>
-              );
-            })}
-          </>
-        )}
+          {/* Pagination dots */}
+          <div className="flex items-center justify-center gap-1.5">
+            {[0, 1].map((i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-200 ${
+                  mobileActiveIndex === i ? "w-4 bg-violet-400" : "w-1.5 bg-white/20"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { TrendingUp, X, BarChart2 } from "lucide-react";
 import { useDashboard, type FocusSession, type HistoricalLog } from "@/context/DashboardContext";
 
@@ -344,6 +344,50 @@ function AllWeeksModal({ onClose, sessions, historicalLogs }: ModalProps) {
   );
 }
 
+interface Metric {
+  label: string;
+  current: number;
+  target: number;
+  unit: string;
+  change: string;
+  positive: boolean;
+}
+
+function MetricsList({ metrics }: { metrics: Metric[] }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {metrics.map((metric, i) => {
+        const pct = Math.min(Math.round((metric.current / metric.target) * 100), 100);
+        return (
+          <div key={metric.label} className="flex flex-col gap-1.5">
+            <div className="flex items-end justify-between">
+              <span className="text-sm text-white font-medium">{metric.label}</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base font-semibold text-white tabular-nums">
+                  {metric.current}{metric.unit}
+                </span>
+                <span className="text-xs text-slate-500">/ {metric.target}{metric.unit}</span>
+              </div>
+            </div>
+            <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
+              <div
+                className={`h-full rounded-full bg-gradient-to-r ${BAR_COLORS[i]} transition-all duration-700`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] ${metric.positive ? "text-emerald-400" : "text-slate-500"}`}>
+                {metric.change}
+              </span>
+              <span className="text-[10px] text-slate-600">{pct}%</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main Card ─────────────────────────────────────────────────────────────────
 
 export default function ProgressCard() {
@@ -481,6 +525,23 @@ export default function ProgressCard() {
 
   const weekRangeStr = getWeekRangeStr(viewOffset);
 
+  // ── Mobile swipe carousel (Last Week ↔ Current Week) ─────────────────────
+  // Page 0 = Last Week, page 1 = Current Week — matches the desktop toggle order.
+  const mobileActiveIndex = viewOffset === -1 ? 0 : 1;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.clientWidth * mobileActiveIndex;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleMobileScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget;
+    const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1));
+    const nextOffset = index === 0 ? -1 : 0;
+    if (nextOffset !== viewOffset) setViewOffset(nextOffset);
+  }
+
   return (
     <>
       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col gap-5">
@@ -497,10 +558,10 @@ export default function ProgressCard() {
             <p className="text-[10px] text-slate-600 mt-0.5 tabular-nums pl-6">{weekRangeStr}</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-white tabular-nums">{overallPct}%</span>
+            <span className="hidden md:inline text-sm font-semibold text-white tabular-nums">{overallPct}%</span>
 
             {/* Last Week / Current Week segmented toggle */}
-            <div className="flex rounded-lg border border-white/[0.07] overflow-hidden">
+            <div className="hidden md:flex rounded-lg border border-white/[0.07] overflow-hidden">
               {([
                 { label: "Last Week",    offset: -1 },
                 { label: "Current Week", offset:  0 },
@@ -531,36 +592,38 @@ export default function ProgressCard() {
           </div>
         </div>
 
-        {/* Metrics */}
-        <div className="flex flex-col gap-4">
-          {metrics.map((metric, i) => {
-            const pct = Math.min(Math.round((metric.current / metric.target) * 100), 100);
-            return (
-              <div key={metric.label} className="flex flex-col gap-1.5">
-                <div className="flex items-end justify-between">
-                  <span className="text-sm text-white font-medium">{metric.label}</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-base font-semibold text-white tabular-nums">
-                      {metric.current}{metric.unit}
-                    </span>
-                    <span className="text-xs text-slate-500">/ {metric.target}{metric.unit}</span>
-                  </div>
-                </div>
-                <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
-                  <div
-                    className={`h-full rounded-full bg-gradient-to-r ${BAR_COLORS[i]} transition-all duration-700`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className={`text-[10px] ${metric.positive ? "text-emerald-400" : "text-slate-500"}`}>
-                    {metric.change}
-                  </span>
-                  <span className="text-[10px] text-slate-600">{pct}%</span>
-                </div>
-              </div>
-            );
-          })}
+        {/* Metrics — desktop: single panel driven by the toggle above */}
+        <div className="hidden md:block">
+          <MetricsList metrics={metrics} />
+        </div>
+
+        {/* Metrics — mobile: swipeable carousel between Last Week and Current Week */}
+        <div className="md:hidden flex flex-col gap-3">
+          <div
+            ref={scrollRef}
+            onScroll={handleMobileScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none" }}
+          >
+            <div className="w-full flex-shrink-0 snap-center">
+              <MetricsList metrics={lastWeekMetrics} />
+            </div>
+            <div className="w-full flex-shrink-0 snap-center">
+              <MetricsList metrics={currentMetrics} />
+            </div>
+          </div>
+
+          {/* Pagination dots */}
+          <div className="flex items-center justify-center gap-1.5">
+            {[0, 1].map((i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-200 ${
+                  mobileActiveIndex === i ? "w-4 bg-violet-400" : "w-1.5 bg-white/20"
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
       </div>

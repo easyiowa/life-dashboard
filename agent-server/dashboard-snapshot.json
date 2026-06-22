@@ -39,6 +39,91 @@
       "dailyTracking": {}
     },
     {
+      "id": "d0acbe34-3689-4798-8f81-a64b095b85a0",
+      "sphere": "iowa",
+      "project": "HealthD FEWFW EF WE FWEF WEF W",
+      "title": "HUIIIIIII",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {
+        "2026-06-20": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        }
+      }
+    },
+    {
+      "id": "78555e27-1765-4d0c-a6e7-821de8c3c945",
+      "sphere": "iowa",
+      "project": "HealthD FEWFW EF WE FWEF WEF W",
+      "title": "Ernie just SUCKS",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": true,
+      "deadline": "2026-06-16",
+      "notes": "",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1,
+      "dailyTracking": {
+        "2026-06-16": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-17": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        }
+      }
+    },
+    {
+      "id": "735676dd-a086-405f-bb85-dafaf8043515",
+      "sphere": "iowa",
+      "project": "HealthD FEWFW EF WE FWEF WEF W",
+      "title": "OWEImngfpiowemgewGFoöibäibäoibhöioböoibäoibäoihbn",
+      "priority": "High",
+      "energy": "Quick",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "öowergn¨pweognw\n'eg",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1,
+      "dailyTracking": {
+        "2026-06-19": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-20": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        }
+      }
+    },
+    {
       "id": "5eb4ad57-799d-4e45-975b-b83ddc002de3",
       "sphere": "irishot",
       "project": "File Management",
@@ -349,36 +434,6 @@
       }
     },
     {
-      "id": "78555e27-1765-4d0c-a6e7-821de8c3c945",
-      "sphere": "iowa",
-      "project": "Health",
-      "title": "Ernie just SUCKS",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": "2026-06-16",
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 1,
-      "dailyTracking": {
-        "2026-06-16": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-17": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      }
-    },
-    {
       "id": "b5d79301-29c4-4110-8d83-5dddcbeda25d",
       "sphere": "dashboard",
       "project": "Polishing",
@@ -416,7 +471,7 @@
     {
       "id": "5a2fd7b4-105e-4370-a9b9-5ee60db58fbe",
       "sphere": "iowa",
-      "project": "Health",
+      "project": "HealthD FEWFW EF WE FWEF WEF W",
       "title": "Synlab appointment",
       "priority": "Low",
       "energy": "Easy",
@@ -454,31 +509,6 @@
       }
     },
     {
-      "id": "735676dd-a086-405f-bb85-dafaf8043515",
-      "sphere": "iowa",
-      "project": "Health",
-      "title": "OWEImngfpiowemgewGF",
-      "priority": "High",
-      "energy": "Quick",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "öowergn¨pweognw\n'eg",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 1,
-      "dailyTracking": {
-        "2026-06-19": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      }
-    },
-    {
       "id": "74ec8894-82ab-473d-9008-0eb098efacc1",
       "sphere": "dashboard",
       "project": "Database",
@@ -500,12 +530,12 @@
     {
       "id": "cfb82ede-086a-44de-8842-5504f42f1688",
       "sphere": "iowa",
-      "project": "Health",
+      "project": "HealthD FEWFW EF WE FWEF WEF W",
       "title": "hui",
       "priority": "Med",
       "energy": "Easy",
       "urgency": "not-urgent",
-      "done": false,
+      "done": true,
       "deadline": "2026-06-19",
       "notes": "åoj\n",
       "manualMinutes": 0,
@@ -515,35 +545,9 @@
       "dailyTargetMinutes": null,
       "rolloverCount": 0,
       "dailyTracking": {}
-    },
-    {
-      "sphere": "iowa",
-      "project": "Health",
-      "title": "HUIIIIIII",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "done": false,
-      "id": "d0acbe34-3689-4798-8f81-a64b095b85a0"
     }
   ],
   "habits": [
-    {
-      "id": "9fb1837f-9d59-44b6-af8e-0c4392262543",
-      "title": "Gym",
-      "type": "start",
-      "routine": "morning",
-      "frequency": "daily",
-      "targetCount": 4,
-      "emoji": "💪",
-      "notes": "",
-      "history": {
-        "2026-06-16": true
-      }
-    },
     {
       "id": "488b3611-7c7c-412f-8e7a-45fbba7fe56d",
       "title": "Vitamins",
@@ -623,7 +627,7 @@
     {
       "id": "22fe2656-eab1-4254-9e07-911d98c1613e",
       "sphere": "iowa",
-      "name": "Health",
+      "name": "HealthD FEWFW EF WE FWEF WEF W",
       "emoji": "🥦",
       "tagIds": [],
       "status": "on-track",
@@ -829,7 +833,7 @@
       "id": "0ec10d0d-5a79-487c-86fd-80c097765f0b",
       "name": "iowa",
       "labelColor": "emerald",
-      "description": "My private stuff"
+      "description": "My private stuff seaoifhweöigfh-wef weOFJEWofjweopJFEWåpofjwåepoJFÅOPWEjfÅPWEjfpweF"
     },
     {
       "id": "879439b2-4f58-42f8-a1d8-d7814bd62a3d",
@@ -912,16 +916,18 @@
   ],
   "quickNotes": [
     {
+      "id": "a2f11bed-e17d-43fd-b7dc-57d255aacf0f",
       "text": "не откладывай на завтра то, что можно забыть сегодня",
       "sphere": "iowa",
       "createdAt": "2026-06-20 13:18",
-      "id": "a2f11bed-e17d-43fd-b7dc-57d255aacf0f"
+      "isImportant": false
     },
     {
+      "id": "874a7ad0-bc8d-4f76-89cf-e1c745fc65c9",
       "text": "Не бойся, когда ты один. Бойся, когда ты два.",
       "sphere": "iowa",
       "createdAt": "2026-06-20 13:16",
-      "id": "874a7ad0-bc8d-4f76-89cf-e1c745fc65c9"
+      "isImportant": false
     },
     {
       "id": "4c283848-3775-4a35-8fba-45fdd7b4e1fa",
@@ -1008,5 +1014,5 @@
       "isImportant": false
     }
   ],
-  "currentTrackingDate": "2026-06-20"
+  "currentTrackingDate": "2026-06-22"
 }

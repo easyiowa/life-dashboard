@@ -488,7 +488,7 @@ function ContactRow({
               <Check className="w-2 h-2 opacity-50" />
             </span>
             {/* Bar + percentage — matches RecurringCard w-16 pattern */}
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
               <div className="w-16 h-1 bg-white/[0.05] rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full bg-gradient-to-r ${URGENCY_BAR[prog.urgency]} transition-all duration-700`}
@@ -507,8 +507,8 @@ function ContactRow({
         )}
       </div>
 
-      {/* Note icon with hover tooltip */}
-      <div className="relative flex-shrink-0">
+      {/* Note icon with hover tooltip — desktop only, hover-dependent */}
+      <div className="hidden md:block relative flex-shrink-0">
         <div className="group/tip">
           <button
             className={`p-1 rounded-md transition-all ${hasNotes ? "text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]" : "text-slate-800 cursor-default"}`}
@@ -554,8 +554,8 @@ function ContactRow({
         </div>
       </div>
 
-      {/* Delete (hover-revealed) */}
-      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+      {/* Delete (hover-revealed) — desktop only, hover-dependent */}
+      <div className="hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           className="w-6 h-6 rounded-md flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all"
@@ -633,52 +633,59 @@ export default function NetworkCard() {
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-violet-400" />
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Network & Relationships</h2>
-            <span className="text-[10px] text-slate-700 tabular-nums">{networkContacts.length}</span>
+            <span className="hidden md:inline text-[10px] text-slate-700 tabular-nums">{networkContacts.length}</span>
           </div>
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all"
           >
-            <Plus className="w-3 h-3" /> Add Connection
+            <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
           </button>
         </div>
 
         {/* Filter pills + group manager toggle */}
-        <div className="flex items-center gap-2 flex-wrap -mt-1">
-          <button
-            type="button"
-            onClick={() => setActiveFilter("__all__")}
-            className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-              isAll
-                ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-                : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
-            }`}
+        <div className="flex items-center gap-2 -mt-1">
+          {/* Pills — swipeable single row on mobile, wraps on desktop */}
+          <div
+            className="flex items-center gap-2 flex-1 min-w-0 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_left,transparent,black_32px,black_100%)]"
+            style={{ scrollbarWidth: "none" }}
           >
-            All {networkContacts.length > 0 && <span className="ml-1 opacity-60 text-[10px]">({networkContacts.length})</span>}
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter("__all__")}
+              className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                isAll
+                  ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
+                  : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
+              }`}
+            >
+              All {networkContacts.length > 0 && <span className="ml-1 opacity-60 text-[10px]">({networkContacts.length})</span>}
+            </button>
 
-          {relationshipGroups.map((g) => {
-            const cc    = COLOR_CLASSES[g.color];
-            const count = networkContacts.filter((c) => c.relationshipType === g.label).length;
-            const active = activeFilter === g.label;
-            return (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => setActiveFilter(g.label)}
-                className={`px-3 h-7 rounded-full text-[11px] font-medium border transition-all duration-150 ${active ? cc.pillActive : cc.pill}`}
-              >
-                {g.emoji} {g.label}
-                {count > 0 && <span className="ml-1 opacity-60 text-[10px]">({count})</span>}
-              </button>
-            );
-          })}
+            {relationshipGroups.map((g) => {
+              const cc    = COLOR_CLASSES[g.color];
+              const count = networkContacts.filter((c) => c.relationshipType === g.label).length;
+              const active = activeFilter === g.label;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setActiveFilter(g.label)}
+                  className={`flex-shrink-0 px-3 h-7 rounded-full text-[11px] font-medium border transition-all duration-150 ${active ? cc.pillActive : cc.pill}`}
+                >
+                  {g.emoji} {g.label}
+                  {count > 0 && <span className="ml-1 opacity-60 text-[10px]">({count})</span>}
+                </button>
+              );
+            })}
+          </div>
 
+          {/* Manage groups — anchored to the right of the swipe track so it never scrolls off-screen */}
           <button
             type="button"
             onClick={() => setIsGroupsModalOpen(true)}
             title="Manage groups"
-            className="w-7 h-7 rounded-full flex items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
+            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>

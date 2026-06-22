@@ -172,13 +172,16 @@ export default function MindfulCheckIn() {
         <span className="order-1 md:order-1 text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0 mr-1">
           How&apos;s your headspace?
         </span>
-        <div className="order-3 md:order-2 basis-full md:basis-auto flex items-center gap-2 flex-wrap">
+        <div
+          className="order-3 md:order-2 basis-full md:basis-auto flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)]"
+          style={{ scrollbarWidth: "none" }}
+        >
           {MOODS.map((m) => (
             <button
               key={m.key}
               type="button"
               onClick={() => handleMoodSelect(m.key)}
-              className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+              className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
                 activeMood === m.key ? m.pillActive : m.pillInactive
               }`}
             >

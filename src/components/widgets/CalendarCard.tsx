@@ -1,7 +1,7 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, ChevronRight, Menu } from "lucide-react";
-import { useRef, useState } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDashboard, type CalendarJump, type RecurringTask } from "@/context/DashboardContext";
 import { areaColor, type AreaColorSet } from "@/lib/areaColors";
@@ -84,16 +84,29 @@ export default function CalendarCard() {
   });
   const [mobileDayCount,   setMobileDayCount]   = useState<1 | 2 | 3>(1);
   const [monthPickerOpen,  setMonthPickerOpen]  = useState(false);
-  const [columnMenuOpen,   setColumnMenuOpen]   = useState(false);
   const [pickerMonthDate,  setPickerMonthDate]  = useState(() => new Date());
 
-  // Dropdowns are portaled to <body> so their z-index isn't trapped inside this
+  // Dropdown is portaled to <body> so its z-index isn't trapped inside this
   // card's own backdrop-blur stacking context (which would otherwise lose to
   // later sibling widget cards regardless of z-index value).
   const monthBtnRef     = useRef<HTMLButtonElement>(null);
-  const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
   const [monthPickerPos, setMonthPickerPos] = useState({ top: 0, left: 0 });
-  const [columnMenuPos,  setColumnMenuPos]  = useState({ top: 0, left: 0 });
+
+  // Mobile 1/2/3-day carousel — swipe replaces the old column-count menu
+  const mobileCarouselRef = useRef<HTMLDivElement>(null);
+  const mobileCarouselIndex = mobileDayCount - 1;
+
+  useEffect(() => {
+    const el = mobileCarouselRef.current;
+    if (el) el.scrollLeft = el.clientWidth * mobileCarouselIndex;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleMobileCarouselScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget;
+    const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1));
+    const nextCount = (Math.min(Math.max(index, 0), 2) + 1) as 1 | 2 | 3;
+    if (nextCount !== mobileDayCount) setMobileDayCount(nextCount);
+  }
 
   // Color resolution
   const sphereByName = new Map(spheres.map((s) => [s.name, s]));
@@ -176,12 +189,18 @@ export default function CalendarCard() {
 
   // ── Mobile column view ────────────────────────────────────────────────────────
 
-  const mobileDays = Array.from({ length: mobileDayCount }, (_, i) => {
-    const d = new Date(mobileActiveDate);
-    d.setDate(mobileActiveDate.getDate() + i);
-    return d;
-  });
-  const mobileGridColsClass = mobileDayCount === 1 ? "grid-cols-1" : mobileDayCount === 2 ? "grid-cols-2" : "grid-cols-3";
+  function getMobileDays(count: 1 | 2 | 3): Date[] {
+    return Array.from({ length: count }, (_, i) => {
+      const d = new Date(mobileActiveDate);
+      d.setDate(mobileActiveDate.getDate() + i);
+      return d;
+    });
+  }
+  const MOBILE_GRID_COLS_CLASS: Record<1 | 2 | 3, string> = {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+  };
 
   function renderDayColumn(day: Date) {
     const dow          = (day.getDay() + 6) % 7; // Mon = 0
@@ -336,7 +355,7 @@ export default function CalendarCard() {
           </div>
         </div>
 
-        {/* Mobile controls — month selector + column-count hamburger */}
+        {/* Mobile controls — month selector; day-count is now set by swiping the carousel below */}
         <div className="flex sm:hidden items-center gap-2">
           <button
             ref={monthBtnRef}
@@ -344,25 +363,11 @@ export default function CalendarCard() {
               const rect = monthBtnRef.current?.getBoundingClientRect();
               if (rect) setMonthPickerPos({ top: rect.bottom + 8, left: rect.right - 256 });
               setPickerMonthDate(new Date(mobileActiveDate));
-              setColumnMenuOpen(false);
               setMonthPickerOpen((o) => !o);
             }}
             className="px-2.5 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-slate-300 text-xs font-medium transition-all duration-150"
           >
             {mobileActiveDate.toLocaleDateString("en-US", { month: "long" })}
-          </button>
-
-          <button
-            ref={hamburgerBtnRef}
-            onClick={() => {
-              const rect = hamburgerBtnRef.current?.getBoundingClientRect();
-              if (rect) setColumnMenuPos({ top: rect.bottom + 8, left: rect.right - 112 });
-              setMonthPickerOpen(false);
-              setColumnMenuOpen((o) => !o);
-            }}
-            className="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center justify-center transition-all duration-150"
-          >
-            <Menu className="w-3.5 h-3.5 text-slate-400" />
           </button>
         </div>
       </div>
@@ -424,34 +429,34 @@ export default function CalendarCard() {
         document.body
       )}
 
-      {columnMenuOpen && createPortal(
-        <>
-          <div className="fixed inset-0 z-[100]" onClick={() => setColumnMenuOpen(false)} />
-          <div
-            className="fixed z-[110] w-28 bg-[#0d1426] border border-white/[0.12] rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5"
-            style={{ top: columnMenuPos.top, left: columnMenuPos.left }}
-          >
-            {([1, 2, 3] as const).map((n) => (
-              <button
-                key={n}
-                onClick={() => { setMobileDayCount(n); setColumnMenuOpen(false); }}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-all duration-150 ${
-                  mobileDayCount === n
-                    ? "bg-violet-600/25 text-violet-300"
-                    : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
-                }`}
-              >
-                {n} day{n > 1 ? "s" : ""}
-              </button>
-            ))}
-          </div>
-        </>,
-        document.body
-      )}
+      {/* ── MOBILE COLUMN VIEW — swipeable 1/2/3-day carousel ───────────────────── */}
+      <div className="sm:hidden flex flex-col gap-3">
+        <div
+          ref={mobileCarouselRef}
+          onScroll={handleMobileCarouselScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {([1, 2, 3] as const).map((n) => (
+            <div key={n} className="w-full flex-shrink-0 snap-center">
+              <div className={`grid ${MOBILE_GRID_COLS_CLASS[n]} gap-2`}>
+                {getMobileDays(n).map((day) => renderDayColumn(day))}
+              </div>
+            </div>
+          ))}
+        </div>
 
-      {/* ── MOBILE COLUMN VIEW ───────────────────────────────────────────────────── */}
-      <div className={`grid ${mobileGridColsClass} gap-2 sm:hidden`}>
-        {mobileDays.map((day) => renderDayColumn(day))}
+        {/* Pagination dots */}
+        <div className="flex items-center justify-center gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-200 ${
+                mobileCarouselIndex === i ? "w-4 bg-violet-400" : "w-1.5 bg-white/20"
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* ── DESKTOP VIEWS ─────────────────────────────────────────────────────────── */}

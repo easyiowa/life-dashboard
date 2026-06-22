@@ -687,9 +687,8 @@ function TodaySuggestions({ onDismiss }: { onDismiss: () => void }) {
 // ── Card ──────────────────────────────────────────────────────────────────────
 
 export default function DailyFocusQueueCard() {
-  const { tasks, currentTrackingDate, requestNightlyReview, historicalLogs } = useDashboard();
+  const { tasks, recurringTasks, currentTrackingDate, requestNightlyReview, historicalLogs } = useDashboard();
   const [showPicker,         setShowPicker]         = useState(false);
-  const [collapsed,          setCollapsed]          = useState(false);
   const [rolloverDismissed,    setRolloverDismissed]    = useState(false);
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
   const [inspectTask,          setInspectTask]          = useState<Task | null>(null);
@@ -701,6 +700,23 @@ export default function DailyFocusQueueCard() {
   const commitments   = queuedTasks.filter((t) => getIntent(t) !== "maybe");
   const maybes        = queuedTasks.filter((t) => getIntent(t) === "maybe");
   const doneCount     = commitments.filter((t) => t.done).length;
+
+  // Nothing queued and nothing actionable suggested for today — used to decide
+  // whether a mobile mount should start collapsed to save vertical space.
+  const hasRolloverSuggestions  = !!(yesterdayLog && yesterdayLog.rolledOverTasks.length > 0);
+  const hasDeadlineSuggestions  = tasks.some(
+    (t) => t.deadline === currentTrackingDate && !t.done && (t.queuedDate ?? null) !== currentTrackingDate
+  );
+  const hasRecurringSuggestions = recurringTasks.some((rt) => computeCountdown(rt).daysLeft <= 0);
+  const hasNothingQueued = queuedTasks.length === 0
+    && !hasRolloverSuggestions && !hasDeadlineSuggestions && !hasRecurringSuggestions;
+
+  // Lazy initializer runs once on mount only — later taps on the chevron toggle
+  // freely via setCollapsed and are never overridden by this check again.
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 768 && hasNothingQueued;
+  });
 
   return (
     <>

@@ -64,7 +64,7 @@ export default function TasksCard() {
               className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all duration-150"
             >
               <Plus className="w-3 h-3" />
-              Add Task
+              <span className="hidden md:inline">Add</span>
             </button>
           </div>
         </div>

@@ -594,7 +594,7 @@ function SortablePill({
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 cursor-grab active:cursor-grabbing select-none touch-none ${
+      className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 cursor-grab active:cursor-grabbing select-none touch-none ${
         isActive ? pill.pillActive : pill.pillInactive
       }`}
     >
@@ -750,7 +750,7 @@ export default function QuickNotesCard() {
         defaultNotes={taskModalDefaults.notes}
       />
 
-      <div className="w-full rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col h-full min-h-[340px]">
+      <div className="w-full rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col h-full md:min-h-[340px]">
 
         {/* Header */}
         <div className="flex items-center justify-between flex-shrink-0">
@@ -764,12 +764,15 @@ export default function QuickNotesCard() {
             onClick={() => setShowAllNotesModal(true)}
             className="text-[11px] font-normal text-violet-400/70 hover:text-violet-300 hover:underline transition-colors whitespace-nowrap"
           >
-            View Archive →
+            View all →
           </button>
         </div>
 
         {/* Area tabs — drag to reorder, order persisted to localStorage */}
-        <div className="flex items-center gap-2 flex-wrap mt-4 flex-shrink-0">
+        <div
+          className="flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal mt-4 flex-shrink-0 [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_left,transparent,black_32px,black_100%)]"
+          style={{ scrollbarWidth: "none" }}
+        >
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedSpheres.map((s) => s.id)} strategy={horizontalListSortingStrategy}>
               {orderedSpheres.map((sphere) => (
@@ -787,7 +790,7 @@ export default function QuickNotesCard() {
           <button
             type="button"
             onClick={() => { hasUserChosen.current = true; setActiveSphereId(ALL_TAB); setProjectId(""); }}
-            className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+            className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
               isAll
                 ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
                 : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
@@ -830,14 +833,14 @@ export default function QuickNotesCard() {
                 Save
               </button>
             </div>
-            <p className="text-[10px] text-slate-700">⌘ + Enter to save quickly</p>
+            <p className="hidden md:block text-[10px] text-slate-700">⌘ + Enter to save quickly</p>
           </form>
         )}
 
         {/* Notes feed */}
-        <div className="flex-1 overflow-y-auto mt-3 flex flex-col gap-1.5 pr-1 min-h-0">
+        <div className="md:flex-1 overflow-y-auto mt-3 flex flex-col gap-1.5 pr-1 min-h-0">
           {todayNotes.length === 0 ? (
-            <p className="text-xs text-slate-700 text-center py-4">
+            <p className="hidden md:block text-xs text-slate-700 text-center py-4">
               {isAll ? "No notes today across any area." : `No notes today for ${activeSphere}.`}
             </p>
           ) : (

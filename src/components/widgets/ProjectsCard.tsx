@@ -335,7 +335,7 @@ function ManageSpheresModal({ onClose }: { onClose: () => void }) {
                 onClick={handleAdd}
                 className="px-3 h-9 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs text-white font-medium transition-all flex-shrink-0 flex items-center gap-1"
               >
-                <Plus className="w-3 h-3" /> Add
+                <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
               </button>
             </div>
             {newErr && <p className="text-[10px] text-red-400 -mt-1">Name is required.</p>}
@@ -450,7 +450,7 @@ function TaskRow({
           {hasNote && (
             <span
               ref={noteIconRef}
-              className="flex-shrink-0 flex items-center justify-center p-1 text-slate-500 hover:text-purple-400 cursor-pointer transition-colors"
+              className="hidden md:flex flex-shrink-0 items-center justify-center p-1 text-slate-500 hover:text-purple-400 cursor-pointer transition-colors"
               onClick={(e) => e.stopPropagation()}
               onMouseEnter={() => {
                 const r = noteIconRef.current?.getBoundingClientRect();
@@ -476,10 +476,10 @@ function TaskRow({
             <button
               onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, task.intent ?? "finish", task.dailyTargetMinutes ?? null); }}
               title={isQueued ? "Remove from today's queue" : "Queue for today"}
-              className={`flex-shrink-0 p-1 rounded transition-all ${
+              className={`flex-shrink-0 p-1 rounded transition-all ml-auto md:ml-0 ${
                 isQueued
                   ? "text-purple-400"
-                  : "opacity-0 group-hover:opacity-100 text-slate-500 hover:text-purple-400"
+                  : "opacity-100 md:opacity-0 md:group-hover:opacity-100 text-slate-500 hover:text-purple-400"
               }`}
             >
               <Target className="w-3.5 h-3.5" />
@@ -491,7 +491,7 @@ function TaskRow({
             <button
               onClick={(e) => { e.stopPropagation(); isThisTaskActive ? pauseGlobalTimer() : startGlobalTimer(task.id); }}
               aria-label={isThisTaskActive ? "Pause focus session" : "Start focus session"}
-              className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
+              className={`hidden md:flex flex-shrink-0 w-7 h-7 rounded-full items-center justify-center transition-all duration-200 ${
                 isThisTaskActive
                   ? "bg-violet-500/25 text-violet-300 ring-1 ring-violet-400/40 shadow-[0_0_10px_rgba(139,92,246,0.35)]"
                   : "bg-white/[0.04] text-slate-500 border border-white/[0.07] opacity-0 group-hover:opacity-100 hover:bg-violet-500/20 hover:text-violet-400 hover:border-violet-500/30"
@@ -505,7 +505,7 @@ function TaskRow({
           <button
             onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
             aria-label="Delete task"
-            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-600 hover:text-rose-400 transition-colors cursor-pointer"
+            className="hidden md:flex flex-shrink-0 w-7 h-7 rounded-full items-center justify-center opacity-0 group-hover:opacity-100 text-slate-600 hover:text-rose-400 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -637,49 +637,54 @@ export default function ProjectsCard() {
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Projects &amp; Tasks</h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">{doneTasks}/{totalTasks} tasks</span>
+            <span className="hidden md:inline text-xs text-slate-500">{doneTasks}/{totalTasks} tasks</span>
             <button
               onClick={() => setShowModal(true)}
               className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all duration-150"
             >
-              <Plus className="w-3 h-3" /> Add Task
+              <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
             </button>
           </div>
         </div>
 
         {/* Sphere tabs + manage button */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Deduplicated sphere pills */}
-          {[...new Map(spheres.map((s) => [s.id, s])).values()].map((sphere) => {
-            const isActive = activeSphereObj?.id === sphere.id;
-            const pill     = areaColor(sphere.labelColor);
-            return (
-              <button
-                key={sphere.id}
-                onClick={() => setActiveSphereId(sphere.id)}
-                className={`px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-                  isActive ? pill.pillActive : pill.pillInactive
-                }`}
-              >
-                {sphere.name}
-              </button>
-            );
-          })}
-          {/* Manage spheres — inline after pills, matches NetworkCard gear style */}
+        <div className="flex items-center gap-2">
+          {/* Deduplicated sphere pills — swipeable single row on mobile, wraps on desktop */}
+          <div
+            className="flex items-center gap-2 flex-1 min-w-0 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_left,transparent,black_32px,black_100%)]"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {[...new Map(spheres.map((s) => [s.id, s])).values()].map((sphere) => {
+              const isActive = activeSphereObj?.id === sphere.id;
+              const pill     = areaColor(sphere.labelColor);
+              return (
+                <button
+                  key={sphere.id}
+                  onClick={() => setActiveSphereId(sphere.id)}
+                  className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                    isActive ? pill.pillActive : pill.pillInactive
+                  }`}
+                >
+                  {sphere.name}
+                </button>
+              );
+            })}
+          </div>
+          {/* Manage spheres — anchored to the right of the swipe track so it never scrolls off-screen */}
           <button
             onClick={() => setShowManageSpheres(true)}
             title="Manage areas"
-            className="w-7 h-7 rounded-full flex items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
+            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
-          {/* Expand / Collapse All — pushed to far right */}
+          {/* Expand / Collapse All — pushed to far right, desktop only */}
           {sphereProjects.length > 0 && (
             <button
               type="button"
               onClick={handleToggleAllProjects}
               title={isAnyProjectOpen ? "Collapse All Projects" : "Expand All Projects"}
-              className="ml-auto h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] text-[11px] font-medium flex items-center gap-1.5 transition-colors duration-150"
+              className="hidden md:flex flex-shrink-0 h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] text-[11px] font-medium items-center gap-1.5 transition-colors duration-150"
             >
               {isAnyProjectOpen ? "▲ Collapse All" : "▼ Expand All"}
             </button>
@@ -688,14 +693,14 @@ export default function ProjectsCard() {
 
         {/* Sub-header */}
         <div className="flex items-center justify-between -mt-1 pb-1 border-b border-white/[0.05]">
-          <div>
+          <div className="min-w-0 flex-1">
             {activeSphereObj?.description && (
-              <p className={`text-xs text-slate-400 font-sans border-l-2 pl-2 ${areaColor(activeSphereObj.labelColor).borderAccent}`}>
+              <p className={`text-xs text-slate-400 font-sans border-l-2 pl-2 truncate whitespace-nowrap overflow-hidden ${areaColor(activeSphereObj.labelColor).borderAccent}`}>
                 {activeSphereObj.description}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
             <div className="h-1.5 w-16 rounded-full bg-white/[0.05] overflow-hidden">
               <div
                 className={`h-full rounded-full bg-gradient-to-r ${barGradient(avgProgress)} transition-all duration-700`}
@@ -726,12 +731,12 @@ export default function ProjectsCard() {
                   className="group flex flex-col gap-1.5 px-3 py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-slate-600 w-4 flex-shrink-0">
+                    <span className="hidden md:block text-[10px] font-mono text-slate-600 w-4 flex-shrink-0">
                       {String(project.index + 1).padStart(2, "0")}
                     </span>
-                    <span className="text-sm font-medium text-white flex-1 leading-none flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-white flex-1 leading-none flex items-center gap-1.5 min-w-0">
                       {project.emoji && <span className="text-base leading-none flex-shrink-0">{project.emoji}</span>}
-                      {project.name}
+                      <span className="truncate whitespace-nowrap overflow-hidden">{project.name}</span>
                     </span>
                     {/* Visible tags — up to 3, then overflow tooltip */}
                     {project.allTagObjs.slice(0, 3).map((tag) => (
@@ -761,12 +766,12 @@ export default function ProjectsCard() {
                         </div>
                       </div>
                     )}
-                    <span className="text-sm font-semibold text-white w-10 text-right tabular-nums">{project.progress}%</span>
+                    <span className="hidden md:inline-block text-sm font-semibold text-white w-10 text-right tabular-nums">{project.progress}%</span>
                     {/* Edit button */}
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditProjectId(project.id); }}
                       title="Edit project"
-                      className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-600 opacity-0 group-hover:opacity-100 hover:text-violet-400 hover:bg-violet-500/10 transition-all duration-150"
+                      className="hidden md:flex flex-shrink-0 w-6 h-6 rounded-md items-center justify-center text-slate-600 opacity-0 group-hover:opacity-100 hover:text-violet-400 hover:bg-violet-500/10 transition-all duration-150"
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
@@ -799,10 +804,10 @@ export default function ProjectsCard() {
                         </>
                       )}
                       {openTasks > 0 && (
-                        <>
+                        <span className="hidden md:contents">
                           <span className="text-slate-700 text-[10px]">·</span>
                           <span className="text-[10px] text-violet-400">{openTasks} open</span>
-                        </>
+                        </span>
                       )}
                       <div className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${status.color} ${status.bg}`}>
                         {status.icon}{status.label}

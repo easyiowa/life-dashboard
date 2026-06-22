@@ -93,7 +93,7 @@ export default function ManageAdminsTab() {
             disabled={adding || !email.trim()}
             className="h-9 px-3 rounded-xl text-xs font-semibold text-purple-300 bg-purple-600/20 border border-purple-500/40 disabled:opacity-40 transition-all flex items-center gap-1.5 shrink-0"
           >
-            {adding ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Plus className="w-3 h-3" /> Add Admin</>}
+            {adding ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span></>}
           </button>
         </div>
         {error && <p className="text-[10px] text-red-400 mt-1">{error}</p>}

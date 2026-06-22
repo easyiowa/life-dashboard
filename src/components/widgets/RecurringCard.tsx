@@ -226,9 +226,9 @@ function RecurringRow({
   return (
     <div
       onClick={() => onInspect(task)}
-      className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 py-2.5 sm:py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
+      className="group flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-3 px-3 py-2.5 sm:py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
     >
-      {/* ── Top / Left: checkbox + title ──────────────────────────────────── */}
+      {/* ── Top / Left: checkbox + title + (mobile) due pill ────────────────── */}
       <div className="flex items-center gap-3 min-w-0 sm:flex-1">
         <button
           onClick={(e) => { e.stopPropagation(); completeRecurringTask(task.id); }}
@@ -237,15 +237,19 @@ function RecurringRow({
         >
           <CheckCircle2 className="w-3 h-3" />
         </button>
-        <span className="text-sm font-medium text-slate-200 leading-none truncate">
+        <span className="text-sm font-medium text-slate-200 leading-none truncate flex-1 min-w-0">
           {task.title}
+        </span>
+        {/* Due pill — sits on the title row on mobile, hidden here on desktop (shown in the bottom row instead) */}
+        <span className={`md:hidden inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0 ${URGENCY_BADGE[urgency]}`}>
+          {label}
         </span>
       </div>
 
-      {/* ── Bottom / Right: cadence · badge · progress · delete ───────────── */}
+      {/* ── Bottom / Right: cadence · badge · progress · delete — desktop only, collapses entirely on mobile ── */}
       {/* pl-9 on mobile = checkbox(w-6 = 24px) + gap-3(12px) = 36px — aligns under title */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 pl-9 sm:pl-0 sm:ml-auto justify-between sm:justify-end">
-        <span className="text-[10px] text-slate-500 flex-shrink-0">
+      <div className="hidden md:flex flex-wrap items-center gap-2 sm:gap-3 pl-9 sm:pl-0 sm:ml-auto justify-between sm:justify-end">
+        <span className="hidden md:block text-[10px] text-slate-500 flex-shrink-0">
           {task.intervalLabel}{task.completionCount > 0 ? ` · 🔄 ${task.completionCount}x` : ""}
         </span>
 
@@ -255,10 +259,11 @@ function RecurringRow({
               {new Date(task.lastDoneDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </span>
           )}
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0 ${URGENCY_BADGE[urgency]}`}>
+          {/* Due pill — desktop only here (mobile shows it up on the title row) */}
+          <span className={`hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0 ${URGENCY_BADGE[urgency]}`}>
             {label}
           </span>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
             <div className="w-16 sm:w-20 h-1 bg-white/[0.05] rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${URGENCY_BAR[urgency]}`}
@@ -358,18 +363,21 @@ export default function RecurringCard() {
             className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all duration-150"
           >
             <Plus className="w-3 h-3" />
-            Add
+            <span className="hidden md:inline">Add</span>
           </button>
         </div>
 
-        {/* Sphere tabs */}
-        <div className="flex flex-wrap gap-2">
+        {/* Sphere tabs — swipeable single row on mobile, wraps on desktop */}
+        <div
+          className="flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_left,transparent,black_32px,black_100%)]"
+          style={{ scrollbarWidth: "none" }}
+        >
 
           {/* Global overdue/due-now quick filter */}
           {nowCount > 0 && (
             <button
               onClick={() => setActiveSphereId(NOW_FILTER)}
-              className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
                 isNowFilter
                   ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.2)]"
                   : "bg-red-500/8 border-red-500/20 text-red-400/80 hover:bg-red-500/15 hover:border-red-500/35"
@@ -387,7 +395,7 @@ export default function RecurringCard() {
               <button
                 key={sphere.id}
                 onClick={() => setActiveSphereId(sphere.id)}
-                className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
                   activeSphereObj?.id === sphere.id ? pill.pillActive : pill.pillInactive
                 }`}
               >
@@ -398,7 +406,7 @@ export default function RecurringCard() {
               </button>
             );
           })}
-          <span className="ml-auto text-xs self-center text-slate-500">
+          <span className="hidden md:block ml-auto flex-shrink-0 text-xs self-center text-slate-500">
             {visible.length} task{visible.length !== 1 ? "s" : ""}
           </span>
         </div>
