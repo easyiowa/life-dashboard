@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
 import { NotebookPen, Trash2, X, Search, Zap, ChevronDown } from "lucide-react";
 import { useDashboard, type QuickNote, type Sphere } from "@/context/DashboardContext";
-import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import ChecklistEditor, { type ChecklistEditorHandle } from "@/components/ui/ChecklistEditor";
 import { areaColor } from "@/lib/areaColors";
 import TaskModal from "@/components/TaskModal";
 import {
@@ -40,6 +40,39 @@ function toTaskTitle(text: string): string {
   return (slug || "Review Note") + "...";
 }
 
+// note.text is saved as HTML (so checklist lines render correctly) — every other consumer
+// (search, task-title generation, the notes copied onto a converted task) wants the plain
+// words, not markup, so they all go through this first. Block-level boundaries (<div>/<p>/<br>)
+// are preserved as newlines so toTaskTitle's "first line" logic keeps working unchanged.
+function stripHtml(html: string): string {
+  if (typeof window === "undefined") return html.replace(/<[^>]+>/g, " ").trim();
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  tmp.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+  tmp.querySelectorAll("div, p").forEach((block) => block.append("\n"));
+  return (tmp.textContent ?? "").replace(/\n{2,}/g, "\n").trim();
+}
+
+// Click handler shared by both saved-note views (today's feed + archive). Toggling a checklist
+// circle inside already-saved HTML flips its data-checked attribute directly on the DOM (the
+// same in-place mutation ChecklistEditor itself uses), then persists the container's resulting
+// innerHTML back to the note via updateQuickNoteText — so a stored checklist stays interactive
+// after the page reloads, not just live in the composer.
+function makeChecklistToggleHandler(noteId: string, updateQuickNoteText: (id: string, text: string) => void) {
+  return (e: React.MouseEvent<HTMLDivElement>) => {
+    const circle = (e.target as HTMLElement).closest(".qn-check-circle") as HTMLElement | null;
+    if (!circle) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const line = circle.closest(".qn-check-line") as HTMLElement | null;
+    if (!line) return;
+    const next = line.dataset.checked !== "true";
+    line.dataset.checked = String(next);
+    circle.setAttribute("aria-checked", String(next));
+    updateQuickNoteText(noteId, e.currentTarget.innerHTML);
+  };
+}
+
 // ── Note row (today feed) ─────────────────────────────────────────────────────
 
 function NoteRow({
@@ -48,6 +81,7 @@ function NoteRow({
   onDelete,
   onToggleImportant,
   onConvertToTask,
+  onUpdateText,
   sphereColor,
 }: {
   note: QuickNote;
@@ -55,14 +89,17 @@ function NoteRow({
   onDelete: () => void;
   onToggleImportant: () => void;
   onConvertToTask: () => void;
+  onUpdateText: (id: string, text: string) => void;
   sphereColor?: string;
 }) {
   const ac = areaColor(sphereColor);
   return (
     <div className={`group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg w-full transition-all duration-150 hover:bg-white/[0.03]`}>
-      <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
-        {note.text}
-      </p>
+      <div
+        className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words"
+        onClick={makeChecklistToggleHandler(note.id, onUpdateText)}
+        dangerouslySetInnerHTML={{ __html: note.text }}
+      />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
@@ -123,21 +160,25 @@ function ArchiveNoteItem({
   onDelete,
   onToggleImportant,
   onConvertToTask,
+  onUpdateText,
 }: {
   note: QuickNote;
   spheres: Sphere[];
   onDelete: () => void;
   onToggleImportant: () => void;
   onConvertToTask: () => void;
+  onUpdateText: (id: string, text: string) => void;
 }) {
   const ac = areaColor(spheres.find((s) => s.name === note.sphere)?.labelColor);
   return (
     <div
       className={`group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg transition-all hover:bg-white/[0.03]`}
     >
-      <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
-        {note.text}
-      </p>
+      <div
+        className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words"
+        onClick={makeChecklistToggleHandler(note.id, onUpdateText)}
+        dangerouslySetInnerHTML={{ __html: note.text }}
+      />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
@@ -307,7 +348,7 @@ function NoteSectionNode({
 }
 
 function NoteDayAccordion({
-  group, isOpen, onToggle, spheres, onDelete, onToggleImportant, onConvertToTask,
+  group, isOpen, onToggle, spheres, onDelete, onToggleImportant, onConvertToTask, onUpdateText,
 }: {
   group: NoteDayGroup;
   isOpen: boolean;
@@ -316,6 +357,7 @@ function NoteDayAccordion({
   onDelete: (id: string) => void;
   onToggleImportant: (id: string) => void;
   onConvertToTask: (note: QuickNote) => void;
+  onUpdateText: (id: string, text: string) => void;
 }) {
   return (
     <div className="rounded-lg border border-white/[0.04] overflow-hidden">
@@ -342,6 +384,7 @@ function NoteDayAccordion({
               onDelete={() => onDelete(note.id)}
               onToggleImportant={() => onToggleImportant(note.id)}
               onConvertToTask={() => onConvertToTask(note)}
+              onUpdateText={onUpdateText}
             />
           ))}
         </div>
@@ -359,6 +402,7 @@ function ArchiveModal({
   onDelete,
   onToggleImportant,
   onConvertToTask,
+  onUpdateText,
 }: {
   notes: QuickNote[];
   spheres: Sphere[];
@@ -366,6 +410,7 @@ function ArchiveModal({
   onDelete: (id: string) => void;
   onToggleImportant: (id: string) => void;
   onConvertToTask: (note: QuickNote) => void;
+  onUpdateText: (id: string, text: string) => void;
 }) {
   const [query,          setQuery]          = useState("");
   const [favoritesOnly,  setFavoritesOnly]  = useState(false);
@@ -376,7 +421,7 @@ function ArchiveModal({
     let list = notes;
     if (favoritesOnly) list = list.filter((n) => n.isImportant);
     const q = query.toLowerCase().trim();
-    if (q) list = list.filter((n) => n.text.toLowerCase().includes(q));
+    if (q) list = list.filter((n) => stripHtml(n.text).toLowerCase().includes(q));
     return list;
   }, [notes, query, favoritesOnly]);
 
@@ -515,6 +560,7 @@ function ArchiveModal({
                       onDelete={onDelete}
                       onToggleImportant={onToggleImportant}
                       onConvertToTask={onConvertToTask}
+                      onUpdateText={onUpdateText}
                     />
                   ))}
                 </NoteSectionNode>
@@ -538,6 +584,7 @@ function ArchiveModal({
                       onDelete={onDelete}
                       onToggleImportant={onToggleImportant}
                       onConvertToTask={onConvertToTask}
+                      onUpdateText={onUpdateText}
                     />
                   ))}
                 </NoteSectionNode>
@@ -562,6 +609,7 @@ function ArchiveModal({
                       onDelete={onDelete}
                       onToggleImportant={onToggleImportant}
                       onConvertToTask={onConvertToTask}
+                      onUpdateText={onUpdateText}
                     />
                   ))}
                 </NoteSectionNode>
@@ -608,7 +656,7 @@ function SortablePill({
 export default function QuickNotesCard() {
   const {
     spheres, projects, quickNotes,
-    addQuickNote, deleteQuickNote, toggleQuickNoteImportant,
+    addQuickNote, deleteQuickNote, toggleQuickNoteImportant, updateQuickNoteText,
   } = useDashboard();
 
   // Persisted sphere ordering — saved to localStorage so custom order survives refresh
@@ -639,9 +687,10 @@ export default function QuickNotesCard() {
   // user interacts with the widget.
   const hasUserChosen = useRef(false);
 
-  const [text,              setText]              = useState("");
+  const [text,              setText]              = useState(""); // HTML — mirrors the ChecklistEditor's live content
   const [projectId,         setProjectId]         = useState("");
   const [showAllNotesModal, setShowAllNotesModal] = useState(false);
+  const editorRef = useRef<ChecklistEditorHandle>(null);
 
   // Task conversion modal state
   const [taskModalOpen,     setTaskModalOpen]     = useState(false);
@@ -706,27 +755,25 @@ export default function QuickNotesCard() {
 
   function handleConvertToTask(note: QuickNote) {
     setTaskModalDefaults({
-      title:  toTaskTitle(note.text),
-      notes:  note.text,
+      title:  toTaskTitle(stripHtml(note.text)),
+      notes:  stripHtml(note.text),
       sphere: note.sphere,
     });
     setTaskModalOpen(true);
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = text.trim();
-    if (!trimmed || isAll) return;
-    addQuickNote(trimmed, activeSphere, projectId || undefined);
+  function submitNote() {
+    const plain = stripHtml(text).trim();
+    if (!plain || isAll) return;
+    addQuickNote(text, activeSphere, projectId || undefined);
     setText("");
     setProjectId("");
+    editorRef.current?.clear();
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-      e.preventDefault();
-      handleSubmit(e as unknown as React.FormEvent);
-    }
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    submitNote();
   }
 
   return (
@@ -739,6 +786,7 @@ export default function QuickNotesCard() {
           onDelete={deleteQuickNote}
           onToggleImportant={toggleQuickNoteImportant}
           onConvertToTask={(note) => { setShowAllNotesModal(false); handleConvertToTask(note); }}
+          onUpdateText={updateQuickNoteText}
         />
       )}
 
@@ -770,7 +818,7 @@ export default function QuickNotesCard() {
 
         {/* Area tabs — drag to reorder, order persisted to localStorage */}
         <div
-          className="flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal mt-4 flex-shrink-0 [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_left,transparent,black_32px,black_100%)]"
+          className="flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal mt-4 flex-shrink-0 [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: "none" }}
         >
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -792,7 +840,7 @@ export default function QuickNotesCard() {
             onClick={() => { hasUserChosen.current = true; setActiveSphereId(ALL_TAB); setProjectId(""); }}
             className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
               isAll
-                ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
+                ? "bg-violet-600 text-white border-transparent md:shadow-[0_0_12px_rgba(139,92,246,0.3)]"
                 : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
             }`}
           >
@@ -805,20 +853,19 @@ export default function QuickNotesCard() {
           <p className="mt-4 text-[11px] text-slate-600 flex-shrink-0">Select an area above to add a note.</p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4 flex-shrink-0">
-            <AutoExpandingTextarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={handleKeyDown}
+            <ChecklistEditor
+              ref={editorRef}
+              onChange={setText}
+              onSubmitShortcut={submitNote}
               placeholder="Capture an idea before it slips away…"
-              minRows={2}
               maxHeightVariant="widget"
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-purple-500/50 focus:bg-white/[0.06] transition-colors"
+              className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] transition-colors"
             />
             <div className="flex items-center gap-2">
               <select
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-400 outline-none focus:border-purple-500/40 transition-colors appearance-none cursor-pointer"
+                className="hidden md:flex flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-400 outline-none focus:border-purple-500/40 transition-colors appearance-none cursor-pointer"
               >
                 <option value="" className="bg-[#0F1629]">No project</option>
                 {sphereProjects.map((p) => (
@@ -827,8 +874,8 @@ export default function QuickNotesCard() {
               </select>
               <button
                 type="submit"
-                disabled={!text.trim()}
-                className="px-4 h-8 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-medium transition-all flex-shrink-0"
+                disabled={!stripHtml(text).trim()}
+                className="w-full md:w-auto px-4 h-8 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-medium transition-all flex-shrink-0"
               >
                 Save
               </button>
@@ -852,6 +899,7 @@ export default function QuickNotesCard() {
                 onDelete={() => deleteQuickNote(note.id)}
                 onToggleImportant={() => toggleQuickNoteImportant(note.id)}
                 onConvertToTask={() => handleConvertToTask(note)}
+                onUpdateText={updateQuickNoteText}
                 sphereColor={spheres.find((s) => s.name === note.sphere)?.labelColor}
               />
             ))

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Users, Plus, X, Trash2, Pencil, FileText, Settings, Check, ChevronDown, CheckCircle2 } from "lucide-react";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 import DatePickerInput from "@/components/ui/DatePickerInput";
+import SwipeToDeleteRow from "@/components/ui/SwipeToDeleteRow";
 import {
   useDashboard,
   type NetworkContact,
@@ -18,14 +19,14 @@ import ManageGroupsModal from "@/components/modals/ManageGroupsModal";
 const COLOR_CLASSES: Record<GroupColor, {
   pill: string; pillActive: string; dot: string; bar: string;
 }> = {
-  rose:    { pill: "bg-rose-500/10 border-rose-500/20 text-rose-400",    pillActive: "bg-rose-500/25 border-rose-500/50 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.2)]",    dot: "bg-rose-400",    bar: "from-rose-600 to-rose-400"    },
-  sky:     { pill: "bg-sky-500/10 border-sky-500/20 text-sky-400",       pillActive: "bg-sky-500/25 border-sky-500/50 text-sky-300 shadow-[0_0_10px_rgba(14,165,233,0.2)]",       dot: "bg-sky-400",     bar: "from-sky-600 to-sky-400"       },
-  amber:   { pill: "bg-amber-500/10 border-amber-500/20 text-amber-400", pillActive: "bg-amber-500/25 border-amber-500/50 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]", dot: "bg-amber-400",   bar: "from-amber-500 to-amber-400"   },
-  emerald: { pill: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400", pillActive: "bg-emerald-500/25 border-emerald-500/50 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]", dot: "bg-emerald-400", bar: "from-emerald-600 to-emerald-400" },
-  violet:  { pill: "bg-violet-500/10 border-violet-500/20 text-violet-400", pillActive: "bg-violet-500/25 border-violet-500/50 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]", dot: "bg-violet-400",  bar: "from-violet-600 to-violet-400"  },
-  teal:    { pill: "bg-teal-500/10 border-teal-500/20 text-teal-400",    pillActive: "bg-teal-500/25 border-teal-500/50 text-teal-300 shadow-[0_0_10px_rgba(20,184,166,0.2)]",    dot: "bg-teal-400",    bar: "from-teal-600 to-teal-400"    },
-  orange:  { pill: "bg-orange-500/10 border-orange-500/20 text-orange-400", pillActive: "bg-orange-500/25 border-orange-500/50 text-orange-300 shadow-[0_0_10px_rgba(249,115,22,0.2)]", dot: "bg-orange-400",  bar: "from-orange-600 to-orange-400"  },
-  pink:    { pill: "bg-pink-500/10 border-pink-500/20 text-pink-400",    pillActive: "bg-pink-500/25 border-pink-500/50 text-pink-300 shadow-[0_0_10px_rgba(236,72,153,0.2)]",    dot: "bg-pink-400",    bar: "from-pink-600 to-pink-400"    },
+  rose:    { pill: "bg-rose-500/10 border-rose-500/20 text-rose-400",    pillActive: "bg-rose-500/25 border-rose-500/50 text-rose-300 md:shadow-[0_0_10px_rgba(244,63,94,0.2)]",    dot: "bg-rose-400",    bar: "from-rose-600 to-rose-400"    },
+  sky:     { pill: "bg-sky-500/10 border-sky-500/20 text-sky-400",       pillActive: "bg-sky-500/25 border-sky-500/50 text-sky-300 md:shadow-[0_0_10px_rgba(14,165,233,0.2)]",       dot: "bg-sky-400",     bar: "from-sky-600 to-sky-400"       },
+  amber:   { pill: "bg-amber-500/10 border-amber-500/20 text-amber-400", pillActive: "bg-amber-500/25 border-amber-500/50 text-amber-300 md:shadow-[0_0_10px_rgba(245,158,11,0.2)]", dot: "bg-amber-400",   bar: "from-amber-500 to-amber-400"   },
+  emerald: { pill: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400", pillActive: "bg-emerald-500/25 border-emerald-500/50 text-emerald-300 md:shadow-[0_0_10px_rgba(16,185,129,0.2)]", dot: "bg-emerald-400", bar: "from-emerald-600 to-emerald-400" },
+  violet:  { pill: "bg-violet-500/10 border-violet-500/20 text-violet-400", pillActive: "bg-violet-500/25 border-violet-500/50 text-violet-300 md:shadow-[0_0_10px_rgba(139,92,246,0.2)]", dot: "bg-violet-400",  bar: "from-violet-600 to-violet-400"  },
+  teal:    { pill: "bg-teal-500/10 border-teal-500/20 text-teal-400",    pillActive: "bg-teal-500/25 border-teal-500/50 text-teal-300 md:shadow-[0_0_10px_rgba(20,184,166,0.2)]",    dot: "bg-teal-400",    bar: "from-teal-600 to-teal-400"    },
+  orange:  { pill: "bg-orange-500/10 border-orange-500/20 text-orange-400", pillActive: "bg-orange-500/25 border-orange-500/50 text-orange-300 md:shadow-[0_0_10px_rgba(249,115,22,0.2)]", dot: "bg-orange-400",  bar: "from-orange-600 to-orange-400"  },
+  pink:    { pill: "bg-pink-500/10 border-pink-500/20 text-pink-400",    pillActive: "bg-pink-500/25 border-pink-500/50 text-pink-300 md:shadow-[0_0_10px_rgba(236,72,153,0.2)]",    dot: "bg-pink-400",    bar: "from-pink-600 to-pink-400"    },
 };
 
 const URGENCY_BAR: Record<string, string> = {
@@ -92,6 +93,50 @@ function computeProgress(contact: NetworkContact): ProgressResult | null {
   const label     = daysLeft === 0 ? "Today!" : daysLeft === 1 ? "1d" : daysLeft < 7 ? `${daysLeft}d` : daysLeft < 60 ? `${Math.ceil(daysLeft / 7)}w` : `${Math.ceil(daysLeft / 30)}mo`;
 
   return { daysLeft, progress, label, urgency, icon: nearest.icon, milestoneLabel: nearest.label, type: nearest.type, eventId: nearest.eventId };
+}
+
+const NOW_FILTER = "__now__";
+
+// Birthday falling on today's month/day — checked independently of computeProgress (which
+// skips the birthday candidate entirely once cycleCompleted is set, so a same-day birthday
+// could otherwise go undetected by the "Now" logic below) but still honors cycleCompleted
+// itself, so checking the contact off as done actually clears its own urgency.
+function isBirthdayToday(contact: NetworkContact): boolean {
+  if (!contact.birthday || contact.cycleCompleted) return false;
+  const today    = new Date();
+  const todayMmdd = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  return contact.birthday.slice(5) === todayMmdd;
+}
+
+// Single source of truth for "how urgent is this contact right now" — combines the nearest
+// follow-up/event date from computeProgress with a same-day-birthday override, so the Now
+// pill's visibility, the active filter's array, and the sort order can never drift apart.
+function effectiveDaysLeft(contact: NetworkContact): number | null {
+  const prog       = computeProgress(contact);
+  const progDays   = prog ? prog.daysLeft : null;
+  const birthdayDays = isBirthdayToday(contact) ? 0 : null;
+  if (progDays === null) return birthdayDays;
+  if (birthdayDays === null) return progDays;
+  return Math.min(progDays, birthdayDays);
+}
+
+// Today, overdue, due within the next 48 hours, or a same-day birthday — mirrors RecurringCard's "Now" quick filter.
+function isUrgentNow(contact: NetworkContact): boolean {
+  const d = effectiveDaysLeft(contact);
+  return d !== null && d <= 2;
+}
+
+// Strict ascending sort by effective urgency — most overdue/imminent (including same-day
+// birthdays) first, undated/no-signal contacts sink to the bottom.
+function sortByUrgency(contacts: NetworkContact[]): NetworkContact[] {
+  return [...contacts].sort((a, b) => {
+    const da = effectiveDaysLeft(a);
+    const db = effectiveDaysLeft(b);
+    if (da === null && db === null) return 0;
+    if (da === null) return 1;
+    if (db === null) return -1;
+    return da - db;
+  });
 }
 
 // ── Add / Edit contact modal ──────────────────────────────────────────────────
@@ -451,8 +496,8 @@ function ContactRow({
   const hasNotes = !!(contact.notes || contact.events.length > 0);
 
   return (
+    <SwipeToDeleteRow onDelete={onDelete} onClick={onEdit}>
     <div
-      onClick={onEdit}
       className="group flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-150 cursor-pointer"
     >
 
@@ -565,6 +610,7 @@ function ContactRow({
         </button>
       </div>
     </div>
+    </SwipeToDeleteRow>
   );
 }
 
@@ -577,10 +623,21 @@ export default function NetworkCard() {
     calendarJump, setCalendarJump,
   } = useDashboard();
 
-  const [activeFilter,     setActiveFilter]     = useState<string>("__all__");
+  // Lands on "Now" when something's actually urgent, otherwise the first category —
+  // never on an unselected/empty filter. Re-evaluated below once data has loaded,
+  // since networkContacts/relationshipGroups are frequently still empty at mount
+  // (Supabase hasn't resolved yet) when this initializer first runs.
+  const [activeFilter, setActiveFilter] = useState<string>(() => {
+    if (networkContacts.some(isUrgentNow)) return NOW_FILTER;
+    return relationshipGroups[0]?.label ?? "";
+  });
   const [showModal,        setShowModal]         = useState(false);
   const [editing,          setEditing]           = useState<NetworkContact | null>(null);
   const [isGroupsModalOpen,setIsGroupsModalOpen] = useState(false);
+
+  // Tracks whether the user has explicitly picked a pill, so the effect below only ever
+  // adjusts the *default* selection and never overrides a deliberate choice.
+  const hasUserChosenFilter = useRef(false);
 
   useEffect(() => {
     if (!calendarJump || calendarJump.type !== "contact") return;
@@ -588,10 +645,43 @@ export default function NetworkCard() {
     if (contact) { setEditing(contact); setCalendarJump(null); }
   }, [calendarJump]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isAll    = activeFilter === "__all__";
-  const visible  = isAll
-    ? networkContacts
-    : networkContacts.filter((c) => c.relationshipType === activeFilter);
+  const nowCount     = networkContacts.filter(isUrgentNow).length;
+  const isKnownGroup = relationshipGroups.some((g) => g.label === activeFilter);
+
+  // Same race-condition fix as the lazy initializer above, but re-checked on every data
+  // change: once contacts/groups actually arrive, move off the stale default — but only
+  // if the user hasn't already made their own selection.
+  useEffect(() => {
+    if (hasUserChosenFilter.current) return;
+    if (nowCount > 0) {
+      if (activeFilter !== NOW_FILTER) setActiveFilter(NOW_FILTER);
+    } else if (!isKnownGroup && activeFilter !== NOW_FILTER) {
+      // The filter points at a category that no longer exists (or hasn't loaded yet).
+      if (relationshipGroups[0]?.label) setActiveFilter(relationshipGroups[0].label);
+    }
+  }, [nowCount, relationshipGroups]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // If the "Now" tab the user is actively viewing empties out — e.g. they just checked off
+  // the last urgent contact — hop to the first category instead of leaving them stranded on
+  // a vanished pill. Unlike the effect above, this always runs regardless of whether the
+  // selection was user-chosen, since it's reacting to a live state change, not overriding
+  // a fresh deliberate pick.
+  useEffect(() => {
+    if (activeFilter === NOW_FILTER && nowCount === 0 && relationshipGroups[0]?.label) {
+      setActiveFilter(relationshipGroups[0].label);
+    }
+  }, [activeFilter, nowCount, relationshipGroups]);
+
+  const isNowFilter = activeFilter === NOW_FILTER;
+  const visible      = sortByUrgency(
+    isNowFilter
+      ? networkContacts.filter(isUrgentNow)
+      // Fallback for any stale/legacy filter value (e.g. a deleted category) — show
+      // everyone rather than silently rendering a blank "No contacts" screen.
+      : isKnownGroup
+        ? networkContacts.filter((c) => c.relationshipType === activeFilter)
+        : networkContacts
+  );
 
   function handleSave(form: Omit<NetworkContact, "id">) {
     if (editing) { updateNetworkContact(editing.id, form); setEditing(null); }
@@ -647,20 +737,24 @@ export default function NetworkCard() {
         <div className="flex items-center gap-2 -mt-1">
           {/* Pills — swipeable single row on mobile, wraps on desktop */}
           <div
-            className="flex items-center gap-2 flex-1 min-w-0 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_left,transparent,black_32px,black_100%)]"
+            className="flex items-center gap-2 flex-1 min-w-0 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: "none" }}
           >
-            <button
-              type="button"
-              onClick={() => setActiveFilter("__all__")}
-              className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
-                isAll
-                  ? "bg-violet-600 text-white border-transparent shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-                  : "bg-white/[0.04] border-white/[0.05] text-slate-400 hover:text-slate-300 hover:bg-white/[0.07]"
-              }`}
-            >
-              All {networkContacts.length > 0 && <span className="ml-1 opacity-60 text-[10px]">({networkContacts.length})</span>}
-            </button>
+            {/* Global overdue/due-soon quick filter — mirrors RecurringCard's "Now" pill */}
+            {nowCount > 0 && (
+              <button
+                type="button"
+                onClick={() => { hasUserChosenFilter.current = true; setActiveFilter(NOW_FILTER); }}
+                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
+                  isNowFilter
+                    ? "bg-red-500/20 border-red-500/50 text-red-300 md:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                    : "bg-red-500/8 border-red-500/20 text-red-400/80 hover:bg-red-500/15 hover:border-red-500/35"
+                }`}
+              >
+                Now
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 flex-shrink-0 animate-pulse" />
+              </button>
+            )}
 
             {relationshipGroups.map((g) => {
               const cc    = COLOR_CLASSES[g.color];
@@ -670,7 +764,7 @@ export default function NetworkCard() {
                 <button
                   key={g.id}
                   type="button"
-                  onClick={() => setActiveFilter(g.label)}
+                  onClick={() => { hasUserChosenFilter.current = true; setActiveFilter(g.label); }}
                   className={`flex-shrink-0 px-3 h-7 rounded-full text-[11px] font-medium border transition-all duration-150 ${active ? cc.pillActive : cc.pill}`}
                 >
                   {g.emoji} {g.label}
@@ -696,7 +790,11 @@ export default function NetworkCard() {
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <span className="text-2xl">🤝</span>
             <p className="text-xs text-slate-600">
-              {isAll ? "No contacts yet — add your first connection." : `No ${activeFilter} contacts yet.`}
+              {isNowFilter
+                ? "All clear — nothing due right now."
+                : networkContacts.length === 0
+                  ? "No contacts yet — add your first connection."
+                  : `No ${activeFilter} contacts yet.`}
             </p>
           </div>
         ) : (

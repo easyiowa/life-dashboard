@@ -25,7 +25,7 @@ function velocityBarClass(v: number): string {
 function humanizedMessage(v: number, completedCount: number, rolledCount: number): string {
   const name = "Olaf";
   if (completedCount === 0 && rolledCount === 0) {
-    return "☕ A relaxed, chill day yesterday! No tasks were planned, allowing for a clean reset. Today is a brand new canvas.";
+    return "A relaxed, chill day yesterday! No tasks were planned, allowing for a clean reset. Today is a brand new canvas.";
   }
   if (v === 100) {
     return `${name}, you absolute legend — 100% velocity. Every single goal hit, nothing left on the table. Clean sweep, zero excuses. Today's going to feel easy by comparison.`;

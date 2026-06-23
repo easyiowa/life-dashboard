@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="bg-[#0B0F19] text-slate-200 antialiased min-h-screen">
+      <body className="bg-[#0B0F19] text-slate-200 antialiased min-h-screen" suppressHydrationWarning={true}>
         {/*
           Auth stack (outermost → innermost):
           1. AuthProvider  — Supabase session context

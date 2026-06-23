@@ -53,6 +53,7 @@ import TaskInspectModal from "@/components/TaskInspectModal";
 import ProjectEditModal from "@/components/ProjectEditModal";
 import { fmtSecs } from "@/lib/time";
 import { areaColor } from "@/lib/areaColors";
+import SwipeToDeleteRow from "@/components/ui/SwipeToDeleteRow";
 
 // ── Style maps ────────────────────────────────────────────────────────────────
 
@@ -391,8 +392,8 @@ function TaskRow({
   const [notePos, setNotePos] = useState<{ top: number; left: number } | null>(null);
 
   return (
+    <SwipeToDeleteRow onDelete={() => deleteTask(task.id)} onClick={() => onInspect(task)} roundedClassName="rounded-lg">
     <div
-      onClick={() => onInspect(task)}
         className={`group flex items-center justify-between w-full px-2.5 py-2 rounded-lg border transition-all duration-200 cursor-pointer ${
           isThisTaskActive
             ? "border-violet-500/30 bg-violet-600/[0.07]"
@@ -511,6 +512,7 @@ function TaskRow({
           </button>
         </div>
     </div>
+    </SwipeToDeleteRow>
   );
 }
 
@@ -651,7 +653,7 @@ export default function ProjectsCard() {
         <div className="flex items-center gap-2">
           {/* Deduplicated sphere pills — swipeable single row on mobile, wraps on desktop */}
           <div
-            className="flex items-center gap-2 flex-1 min-w-0 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_left,transparent,black_32px,black_100%)]"
+            className="flex items-center gap-2 flex-1 min-w-0 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: "none" }}
           >
             {[...new Map(spheres.map((s) => [s.id, s])).values()].map((sphere) => {

@@ -258,6 +258,7 @@ type Action =
   | { type: "ADD_QUICK_NOTE"; note: Omit<QuickNote, "id">; _id?: string }
   | { type: "DELETE_QUICK_NOTE"; id: string }
   | { type: "TOGGLE_QUICK_NOTE_IMPORTANT"; id: string }
+  | { type: "UPDATE_QUICK_NOTE_TEXT"; id: string; text: string }
   | { type: "ADD_NETWORK_CONTACT"; contact: Omit<NetworkContact, "id">; _id?: string }
   | { type: "UPDATE_NETWORK_CONTACT"; id: string; fields: Partial<Omit<NetworkContact, "id">> }
   | { type: "DELETE_NETWORK_CONTACT"; id: string }
@@ -779,6 +780,14 @@ function reducer(state: State, action: Action): State {
         ),
       };
 
+    case "UPDATE_QUICK_NOTE_TEXT":
+      return {
+        ...state,
+        quickNotes: state.quickNotes.map((n) =>
+          n.id !== action.id ? n : { ...n, text: action.text }
+        ),
+      };
+
     case "ADD_NETWORK_CONTACT": {
       const contact: NetworkContact = {
         ...action.contact,
@@ -1081,6 +1090,7 @@ interface DashboardContextType {
   addQuickNote: (text: string, sphere: string, projectId?: string) => void;
   deleteQuickNote: (id: string) => void;
   toggleQuickNoteImportant: (id: string) => void;
+  updateQuickNoteText: (id: string, text: string) => void;
   networkContacts: NetworkContact[];
   addNetworkContact: (contact: Omit<NetworkContact, "id">) => void;
   updateNetworkContact: (id: string, fields: Partial<Omit<NetworkContact, "id">>) => void;
@@ -1569,6 +1579,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           const n = stateRef.current.quickNotes.find(qn => qn.id === id);
           dispatch({ type: "TOGGLE_QUICK_NOTE_IMPORTANT", id });
           if (db && n) db.from("quick_notes").update({ is_important: !n.isImportant }).eq("id", id).then(() => {});
+        },
+        updateQuickNoteText: (id, text) => {
+          dispatch({ type: "UPDATE_QUICK_NOTE_TEXT", id, text });
+          if (db) db.from("quick_notes").update({ text }).eq("id", id).then(() => {});
         },
 
         relationshipGroups: state.relationshipGroups,

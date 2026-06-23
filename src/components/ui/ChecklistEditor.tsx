@@ -1,0 +1,276 @@
+"use client";
+
+import { useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { ListTodo } from "lucide-react";
+
+type MaxHeightVariant = "widget" | "modal" | "full";
+
+const MAX_HEIGHT: Record<MaxHeightVariant, string> = {
+  widget: "max-h-[180px] md:max-h-[350px]",
+  modal:  "max-h-[250px] md:max-h-[500px]",
+  full:   "max-h-[80vh]",
+};
+
+export interface ChecklistEditorHandle {
+  clear: () => void;
+  isEmpty: () => boolean;
+}
+
+interface ChecklistEditorProps {
+  onChange: (html: string) => void;
+  /** Fired on Cmd/Ctrl+Enter — the checklist editor owns Enter handling, so the parent can't listen for it directly. */
+  onSubmitShortcut?: () => void;
+  placeholder?: string;
+  className?: string;
+  maxHeightVariant?: MaxHeightVariant;
+}
+
+const CIRCLE_CLASS =
+  "qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500";
+const TEXT_CLASS =
+  "qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70";
+
+// Plain-text-only paste — the only HTML that should ever exist in this editor is the
+// checklist-line markup we generate ourselves below. Accepting rich pasted HTML here would
+// both corrupt that structure and reopen an XSS surface, since the saved HTML is later
+// rendered elsewhere via dangerouslySetInnerHTML.
+function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
+  e.preventDefault();
+  const text = e.clipboardData.getData("text/plain");
+  document.execCommand("insertText", false, text);
+}
+
+function createCircle(): HTMLSpanElement {
+  const circle = document.createElement("span");
+  circle.className = CIRCLE_CLASS;
+  circle.contentEditable = "false";
+  circle.setAttribute("role", "checkbox");
+  circle.setAttribute("aria-checked", "false");
+  return circle;
+}
+
+function createTextSpan(): HTMLSpanElement {
+  const textSpan = document.createElement("span");
+  textSpan.className = TEXT_CLASS;
+  return textSpan;
+}
+
+// A brand-new, empty checklist line — used when Enter continues the list onto the next row.
+function createChecklistLine(): HTMLDivElement {
+  const line = document.createElement("div");
+  line.className = "qn-check-line group flex items-start gap-2 py-0.5";
+  line.dataset.checked = "false";
+  const textSpan = createTextSpan();
+  textSpan.appendChild(document.createElement("br")); // gives the empty line a caret target
+  line.append(createCircle(), textSpan);
+  return line;
+}
+
+function placeCursor(node: Node, atStart: boolean) {
+  const sel = window.getSelection();
+  if (!sel) return;
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  range.collapse(atStart);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+// Markdown-style bullet prefixes ("- ", "* ", "• ") read as redundant once the line gets its
+// own checkbox glyph — strip the first one off the line's leading text before wrapping, so the
+// result reads "○ buy milk" instead of "○ - buy milk".
+const BULLET_PREFIX_RE = /^\s*[-*•]\s*/;
+
+function stripLeadingBulletPrefix(container: HTMLElement) {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const firstTextNode = walker.nextNode() as Text | null;
+  if (!firstTextNode) return;
+  const match = firstTextNode.data.match(BULLET_PREFIX_RE);
+  if (match) firstTextNode.data = firstTextNode.data.slice(match[0].length);
+}
+
+function closestLine(node: Node | null): HTMLElement | null {
+  const el = node instanceof HTMLElement ? node : node?.parentElement ?? null;
+  return el?.closest(".qn-check-line") ?? null;
+}
+
+// Finds the block that represents "the current line" under the cursor: an existing
+// checklist line, an existing line <div> the browser created on a previous Enter, or — if
+// the cursor sits directly in the editor root with no wrapper yet (the very first line typed,
+// before any Enter) — the editor root itself.
+function getLineContainer(editor: HTMLElement, sel: Selection | null): HTMLElement | null {
+  if (!sel || sel.rangeCount === 0 || !sel.anchorNode) return null;
+  if (!editor.contains(sel.anchorNode)) return null;
+
+  const existing = closestLine(sel.anchorNode);
+  if (existing) return existing;
+
+  let el = sel.anchorNode instanceof HTMLElement ? sel.anchorNode : sel.anchorNode.parentElement;
+  while (el && el !== editor && el.parentElement !== editor) {
+    el = el.parentElement;
+  }
+  return el; // either a direct child block of the editor, or the editor itself
+}
+
+// True when the caret sits collapsed at the very start of a checklist line's text span —
+// i.e. immediately to the right of the circle, with nothing to its left to delete first.
+function isCaretAtLineTextStart(sel: Selection | null, textSpan: Element): boolean {
+  if (!sel || !sel.isCollapsed || sel.anchorOffset !== 0) return false;
+  return sel.anchorNode === textSpan || sel.anchorNode === textSpan.firstChild;
+}
+
+const ChecklistEditor = forwardRef<ChecklistEditorHandle, ChecklistEditorProps>(function ChecklistEditor(
+  { onChange, onSubmitShortcut, placeholder = "", className = "", maxHeightVariant = "modal" },
+  ref
+) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    clear() {
+      if (editorRef.current) editorRef.current.innerHTML = "";
+      onChange("");
+    },
+    isEmpty() {
+      return !(editorRef.current?.textContent ?? "").trim();
+    },
+  }));
+
+  function emitChange() {
+    const el = editorRef.current;
+    if (!el) return;
+    // Fully collapse a cleared-out editor so the :empty placeholder selector still matches —
+    // contentEditable often leaves a stray <br> behind after the last character is deleted.
+    if (!el.textContent?.trim() && el.querySelectorAll(".qn-check-line").length === 0) {
+      el.innerHTML = "";
+    }
+    onChange(el.innerHTML);
+  }
+
+  // Wraps the *entire active line* in a checklist row, with the circle ahead of the line's
+  // existing words — never injected mid-sentence at the caret and never appended at the end.
+  function insertChecklistItem() {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+
+    const sel = window.getSelection();
+    const container = getLineContainer(editor, sel);
+    if (!container || container.classList?.contains("qn-check-line")) return; // already a checklist line
+
+    stripLeadingBulletPrefix(container);
+
+    const line = document.createElement("div");
+    line.className = "qn-check-line group flex items-start gap-2 py-0.5";
+    line.dataset.checked = "false";
+    const textSpan = createTextSpan();
+
+    // Move every existing node of the line (text + any <br>s) into the new text span, so the
+    // pre-existing words land to the right of the circle instead of being replaced.
+    while (container.firstChild) textSpan.appendChild(container.firstChild);
+    if (!textSpan.hasChildNodes()) textSpan.appendChild(document.createElement("br"));
+
+    line.append(createCircle(), textSpan);
+
+    if (container === editor) {
+      editor.appendChild(line); // first/only line — was never wrapped in its own block
+    } else {
+      container.replaceWith(line);
+    }
+
+    placeCursor(textSpan, false);
+    emitChange();
+  }
+
+  // Strips the checkbox and restores a plain line in a single keypress, instead of the
+  // browser's default "first press selects the atomic checkbox, second press deletes it".
+  function unwrapChecklistLine(line: HTMLElement, textSpan: Element) {
+    const plainLine = document.createElement("div");
+    while (textSpan.firstChild) plainLine.appendChild(textSpan.firstChild);
+    if (!plainLine.hasChildNodes()) plainLine.appendChild(document.createElement("br"));
+    line.replaceWith(plainLine);
+    placeCursor(plainLine, true);
+    emitChange();
+  }
+
+  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
+    const circle = (e.target as HTMLElement).closest(".qn-check-circle") as HTMLElement | null;
+    if (!circle) return;
+    e.preventDefault();
+    const line = circle.closest(".qn-check-line") as HTMLElement | null;
+    if (!line) return;
+    const next = line.dataset.checked !== "true";
+    line.dataset.checked = String(next);
+    circle.setAttribute("aria-checked", String(next));
+    emitChange();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      onSubmitShortcut?.();
+      return;
+    }
+
+    const sel = window.getSelection();
+
+    if (e.key === "Backspace") {
+      const line = sel && sel.rangeCount > 0 ? closestLine(sel.anchorNode) : null;
+      const textSpan = line?.querySelector(".qn-check-text");
+      if (line && textSpan && isCaretAtLineTextStart(sel, textSpan)) {
+        e.preventDefault();
+        unwrapChecklistLine(line, textSpan);
+        return;
+      }
+    }
+
+    if (e.key !== "Enter" || e.shiftKey) return;
+
+    const currentLine = sel && sel.rangeCount > 0 ? closestLine(sel.anchorNode) : null;
+    if (!currentLine) return; // not inside a checklist line — normal Enter behavior
+
+    e.preventDefault();
+    const newLine = createChecklistLine();
+    currentLine.after(newLine);
+    placeCursor(newLine.querySelector(".qn-check-text")!, false);
+    emitChange();
+  }
+
+  return (
+    // className (rounded/border/bg/focus styles) lives on this outer box so the toolbar
+    // below reads as part of the same input, not a detached strip underneath it.
+    <div className={`flex flex-col focus-within:border-purple-500/50 focus-within:bg-white/[0.06] ${className}`}>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        onInput={emitChange}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        className={`px-3 py-2 overflow-y-auto outline-none text-sm text-white empty:before:content-[attr(data-placeholder)] empty:before:text-slate-600 empty:before:pointer-events-none ${MAX_HEIGHT[maxHeightVariant]}`}
+      />
+
+      {/* Formatting toolbar — only while the editor is actively focused */}
+      {isFocused && (
+        <div className="flex items-center gap-1.5 px-2 py-1.5 border-t border-white/[0.06]">
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()} // keep focus (and the cursor position) inside the editor
+            onClick={insertChecklistItem}
+            title="To-Do list"
+            className="flex items-center gap-1.5 px-2 h-6 rounded-md text-[10px] font-medium text-slate-400 hover:text-violet-300 hover:bg-violet-500/10 transition-colors"
+          >
+            <ListTodo className="w-3.5 h-3.5" />
+            To-Do
+          </button>
+        </div>
+      )}
+    </div>
+  );
+});
+
+export default ChecklistEditor;

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap, Plus } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap, Plus, Trash2 } from "lucide-react";
 import { useDashboard, type Task, type HistoricalLog, type DailyTrackingEntry } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
 import TaskInspectModal from "@/components/TaskInspectModal";
@@ -16,13 +16,13 @@ function fmtDate(ds: string): string {
   });
 }
 
-const INTENT_OPTIONS: { value: Task["intent"]; label: string }[] = [
+export const INTENT_OPTIONS: { value: Task["intent"]; label: string }[] = [
   { value: "finish", label: "🎯 Finish" },
   { value: "time",   label: "⏱️ Time Goal" },
   { value: "maybe",  label: "🎲 Maybe" },
 ];
 
-const INTENT_ACTIVE: Record<NonNullable<Task["intent"]>, string> = {
+export const INTENT_ACTIVE: Record<NonNullable<Task["intent"]>, string> = {
   finish: "bg-violet-600/25 border-violet-500/50 text-violet-200",
   time:   "bg-blue-600/25 border-blue-500/50 text-blue-200",
   maybe:  "bg-slate-600/25 border-slate-500/40 text-slate-300",
@@ -30,11 +30,128 @@ const INTENT_ACTIVE: Record<NonNullable<Task["intent"]>, string> = {
 
 const INACTIVE_PILL = "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-slate-300";
 
+// Swipe-to-delete reveal geometry — kept as named constants so the JS snap target
+// always matches the tray's actual layout (icon button width + symmetric padding
+// on each side, mirroring the pr-4/w-8 values used in the tray markup below).
+const DELETE_ICON_SIZE      = 32; // px — w-8/h-8 icon button
+const DELETE_TRAY_PADDING   = 16; // px — pr-4, mirrored on the icon's left side too
+const DELETE_REVEAL_OFFSET  = DELETE_ICON_SIZE + DELETE_TRAY_PADDING * 2; // 64px
+
 // ── Queue row ─────────────────────────────────────────────────────────────────
 
 function QueueRow({ task, onInspect }: { task: Task; onInspect: (t: Task) => void }) {
   const { updateTaskDaily, toggleTaskComplete, toggleTaskForToday, startGlobalTimer, pauseGlobalTimer, activeTaskId, timerIsRunning, elapsed, committedSecs, currentTrackingDate, spheres } = useDashboard();
   const ac = areaColor(spheres.find((s) => s.name === task.sphere)?.labelColor);
+
+  // ── Mobile swipe-left-to-delete gesture ──────────────────────────────────────
+  const containerRef = useRef<HTMLDivElement>(null); // wraps tray + foreground — used to detect outside taps
+  const rowRef = useRef<HTMLDivElement>(null);
+  const touchRef = useRef<{ startX: number; startY: number; axis: "x" | "y" | null }>({ startX: 0, startY: 0, axis: null });
+  const suppressClickRef = useRef(false);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // locked at the symmetric anchor, awaiting a follow-up tap
+
+  function closeRow() {
+    setDragX(0);
+    setIsOpen(false);
+  }
+
+  // While the row is pinned open, any vertical page scroll or any tap/touch outside this
+  // row's own bounds should snap it closed again. Listeners are only live while open, and
+  // are torn down immediately on close so idle rows never pay for this.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleOutsideInteraction(e: Event) {
+      const target = e.target as Node | null;
+      if (containerRef.current && target && !containerRef.current.contains(target)) {
+        closeRow();
+      }
+    }
+
+    function handleScroll() {
+      closeRow();
+    }
+
+    document.addEventListener("pointerdown", handleOutsideInteraction, true);
+    document.addEventListener("touchstart", handleOutsideInteraction, true);
+    document.addEventListener("click", handleOutsideInteraction, true);
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsideInteraction, true);
+      document.removeEventListener("touchstart", handleOutsideInteraction, true);
+      document.removeEventListener("click", handleOutsideInteraction, true);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [isOpen]);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touchRef.current = { startX: t.clientX, startY: t.clientY, axis: null };
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    const t = e.touches[0];
+    const deltaX = t.clientX - touchRef.current.startX;
+    const deltaY = t.clientY - touchRef.current.startY;
+
+    if (touchRef.current.axis === null) {
+      // Vertical intent wins immediately — let the native page scroll take over.
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        touchRef.current.axis = "y";
+        return;
+      }
+      // Require a clear horizontal intent before locking the gesture.
+      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        touchRef.current.axis = "x";
+        setIsDragging(true);
+      } else {
+        return;
+      }
+    }
+
+    if (touchRef.current.axis !== "x") return;
+
+    const width = rowRef.current?.offsetWidth ?? 1;
+    setDragX(Math.min(0, Math.max(deltaX, -width)));
+  }
+
+  function handleTouchEnd() {
+    if (touchRef.current.axis === "x") {
+      const width = rowRef.current?.offsetWidth ?? 1;
+      if (Math.abs(dragX) >= width * 0.6) {
+        // Long-swipe past 60% — commit the delete immediately, no need to settle on the anchor first.
+        toggleTaskForToday(task.id, currentTrackingDate, "finish", null);
+        setDragX(0);
+        setIsOpen(false);
+      } else if (Math.abs(dragX) >= DELETE_REVEAL_OFFSET) {
+        // Past the reveal point but short of the delete trigger — magnetically lock onto the
+        // pre-calculated symmetric anchor instead of resting wherever the finger happened to lift.
+        setDragX(-DELETE_REVEAL_OFFSET);
+        setIsOpen(true);
+      } else {
+        // Short swipe — snap fully back closed.
+        setDragX(0);
+        setIsOpen(false);
+      }
+      suppressClickRef.current = true;
+    } else {
+      setDragX(0);
+      setIsOpen(false);
+    }
+    setIsDragging(false);
+    touchRef.current.axis = null;
+  }
+
+  function handleRowClick() {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    onInspect(task);
+  }
 
   // All daily focus data reads from the per-date registry — never from cumulative task fields
   const dailyEntry: DailyTrackingEntry = task.dailyTracking?.[currentTrackingDate]
@@ -79,17 +196,40 @@ function QueueRow({ task, onInspect }: { task: Task; onInspect: (t: Task) => voi
 
   const isComplete = task.done;
 
+  const cardToneClass = (isComplete || goalAchieved)
+    ? "border-emerald-500/25 bg-emerald-500/[0.03]"
+    : isMaybe
+      ? "border-dashed border-white/[0.07] bg-white/[0.01] opacity-70"
+      : "border-white/[0.05] bg-white/[0.02]";
+
   return (
+    <div ref={containerRef} className="relative rounded-xl overflow-hidden">
+      {/* Underlayer — stationary delete tray, fully covered by the foreground card at rest */}
+      <div className="md:hidden absolute inset-0 flex items-center justify-end pr-4 bg-white/[0.02]">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, "finish", null); closeRow(); }}
+          aria-label="Delete task"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] text-red-500"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+    {/* Foreground layer — the draggable task card; opaque base blocks the red tray underneath */}
     <div
-      onClick={() => onInspect(task)}
-      className={`flex flex-col gap-2 p-2.5 rounded-xl border transition-all duration-200 overflow-hidden cursor-pointer hover:bg-white/[0.03] ${
-        (isComplete || goalAchieved)
-          ? "border-emerald-500/25 bg-emerald-500/[0.03]"
-          : isMaybe
-            ? "border-dashed border-white/[0.07] bg-white/[0.01] opacity-70"
-            : "border-white/[0.05] bg-white/[0.02]"
-      }`}
+      ref={rowRef}
+      onClick={handleRowClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ transform: `translateX(${dragX}px)`, transition: isDragging ? "none" : "transform 0.2s ease-out" }}
+      className="relative rounded-xl overflow-hidden cursor-pointer touch-pan-y"
     >
+      <div className="absolute inset-0 rounded-xl bg-[#0F1629]" />
+      <div className={`absolute inset-0 rounded-xl border transition-colors duration-200 ${cardToneClass}`} />
+
+      <div className="relative flex flex-col gap-2 p-2.5 hover:bg-white/[0.03] transition-colors duration-200">
       {/* Title row */}
       <div className="flex items-center gap-2">
         {/* Completion checkbox */}
@@ -131,13 +271,13 @@ function QueueRow({ task, onInspect }: { task: Task; onInspect: (t: Task) => voi
         <button
           onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, "finish", null); }}
           title="Remove from today"
-          className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 transition-colors"
+          className="hidden md:flex flex-shrink-0 w-5 h-5 rounded items-center justify-center text-slate-600 hover:text-slate-300 transition-colors"
         >
           <X className="w-3 h-3" />
         </button>
       </div>
 
-      {/* Meta row — sphere/project left, intent pills right */}
+      {/* Meta row — sphere/project left, intent pills right (desktop only — pills move into the Task Properties sheet on mobile) */}
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-1.5">
           <span className={`text-[10px] font-medium flex-shrink-0 ${ac.text}`}>{task.sphere}</span>
@@ -145,7 +285,7 @@ function QueueRow({ task, onInspect }: { task: Task; onInspect: (t: Task) => voi
           <span className="text-[10px] text-slate-500 flex-shrink-0">{task.project}</span>
         </div>
         {!isComplete && (
-          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="hidden md:flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             {INTENT_OPTIONS.map((opt) => {
               const isActive = intent === opt.value;
               if (opt.value === "time" && isActive) {
@@ -182,16 +322,18 @@ function QueueRow({ task, onInspect }: { task: Task; onInspect: (t: Task) => voi
           </div>
         )}
       </div>
+      </div>
 
       {/* Progress bar — flush to card bottom; always shown when done or time goal active */}
       {(isTimeGoal || isComplete) && (
-        <div className="-mx-2.5 -mb-2.5 h-1 bg-white/[0.04]">
+        <div className="relative h-1 bg-white/[0.04]">
           <div
             className={`h-full transition-all duration-1000 ease-linear ${isComplete || goalAchieved ? "bg-emerald-500" : "bg-violet-500/50"}`}
             style={{ width: `${isComplete ? 100 : pct}%` }}
           />
         </div>
       )}
+    </div>
     </div>
   );
 }
@@ -687,7 +829,7 @@ function TodaySuggestions({ onDismiss }: { onDismiss: () => void }) {
 // ── Card ──────────────────────────────────────────────────────────────────────
 
 export default function DailyFocusQueueCard() {
-  const { tasks, recurringTasks, currentTrackingDate, requestNightlyReview, historicalLogs } = useDashboard();
+  const { tasks, currentTrackingDate, requestNightlyReview, historicalLogs } = useDashboard();
   const [showPicker,         setShowPicker]         = useState(false);
   const [rolloverDismissed,    setRolloverDismissed]    = useState(false);
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
@@ -701,21 +843,13 @@ export default function DailyFocusQueueCard() {
   const maybes        = queuedTasks.filter((t) => getIntent(t) === "maybe");
   const doneCount     = commitments.filter((t) => t.done).length;
 
-  // Nothing queued and nothing actionable suggested for today — used to decide
-  // whether a mobile mount should start collapsed to save vertical space.
-  const hasRolloverSuggestions  = !!(yesterdayLog && yesterdayLog.rolledOverTasks.length > 0);
-  const hasDeadlineSuggestions  = tasks.some(
-    (t) => t.deadline === currentTrackingDate && !t.done && (t.queuedDate ?? null) !== currentTrackingDate
-  );
-  const hasRecurringSuggestions = recurringTasks.some((rt) => computeCountdown(rt).daysLeft <= 0);
-  const hasNothingQueued = queuedTasks.length === 0
-    && !hasRolloverSuggestions && !hasDeadlineSuggestions && !hasRecurringSuggestions;
-
   // Lazy initializer runs once on mount only — later taps on the chevron toggle
-  // freely via setCollapsed and are never overridden by this check again.
+  // freely via setCollapsed and are never overridden by this check again. Mobile
+  // starts expanded whenever today actually has tasks queued, and only collapses
+  // by default when there's nothing planned for the day.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return window.innerWidth < 768 && hasNothingQueued;
+    return window.innerWidth < 768 && queuedTasks.length === 0;
   });
 
   return (
@@ -731,14 +865,14 @@ export default function DailyFocusQueueCard() {
             Today's Focus
           </h2>
           {queuedTasks.length > 0 && (
-            <span className="text-[10px] text-slate-600">
+            <span className="hidden md:inline-block text-[10px] text-slate-600">
               {fmtDate(currentTrackingDate)}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {queuedTasks.length > 0 && (
-            <span className="text-[10px] text-slate-500 tabular-nums">
+            <span className="hidden md:inline-block text-[10px] text-slate-500 tabular-nums">
               {doneCount}/{commitments.length} done
             </span>
           )}

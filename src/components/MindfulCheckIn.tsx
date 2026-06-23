@@ -14,7 +14,7 @@ const MOODS = [
     emoji: "⚡",
     label: "Energized",
     tags: ["#motivated", "#powerful", "#focused"],
-    pillActive:   "bg-violet-500 border-violet-500 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]",
+    pillActive:   "bg-violet-500 border-violet-500 text-white md:shadow-[0_0_12px_rgba(139,92,246,0.4)]",
     pillInactive: "bg-violet-500/10 border-violet-500/25 text-violet-400 hover:bg-violet-500/20",
   },
   {
@@ -22,7 +22,7 @@ const MOODS = [
     emoji: "☕",
     label: "Calm",
     tags: ["#peaceful", "#clear", "#grounded"],
-    pillActive:   "bg-teal-500 border-teal-500 text-white shadow-[0_0_12px_rgba(20,184,166,0.4)]",
+    pillActive:   "bg-teal-500 border-teal-500 text-white md:shadow-[0_0_12px_rgba(20,184,166,0.4)]",
     pillInactive: "bg-teal-500/10 border-teal-500/25 text-teal-400 hover:bg-teal-500/20",
   },
   {
@@ -30,7 +30,7 @@ const MOODS = [
     emoji: "💤",
     label: "Tired",
     tags: ["#drained", "#slow", "#foggy"],
-    pillActive:   "bg-blue-500 border-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]",
+    pillActive:   "bg-blue-500 border-blue-500 text-white md:shadow-[0_0_12px_rgba(59,130,246,0.4)]",
     pillInactive: "bg-blue-500/10 border-blue-500/25 text-blue-400 hover:bg-blue-500/20",
   },
   {
@@ -38,7 +38,7 @@ const MOODS = [
     emoji: "🌪️",
     label: "Stressed",
     tags: ["#anxious", "#frustrated", "#overwhelmed"],
-    pillActive:   "bg-amber-500 border-amber-500 text-white shadow-[0_0_12px_rgba(245,158,11,0.4)]",
+    pillActive:   "bg-amber-500 border-amber-500 text-white md:shadow-[0_0_12px_rgba(245,158,11,0.4)]",
     pillInactive: "bg-amber-500/10 border-amber-500/25 text-amber-400 hover:bg-amber-500/20",
   },
 ] as const;
@@ -146,7 +146,7 @@ export default function MindfulCheckIn() {
             onClick={() => setShowTrends(true)}
             className="text-[11px] text-violet-400/70 hover:text-violet-300 transition-colors flex-shrink-0 whitespace-nowrap"
           >
-            View Headspace Trends →
+            View all →
           </button>
           <button
             type="button"
@@ -173,7 +173,7 @@ export default function MindfulCheckIn() {
           How&apos;s your headspace?
         </span>
         <div
-          className="order-3 md:order-2 basis-full md:basis-auto flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)]"
+          className="order-3 md:order-2 basis-full md:basis-auto flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: "none" }}
         >
           {MOODS.map((m) => (
@@ -194,7 +194,7 @@ export default function MindfulCheckIn() {
           onClick={() => setShowTrends(true)}
           className="order-2 md:order-3 ml-auto text-[11px] text-violet-400/50 hover:text-violet-300 transition-colors flex-shrink-0 whitespace-nowrap"
         >
-          View Headspace Trends →
+          View all →
         </button>
       </div>
 

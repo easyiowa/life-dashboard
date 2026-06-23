@@ -82,7 +82,15 @@ export default function CalendarCard() {
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const [mobileDayCount,   setMobileDayCount]   = useState<1 | 2 | 3>(1);
+  const [mobileDayCount,   setMobileDayCount]   = useState<1 | 2 | 3>(() => {
+    if (typeof window === "undefined") return 1;
+    try {
+      const saved = localStorage.getItem("dashboard_calendar_view_index");
+      const idx = saved !== null ? Number(saved) : NaN;
+      if (idx >= 0 && idx <= 2) return (idx + 1) as 1 | 2 | 3;
+    } catch { /* */ }
+    return 1;
+  });
   const [monthPickerOpen,  setMonthPickerOpen]  = useState(false);
   const [pickerMonthDate,  setPickerMonthDate]  = useState(() => new Date());
 
@@ -105,7 +113,10 @@ export default function CalendarCard() {
     const el = e.currentTarget;
     const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1));
     const nextCount = (Math.min(Math.max(index, 0), 2) + 1) as 1 | 2 | 3;
-    if (nextCount !== mobileDayCount) setMobileDayCount(nextCount);
+    if (nextCount !== mobileDayCount) {
+      setMobileDayCount(nextCount);
+      try { localStorage.setItem("dashboard_calendar_view_index", String(nextCount - 1)); } catch { /* quota */ }
+    }
   }
 
   // Color resolution

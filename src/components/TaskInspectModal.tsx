@@ -13,6 +13,7 @@ import {
   type Energy,
   type Urgency,
 } from "@/context/DashboardContext";
+import { INTENT_OPTIONS, INTENT_ACTIVE } from "@/components/widgets/DailyFocusQueueCard";
 
 interface Props {
   task: Task | null;
@@ -69,20 +70,45 @@ function formatMinutes(m: number): string {
 }
 
 export default function TaskInspectModal({ task, onClose }: Props) {
-  const { spheres, projects, sessions, updateTask } = useDashboard();
+  const { spheres, projects, sessions, updateTask, currentTrackingDate, updateTaskDaily, tasks } = useDashboard();
   const [form, setForm]               = useState<Task | null>(null);
   const [rawManualMins, setRawManualMins] = useState<string>("0");
   const [showSettings, setShowSettings]   = useState(false);
+  const [localTargetMins, setLocalTargetMins] = useState<string>("");
 
   useEffect(() => {
     if (task) {
       setForm({ ...task });
       setRawManualMins(String(task.manualMinutes));
       setShowSettings(false);
+      setLocalTargetMins(task.dailyTracking?.[currentTrackingDate]?.dailyTargetMinutes?.toString() ?? "");
     }
-  }, [task]);
+  }, [task]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!task || !form) return null;
+
+  // `task` is a snapshot captured once when the modal opened, so it never reflects later
+  // context updates. Pulling the live record by id keeps intent-pill clicks (which write
+  // straight to context via updateTaskDaily) visible in this modal without closing/reopening.
+  const liveTask = tasks.find((t) => t.id === task.id) ?? task;
+
+  // Queued-for-today intent — only meaningful (and editable) for tasks sitting in Today's Focus
+  const isQueuedToday = (liveTask.queuedDate ?? null) === currentTrackingDate;
+  const dailyEntry     = liveTask.dailyTracking?.[currentTrackingDate] ?? { timeSpentMinutes: 0, intent: "finish" as const, dailyTargetMinutes: null };
+
+  function handleIntentChange(val: Task["intent"]) {
+    const resolvedIntent = val ?? "finish";
+    if (resolvedIntent === "time" && !localTargetMins) setLocalTargetMins("25");
+    updateTaskDaily(task!.id, currentTrackingDate, {
+      intent: resolvedIntent,
+      dailyTargetMinutes: resolvedIntent !== "time" ? null : (Number(localTargetMins) || 25),
+    });
+  }
+
+  function handleTargetBlur() {
+    const mins = Number(localTargetMins);
+    updateTaskDaily(task!.id, currentTrackingDate, { dailyTargetMinutes: mins > 0 ? mins : null });
+  }
 
   const sphereProjects = projects.filter((p) => p.sphere === form.sphere);
   const ac = areaColor(spheres.find((s) => s.name === form.sphere)?.labelColor);
@@ -160,6 +186,48 @@ export default function TaskInspectModal({ task, onClose }: Props) {
               className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors resize-none"
             />
           </div>
+
+          {/* Today's Focus intent — mobile only; desktop keeps these inline in the queue row.
+              Sits directly below Notes and above Task Properties so it stays prominent. */}
+          {isQueuedToday && (
+            <div className="flex md:hidden flex-col gap-1.5">
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Today&apos;s Focus</label>
+              <div className="flex gap-2">
+                {INTENT_OPTIONS.map((opt) => {
+                  const isActive = dailyEntry.intent === opt.value;
+                  if (opt.value === "time" && isActive) {
+                    return (
+                      <div key={opt.value} className={`flex-1 flex items-center justify-center gap-1 h-8 rounded-lg text-xs font-medium border ${INTENT_ACTIVE["time"]}`}>
+                        <span className="leading-none">⏱️</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={localTargetMins}
+                          onChange={(e) => setLocalTargetMins(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                          onBlur={handleTargetBlur}
+                          className="w-6 p-0 m-0 bg-transparent outline-none text-center leading-none text-blue-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <span className="leading-none">min</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleIntentChange(opt.value)}
+                      className={`flex-1 h-8 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                        isActive && opt.value ? INTENT_ACTIVE[opt.value] : INACTIVE
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Task Properties accordion ──────────────────────────────────── */}
           <div className="flex flex-col gap-3">

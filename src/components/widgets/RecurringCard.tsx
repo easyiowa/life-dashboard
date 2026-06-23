@@ -6,6 +6,7 @@ import { useDashboard, type RecurringTask } from "@/context/DashboardContext";
 import RecurringResponsibilityModal from "@/components/RecurringResponsibilityModal";
 import AddRecurringTaskModal from "@/components/AddRecurringTaskModal";
 import { areaColor } from "@/lib/areaColors";
+import SwipeToDeleteRow from "@/components/ui/SwipeToDeleteRow";
 
 // ── Countdown helpers ─────────────────────────────────────────────────────────
 
@@ -224,8 +225,8 @@ function RecurringRow({
   const pct = Math.round(progress * 100);
 
   return (
+    <SwipeToDeleteRow onDelete={() => onDeleteRequest(task)} onClick={() => onInspect(task)}>
     <div
-      onClick={() => onInspect(task)}
       className="group flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-3 px-3 py-2.5 sm:py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
     >
       {/* ── Top / Left: checkbox + title + (mobile) due pill ────────────────── */}
@@ -284,6 +285,7 @@ function RecurringRow({
         </div>
       </div>
     </div>
+    </SwipeToDeleteRow>
   );
 }
 
@@ -369,7 +371,7 @@ export default function RecurringCard() {
 
         {/* Sphere tabs — swipeable single row on mobile, wraps on desktop */}
         <div
-          className="flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_left,transparent,black_32px,black_100%)]"
+          className="flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: "none" }}
         >
 
@@ -379,7 +381,7 @@ export default function RecurringCard() {
               onClick={() => setActiveSphereId(NOW_FILTER)}
               className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
                 isNowFilter
-                  ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                  ? "bg-red-500/20 border-red-500/50 text-red-300 md:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
                   : "bg-red-500/8 border-red-500/20 text-red-400/80 hover:bg-red-500/15 hover:border-red-500/35"
               }`}
             >
