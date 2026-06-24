@@ -6,9 +6,10 @@ import FeedbackTab from "./FeedbackTab";
 import UpdatesTab from "./UpdatesTab";
 import InsightsTab from "./InsightsTab";
 import ManageAdminsTab from "./ManageAdminsTab";
+import DuduMetricsTab from "./DuduMetricsTab";
 
 type WorkbenchTab = "feedback" | "updates";
-type Mode         = "workbench" | "insights" | "admins";
+type Mode         = "workbench" | "insights" | "admins" | "dudu";
 
 interface Props {
   isOpen:  boolean;
@@ -31,8 +32,8 @@ export default function FounderDashboard({ isOpen, onClose, mode }: Props) {
 
   if (!isOpen) return null;
 
-  const title    = mode === "workbench" ? "Workbench" : mode === "insights" ? "User Insights" : "Manage Admins";
-  const HeadIcon = mode === "workbench" ? Crown : mode === "insights" ? Users : Shield;
+  const title    = mode === "workbench" ? "Workbench" : mode === "insights" ? "User Insights" : mode === "dudu" ? "Dudu's Help 🦦" : "Manage Admins";
+  const HeadIcon = mode === "workbench" ? Crown : mode === "insights" ? Users : mode === "dudu" ? MessageSquare : Shield;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -92,6 +93,8 @@ export default function FounderDashboard({ isOpen, onClose, mode }: Props) {
             ? <InsightsTab />
             : mode === "admins"
             ? <ManageAdminsTab />
+            : mode === "dudu"
+            ? <DuduMetricsTab />
             : workbenchTab === "feedback" ? <FeedbackTab /> : <UpdatesTab />}
         </div>
 
@@ -103,6 +106,8 @@ export default function FounderDashboard({ isOpen, onClose, mode }: Props) {
               ? "Snapshot of onboarding intent, industry and widget selections across users."
               : mode === "admins"
               ? "Admins added here gain full access to Workbench and User Insights."
+              : mode === "dudu"
+              ? "Every Dudu trigger fired and what each user did about it."
               : workbenchTab === "feedback"
               ? "Feedback arrives here from the beacon drawer on every user session."
               : "Only published updates appear in user drawer · drafts visible to founder only."}

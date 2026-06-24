@@ -34,6 +34,24 @@
   animation: card-pulse 0.9s ease-in-out;
 }
 
+@keyframes dudu-fade-slide-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-dudu-fade-slide-in {
+  animation: dudu-fade-slide-in 0.25s ease-out;
+}
+
+@keyframes dudu-fade-slide-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(8px) scale(0.97); }
+}
+
+.animate-dudu-fade-slide-out {
+  animation: dudu-fade-slide-out 0.2s ease-in forwards;
+}
+
 body {
   background: #0B0F19;
   color: #e2e8f0;
