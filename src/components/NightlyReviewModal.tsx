@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Check, CheckCircle2, Flame, Clock, AlertTriangle, Rocket, TrendingUp, Moon, Brain } from "lucide-react";
 import { useDashboard, type Task, type TaskArchiveMeta, type MindStateClosure, type NetworkContact, type RecurringTask } from "@/context/DashboardContext";
 import { computeCountdown } from "@/components/widgets/RecurringCard";
+import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 
 // ── Velocity helpers ──────────────────────────────────────────────────────────
 
@@ -34,10 +35,11 @@ function fmtMins(m: number): string {
 // ── Category section (for standard Task objects) ──────────────────────────────
 
 function Section({
-  emoji, title, color, tasks, emptyText,
+  emoji, title, color, tasks,
 }: {
-  emoji: string; title: string; color: string; tasks: Task[]; emptyText: string;
+  emoji: string; title: string; color: string; tasks: Task[];
 }) {
+  if (tasks.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -45,11 +47,8 @@ function Section({
         <span className={`text-[10px] font-semibold uppercase tracking-widest ${color}`}>{title}</span>
         <span className="text-[10px] text-slate-600">({tasks.length})</span>
       </div>
-      {tasks.length === 0 ? (
-        <p className="text-[10px] text-slate-700 px-2">{emptyText}</p>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {tasks.map((t) => {
+      <div className="flex flex-col gap-1">
+        {tasks.map((t) => {
             const intent    = t.intent ?? "finish";
             const totalMins = (t.timeSpentMinutes ?? 0) + (t.manualMinutes ?? 0);
             const target    = t.dailyTargetMinutes ?? 0;
@@ -84,8 +83,7 @@ function Section({
               </div>
             );
           })}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -428,26 +426,22 @@ export default function NightlyReviewModal() {
             </div>
           </div>
 
-          {/* Standard task sections */}
+          {/* Standard task sections — each Section hides itself entirely when empty */}
           <Section
             emoji="✅" title="Accomplished" color="text-emerald-400"
             tasks={accomplished}
-            emptyText="No commitments completed today."
           />
           <Section
             emoji="🔥" title="Deep Work Compounded" color="text-violet-400"
             tasks={deepWork}
-            emptyText="No time goals met."
           />
           <Section
             emoji="⏳" title="Active Rollovers" color="text-amber-400"
             tasks={activeRollovers}
-            emptyText="Nothing carrying forward."
           />
           <Section
             emoji="⚠️" title="Friction Alerts" color="text-rose-400"
             tasks={frictionAlerts}
-            emptyText="No stuck items — great!"
           />
 
           {/* Birthday checklist — unchecked items gracefully clear, never roll over */}
@@ -464,14 +458,11 @@ export default function NightlyReviewModal() {
             onToggle={toggleRecurring}
           />
 
-          {/* Bonus momentum */}
-          {bonusTasks.length > 0 && (
-            <Section
-              emoji="🚀" title="Bonus Momentum" color="text-indigo-400"
-              tasks={bonusTasks}
-              emptyText=""
-            />
-          )}
+          {/* Bonus momentum — Section hides itself when bonusTasks is empty */}
+          <Section
+            emoji="🚀" title="Bonus Momentum" color="text-indigo-400"
+            tasks={bonusTasks}
+          />
 
           {/* Mind State Closure — only when a check-in exists for today */}
           {dailyCheckIn?.date === reviewDate && (
@@ -523,12 +514,13 @@ export default function NightlyReviewModal() {
               </div>
 
               {/* Closure note */}
-              <input
-                type="text"
+              <AutoExpandingTextarea
                 value={closureNote}
                 onChange={(e) => setClosureNote(e.target.value)}
                 placeholder="Day wrap-up thought…"
-                className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50 transition-colors"
+                minRows={1}
+                maxHeightVariant="modal"
+                className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50 transition-colors"
               />
             </div>
           )}
@@ -539,7 +531,7 @@ export default function NightlyReviewModal() {
               {isRetroactive ? (
                 <>Locking yesterday&apos;s day will archive the record, roll over incomplete commitments, and advance your tracking date to today.</>
               ) : (
-                <>Clicking <span className="text-white font-medium">Lock Day & Advance</span> will roll over incomplete commitments, reset today&apos;s queue, and advance your tracking date to today.</>
+                <>Clicking <span className="text-white font-medium">Done!</span> will roll over incomplete commitments, reset today&apos;s queue, and advance your tracking date to today.</>
               )}
             </p>
             <div className="flex gap-3">
@@ -554,7 +546,7 @@ export default function NightlyReviewModal() {
                 className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.4)] flex items-center justify-center gap-2"
               >
                 <Flame className="w-4 h-4" />
-                Lock Day &amp; Advance
+                Done!
               </button>
             </div>
           </div>

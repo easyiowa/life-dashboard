@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
-import { NotebookPen, Trash2, X, Search, Zap, ChevronDown } from "lucide-react";
+import { NotebookPen, Trash2, X, Search, Zap, ChevronDown, Pencil, MoreVertical } from "lucide-react";
 import { useDashboard, type QuickNote, type Sphere } from "@/context/DashboardContext";
+import ManageAreasModal from "@/components/modals/ManageAreasModal";
 import ChecklistEditor, { type ChecklistEditorHandle } from "@/components/ui/ChecklistEditor";
+import ScrollFadeContainer from "@/components/ui/ScrollFadeContainer";
+import SwipeToDeleteRow from "@/components/ui/SwipeToDeleteRow";
 import { areaColor } from "@/lib/areaColors";
+import { stripHtml, makeChecklistToggleHandler } from "@/lib/richText";
 import TaskModal from "@/components/TaskModal";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -40,38 +44,6 @@ function toTaskTitle(text: string): string {
   return (slug || "Review Note") + "...";
 }
 
-// note.text is saved as HTML (so checklist lines render correctly) — every other consumer
-// (search, task-title generation, the notes copied onto a converted task) wants the plain
-// words, not markup, so they all go through this first. Block-level boundaries (<div>/<p>/<br>)
-// are preserved as newlines so toTaskTitle's "first line" logic keeps working unchanged.
-function stripHtml(html: string): string {
-  if (typeof window === "undefined") return html.replace(/<[^>]+>/g, " ").trim();
-  const tmp = document.createElement("div");
-  tmp.innerHTML = html;
-  tmp.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
-  tmp.querySelectorAll("div, p").forEach((block) => block.append("\n"));
-  return (tmp.textContent ?? "").replace(/\n{2,}/g, "\n").trim();
-}
-
-// Click handler shared by both saved-note views (today's feed + archive). Toggling a checklist
-// circle inside already-saved HTML flips its data-checked attribute directly on the DOM (the
-// same in-place mutation ChecklistEditor itself uses), then persists the container's resulting
-// innerHTML back to the note via updateQuickNoteText — so a stored checklist stays interactive
-// after the page reloads, not just live in the composer.
-function makeChecklistToggleHandler(noteId: string, updateQuickNoteText: (id: string, text: string) => void) {
-  return (e: React.MouseEvent<HTMLDivElement>) => {
-    const circle = (e.target as HTMLElement).closest(".qn-check-circle") as HTMLElement | null;
-    if (!circle) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const line = circle.closest(".qn-check-line") as HTMLElement | null;
-    if (!line) return;
-    const next = line.dataset.checked !== "true";
-    line.dataset.checked = String(next);
-    circle.setAttribute("aria-checked", String(next));
-    updateQuickNoteText(noteId, e.currentTarget.innerHTML);
-  };
-}
 
 // ── Note row (today feed) ─────────────────────────────────────────────────────
 
@@ -82,6 +54,7 @@ function NoteRow({
   onToggleImportant,
   onConvertToTask,
   onUpdateText,
+  onEdit,
   sphereColor,
 }: {
   note: QuickNote;
@@ -90,19 +63,47 @@ function NoteRow({
   onToggleImportant: () => void;
   onConvertToTask: () => void;
   onUpdateText: (id: string, text: string) => void;
+  onEdit: () => void;
   sphereColor?: string;
 }) {
   const ac = areaColor(sphereColor);
   return (
+    <SwipeToDeleteRow
+      roundedClassName="rounded-r-lg"
+      actions={[
+        {
+          icon: <span className="text-sm leading-none">🔥</span>,
+          label: note.isImportant ? "Unmark important" : "Mark as important",
+          toneClassName: "bg-amber-500/20 text-amber-400",
+          onClick: onToggleImportant,
+        },
+        {
+          icon: <Zap className="w-3.5 h-3.5" />,
+          label: "Convert to task",
+          toneClassName: "bg-violet-500/20 text-violet-400",
+          onClick: onConvertToTask,
+        },
+        {
+          icon: <Trash2 className="w-3.5 h-3.5" />,
+          label: "Delete note",
+          toneClassName: "bg-red-500/20 text-red-400",
+          onClick: onDelete,
+        },
+      ]}
+    >
     <div className={`group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg w-full transition-all duration-150 hover:bg-white/[0.03]`}>
       <div
         className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words"
-        onClick={makeChecklistToggleHandler(note.id, onUpdateText)}
+        onClick={makeChecklistToggleHandler((html) => onUpdateText(note.id, html))}
         dangerouslySetInnerHTML={{ __html: note.text }}
       />
-      <div className="flex items-center justify-between gap-2">
+      {/* Single compact footer line — timestamp/badge/meta on the left, desktop hover
+          utilities + the always-visible Edit trigger on the far right. Folding Edit into
+          this row (instead of its own line below) keeps every card the same fixed height. */}
+      <div className="flex items-center justify-between w-full gap-2">
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
+          {note.isImportant && <span className="text-[10px] leading-none">🔥</span>}
           {showArea && note.sphere && (
             <>
               <span className="text-slate-700 text-[10px]">·</span>
@@ -116,39 +117,52 @@ function NoteRow({
             </>
           )}
         </div>
-        <div className="flex items-center gap-0.5">
-          {/* Important toggle — always visible when flagged, hover-only when not */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Desktop hover utilities — fully hidden on mobile, replaced by the swipe-left tray above */}
+          <div className="hidden md:flex items-center gap-0.5">
+            {/* Important toggle — always visible when flagged, hover-only when not */}
+            <button
+              onClick={onToggleImportant}
+              title={note.isImportant ? "Unmark important" : "Mark as important"}
+              className={`p-1 rounded-md transition-all text-[11px] leading-none ${
+                note.isImportant
+                  ? "opacity-100 hover:bg-amber-500/10"
+                  : "opacity-0 group-hover:opacity-100 hover:bg-amber-500/10"
+              }`}
+            >
+              🔥
+            </button>
+            {/* Convert to task */}
+            <button
+              onClick={onConvertToTask}
+              title="Convert to task"
+              className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
+            >
+              <Zap className="w-2.5 h-2.5" />
+              <span>Task</span>
+            </button>
+            {/* Delete */}
+            <button
+              onClick={onDelete}
+              title="Delete note"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+            >
+              <Trash2 className="w-2.5 h-2.5" />
+            </button>
+          </div>
+          {/* Edit trigger — loads this note back into the composer above, switching it into update mode */}
           <button
-            onClick={onToggleImportant}
-            title={note.isImportant ? "Unmark important" : "Mark as important"}
-            className={`p-1 rounded-md transition-all text-[11px] leading-none ${
-              note.isImportant
-                ? "opacity-100 hover:bg-amber-500/10"
-                : "opacity-0 group-hover:opacity-100 hover:bg-amber-500/10"
-            }`}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-violet-300 transition-colors"
           >
-            🔥
-          </button>
-          {/* Convert to task */}
-          <button
-            onClick={onConvertToTask}
-            title="Convert to task"
-            className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
-          >
-            <Zap className="w-2.5 h-2.5" />
-            <span>Task</span>
-          </button>
-          {/* Delete */}
-          <button
-            onClick={onDelete}
-            title="Delete note"
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-          >
-            <Trash2 className="w-2.5 h-2.5" />
+            <Pencil className="w-2.5 h-2.5" />
+            Edit
           </button>
         </div>
       </div>
     </div>
+    </SwipeToDeleteRow>
   );
 }
 
@@ -157,72 +171,39 @@ function NoteRow({
 function ArchiveNoteItem({
   note,
   spheres,
-  onDelete,
-  onToggleImportant,
-  onConvertToTask,
   onUpdateText,
 }: {
   note: QuickNote;
   spheres: Sphere[];
-  onDelete: () => void;
-  onToggleImportant: () => void;
-  onConvertToTask: () => void;
   onUpdateText: (id: string, text: string) => void;
 }) {
   const ac = areaColor(spheres.find((s) => s.name === note.sphere)?.labelColor);
   return (
     <div
-      className={`group flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg transition-all hover:bg-white/[0.03]`}
+      className={`flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg transition-all hover:bg-white/[0.03]`}
     >
       <div
         className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words"
-        onClick={makeChecklistToggleHandler(note.id, onUpdateText)}
+        onClick={makeChecklistToggleHandler((html) => onUpdateText(note.id, html))}
         dangerouslySetInnerHTML={{ __html: note.text }}
       />
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
-          {note.sphere && (
-            <>
-              <span className="text-slate-700 text-[10px]">·</span>
-              <span className={`text-[10px] ${ac.text}`}>{note.sphere}</span>
-            </>
-          )}
-          {note.projectId && (
-            <>
-              <span className="text-slate-700 text-[10px]">·</span>
-              <span className="text-[10px] text-slate-600">{note.projectId}</span>
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={onToggleImportant}
-            title={note.isImportant ? "Unmark important" : "Mark as important"}
-            className={`p-1 rounded-md transition-all text-[11px] leading-none ${
-              note.isImportant
-                ? "opacity-100 hover:bg-amber-500/10"
-                : "opacity-0 group-hover:opacity-100 hover:bg-amber-500/10"
-            }`}
-          >
-            🔥
-          </button>
-          <button
-            onClick={onConvertToTask}
-            title="Convert to task"
-            className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
-          >
-            <Zap className="w-2.5 h-2.5" />
-            <span>Task</span>
-          </button>
-          <button
-            onClick={onDelete}
-            title="Delete note"
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-          >
-            <Trash2 className="w-2.5 h-2.5" />
-          </button>
-        </div>
+      {/* No hover action buttons here — the archive is a minimal, read-mostly view. A
+          persisted favorite stays visible as a static badge instead of an interactive toggle. */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
+        {note.isImportant && <span className="text-[10px] leading-none">🔥</span>}
+        {note.sphere && (
+          <>
+            <span className="text-slate-700 text-[10px]">·</span>
+            <span className={`text-[10px] ${ac.text}`}>{note.sphere}</span>
+          </>
+        )}
+        {note.projectId && (
+          <>
+            <span className="text-slate-700 text-[10px]">·</span>
+            <span className="text-[10px] text-slate-600">{note.projectId}</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -348,15 +329,12 @@ function NoteSectionNode({
 }
 
 function NoteDayAccordion({
-  group, isOpen, onToggle, spheres, onDelete, onToggleImportant, onConvertToTask, onUpdateText,
+  group, isOpen, onToggle, spheres, onUpdateText,
 }: {
   group: NoteDayGroup;
   isOpen: boolean;
   onToggle: () => void;
   spheres: Sphere[];
-  onDelete: (id: string) => void;
-  onToggleImportant: (id: string) => void;
-  onConvertToTask: (note: QuickNote) => void;
   onUpdateText: (id: string, text: string) => void;
 }) {
   return (
@@ -381,9 +359,6 @@ function NoteDayAccordion({
               key={note.id}
               note={note}
               spheres={spheres}
-              onDelete={() => onDelete(note.id)}
-              onToggleImportant={() => onToggleImportant(note.id)}
-              onConvertToTask={() => onConvertToTask(note)}
               onUpdateText={onUpdateText}
             />
           ))}
@@ -399,17 +374,11 @@ function ArchiveModal({
   notes,
   spheres,
   onClose,
-  onDelete,
-  onToggleImportant,
-  onConvertToTask,
   onUpdateText,
 }: {
   notes: QuickNote[];
   spheres: Sphere[];
   onClose: () => void;
-  onDelete: (id: string) => void;
-  onToggleImportant: (id: string) => void;
-  onConvertToTask: (note: QuickNote) => void;
   onUpdateText: (id: string, text: string) => void;
 }) {
   const [query,          setQuery]          = useState("");
@@ -557,9 +526,6 @@ function ArchiveModal({
                       isOpen={!!expandedGroups[g.key]}
                       onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
                       spheres={spheres}
-                      onDelete={onDelete}
-                      onToggleImportant={onToggleImportant}
-                      onConvertToTask={onConvertToTask}
                       onUpdateText={onUpdateText}
                     />
                   ))}
@@ -581,9 +547,6 @@ function ArchiveModal({
                       isOpen={!!expandedGroups[g.key]}
                       onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
                       spheres={spheres}
-                      onDelete={onDelete}
-                      onToggleImportant={onToggleImportant}
-                      onConvertToTask={onConvertToTask}
                       onUpdateText={onUpdateText}
                     />
                   ))}
@@ -606,9 +569,6 @@ function ArchiveModal({
                       isOpen={!!expandedGroups[g.key]}
                       onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
                       spheres={spheres}
-                      onDelete={onDelete}
-                      onToggleImportant={onToggleImportant}
-                      onConvertToTask={onConvertToTask}
                       onUpdateText={onUpdateText}
                     />
                   ))}
@@ -690,7 +650,13 @@ export default function QuickNotesCard() {
   const [text,              setText]              = useState(""); // HTML — mirrors the ChecklistEditor's live content
   const [projectId,         setProjectId]         = useState("");
   const [showAllNotesModal, setShowAllNotesModal] = useState(false);
+  const [showManageAreas,   setShowManageAreas]   = useState(false);
+  const [isExpandedToday,   setIsExpandedToday]   = useState(false);
   const editorRef = useRef<ChecklistEditorHandle>(null);
+
+  // Set while editing an existing note loaded back into the composer above — submitNote()
+  // updates this record instead of creating a new one while it's non-null.
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   // Task conversion modal state
   const [taskModalOpen,     setTaskModalOpen]     = useState(false);
@@ -747,11 +713,19 @@ export default function QuickNotesCard() {
   const sphereProjects  = isAll ? [] : projects.filter((p) => p.sphere === activeSphere);
 
   // Notes shown in the main feed — favorites always float to the top
-  const todayNotes: QuickNote[] = (
-    isAll
-      ? quickNotes.filter((n) => n.createdAt.startsWith(TODAY))
-      : quickNotes.filter((n) => n.sphere === activeSphere && n.createdAt.startsWith(TODAY))
-  ).slice().sort((a, b) => Number(b.isImportant) - Number(a.isImportant));
+  const todayNotesRaw: QuickNote[] = isAll
+    ? quickNotes.filter((n) => n.createdAt.startsWith(TODAY))
+    : quickNotes.filter((n) => n.sphere === activeSphere && n.createdAt.startsWith(TODAY));
+  const todayNotes = [...todayNotesRaw].sort((a, b) => Number(b.isImportant) - Number(a.isImportant));
+
+  // Collapsed view shows only the single most recently created note (not necessarily
+  // todayNotes[0], which favorite status can bump ahead of a newer plain note).
+  const mostRecentTodayNote = todayNotesRaw.length > 0
+    ? [...todayNotesRaw].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+    : null;
+  const visibleTodayNotes = !isExpandedToday && todayNotes.length > 1
+    ? (mostRecentTodayNote ? [mostRecentTodayNote] : [])
+    : todayNotes;
 
   function handleConvertToTask(note: QuickNote) {
     setTaskModalDefaults({
@@ -765,10 +739,28 @@ export default function QuickNotesCard() {
   function submitNote() {
     const plain = stripHtml(text).trim();
     if (!plain || isAll) return;
-    addQuickNote(text, activeSphere, projectId || undefined);
+    if (editingNoteId) {
+      updateQuickNoteText(editingNoteId, text);
+      setEditingNoteId(null);
+    } else {
+      addQuickNote(text, activeSphere, projectId || undefined);
+    }
     setText("");
     setProjectId("");
     editorRef.current?.clear();
+  }
+
+  // Loads an existing note back into the composer above and flips submitNote() into update
+  // mode for it — switches the active sphere tab to match so the composer is actually visible.
+  function handleEditNote(note: QuickNote) {
+    const matchingSphere = spheres.find((s) => s.name === note.sphere);
+    if (matchingSphere) {
+      hasUserChosen.current = true;
+      setActiveSphereId(matchingSphere.id);
+    }
+    setProjectId(note.projectId ?? "");
+    setEditingNoteId(note.id);
+    setText(note.text);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -783,9 +775,6 @@ export default function QuickNotesCard() {
           notes={quickNotes}
           spheres={spheres}
           onClose={() => setShowAllNotesModal(false)}
-          onDelete={deleteQuickNote}
-          onToggleImportant={toggleQuickNoteImportant}
-          onConvertToTask={(note) => { setShowAllNotesModal(false); handleConvertToTask(note); }}
           onUpdateText={updateQuickNoteText}
         />
       )}
@@ -798,7 +787,12 @@ export default function QuickNotesCard() {
         defaultNotes={taskModalDefaults.notes}
       />
 
-      <div className="w-full rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col h-full md:min-h-[340px]">
+      <ManageAreasModal
+        isOpen={showManageAreas}
+        onClose={() => setShowManageAreas(false)}
+      />
+
+      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col h-full md:min-h-[340px]">
 
         {/* Header */}
         <div className="flex items-center justify-between flex-shrink-0">
@@ -808,19 +802,29 @@ export default function QuickNotesCard() {
               Quick Notes
             </h2>
           </div>
-          <button
-            onClick={() => setShowAllNotesModal(true)}
-            className="text-[11px] font-normal text-violet-400/70 hover:text-violet-300 hover:underline transition-colors whitespace-nowrap"
-          >
-            View all →
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAllNotesModal(true)}
+              className="text-[11px] font-normal text-violet-400/70 hover:text-violet-300 hover:underline transition-colors whitespace-nowrap"
+            >
+              View all →
+            </button>
+            <button
+              onClick={() => setShowManageAreas(true)}
+              title="Manage areas"
+              className="flex-shrink-0 p-1 text-slate-500 hover:text-violet-300 active:opacity-70 transition-colors"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Area tabs — drag to reorder, order persisted to localStorage */}
-        <div
-          className="flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal mt-4 flex-shrink-0 [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: "none" }}
-        >
+        {/* Area tabs — drag to reorder, order persisted to localStorage. Edge-fade scroll
+            masking (right-only at rest, both edges mid-scroll, left-only at the end) is
+            handled internally by ScrollFadeContainer — see that component for why a mask is
+            used here instead of a solid-color overlay against this card's glassmorphic
+            bg-white/[0.03] backdrop-blur-xl surface. */}
+        <ScrollFadeContainer className="mt-4 flex-shrink-0">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedSpheres.map((s) => s.id)} strategy={horizontalListSortingStrategy}>
               {orderedSpheres.map((sphere) => (
@@ -846,7 +850,7 @@ export default function QuickNotesCard() {
           >
             All
           </button>
-        </div>
+        </ScrollFadeContainer>
 
         {/* Capture form — hidden when "All" is active */}
         {isAll ? (
@@ -854,13 +858,40 @@ export default function QuickNotesCard() {
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4 flex-shrink-0">
             <ChecklistEditor
+              // Remounts (and re-seeds defaultValue) whenever the edit target changes — the
+              // form/editor often stays mounted across that transition (e.g. editing a note
+              // that's already in the active sphere), so a key is the only reliable way to
+              // load fresh content into what may already be a live, focused instance.
+              key={editingNoteId ?? "composer"}
               ref={editorRef}
+              defaultValue={text}
+              // Edit-click sets editingNoteId, which both forces this remount (above) and
+              // flips autoFocus on — ChecklistEditor's own mount effect then focuses and locks
+              // the caret to the end of the freshly-seeded note text in one step.
+              autoFocus={!!editingNoteId}
               onChange={setText}
               onSubmitShortcut={submitNote}
               placeholder="Capture an idea before it slips away…"
               maxHeightVariant="widget"
               className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] transition-colors"
             />
+            {editingNoteId && (
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-medium text-violet-400/80">Editing note…</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingNoteId(null);
+                    setText("");
+                    setProjectId("");
+                    editorRef.current?.clear();
+                  }}
+                  className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <select
                 value={projectId}
@@ -875,34 +906,52 @@ export default function QuickNotesCard() {
               <button
                 type="submit"
                 disabled={!stripHtml(text).trim()}
+                // Without this, mousedown blurs the still-focused editor, its toolbar
+                // unmounts mid-click, the layout shifts up underneath the pointer, and the
+                // browser's click lands somewhere other than this button — requiring a
+                // second, now-accurate click. Keeping focus in the editor avoids the shift.
+                onMouseDown={(e) => e.preventDefault()}
                 className="w-full md:w-auto px-4 h-8 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-medium transition-all flex-shrink-0"
               >
-                Save
+                {editingNoteId ? "Update" : "Save"}
               </button>
             </div>
             <p className="hidden md:block text-[10px] text-slate-700">⌘ + Enter to save quickly</p>
           </form>
         )}
 
-        {/* Notes feed */}
+        {/* Notes feed — collapsed to just the most recent note once today's list grows past
+            one, so a high-activity day doesn't push the whole widget into a long scroll. */}
         <div className="md:flex-1 overflow-y-auto mt-3 flex flex-col gap-1.5 pr-1 min-h-0">
           {todayNotes.length === 0 ? (
             <p className="hidden md:block text-xs text-slate-700 text-center py-4">
               {isAll ? "No notes today across any area." : `No notes today for ${activeSphere}.`}
             </p>
           ) : (
-            todayNotes.map((note) => (
-              <NoteRow
-                key={note.id}
-                note={note}
-                showArea={isAll}
-                onDelete={() => deleteQuickNote(note.id)}
-                onToggleImportant={() => toggleQuickNoteImportant(note.id)}
-                onConvertToTask={() => handleConvertToTask(note)}
-                onUpdateText={updateQuickNoteText}
-                sphereColor={spheres.find((s) => s.name === note.sphere)?.labelColor}
-              />
-            ))
+            <>
+              {visibleTodayNotes.map((note) => (
+                <NoteRow
+                  key={note.id}
+                  note={note}
+                  showArea={isAll}
+                  onDelete={() => deleteQuickNote(note.id)}
+                  onToggleImportant={() => toggleQuickNoteImportant(note.id)}
+                  onConvertToTask={() => handleConvertToTask(note)}
+                  onUpdateText={updateQuickNoteText}
+                  onEdit={() => handleEditNote(note)}
+                  sphereColor={spheres.find((s) => s.name === note.sphere)?.labelColor}
+                />
+              ))}
+              {todayNotes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setIsExpandedToday((v) => !v)}
+                  className="flex items-center justify-center gap-1 text-[10px] font-medium text-slate-500 hover:text-violet-300 transition-colors py-1"
+                >
+                  {isExpandedToday ? "Show less" : `Show more (+${todayNotes.length - 1} note${todayNotes.length - 1 !== 1 ? "s" : ""})`}
+                </button>
+              )}
+            </>
           )}
         </div>
 

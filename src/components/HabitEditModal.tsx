@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import { useDashboard, type Habit } from "@/context/DashboardContext";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
@@ -63,7 +63,7 @@ const FREQ_OPTIONS: { value: Habit["frequency"]; label: string }[] = [
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export default function HabitEditModal({ habit, onClose }: Props) {
-  const { updateHabit } = useDashboard();
+  const { updateHabit, deleteHabit } = useDashboard();
 
   const [title,       setTitle]       = useState("");
   const [type,        setType]        = useState<Habit["type"]>("start");
@@ -131,15 +131,29 @@ export default function HabitEditModal({ habit, onClose }: Props) {
                 locked={emojiLocked}
                 onPick={(e) => { setEmoji(e); setEmojiLocked(true); }}
               />
-              <input
-                autoFocus
-                type="text"
-                value={title}
-                onChange={(e) => { setTitle(e.target.value); setTitleErr(false); }}
-                className={`flex-1 h-10 px-3 rounded-xl bg-white/[0.04] border text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors ${
-                  titleErr ? "border-red-500/60" : "border-white/[0.07]"
-                }`}
-              />
+              <div className="relative flex-1">
+                <input
+                  autoFocus
+                  type="text"
+                  value={title}
+                  onChange={(e) => { setTitle(e.target.value); setTitleErr(false); }}
+                  className={`w-full h-10 px-3 pr-10 rounded-xl bg-white/[0.04] border text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors ${
+                    titleErr ? "border-red-500/60" : "border-white/[0.07]"
+                  }`}
+                />
+                {/* This modal only ever represents an existing habit (HabitEditModal requires a
+                    non-null habit — see the early `if (!habit) return null` above), so the
+                    delete action belongs here unconditionally; the separate "+" creation flow
+                    goes through HabitModal instead, which has no such button. */}
+                <button
+                  type="button"
+                  onClick={() => { deleteHabit(habit!.id); onClose(); }}
+                  title="Delete habit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-red-400 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             {titleErr && <p className="text-[10px] text-red-400">Habit name is required.</p>}
             {!emojiLocked && title.length > 0 && (

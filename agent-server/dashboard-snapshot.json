@@ -1,6 +1,76 @@
 {
   "tasks": [
     {
+      "id": "78555e27-1765-4d0c-a6e7-821de8c3c945",
+      "sphere": "iowa",
+      "project": "HealthD FEWFW EF WE FWEF WEF W",
+      "title": "Ernie just SUCKS",
+      "priority": "Med",
+      "energy": "Easy",
+      "urgency": "not-urgent",
+      "done": true,
+      "deadline": "2026-06-16",
+      "notes": "",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 1,
+      "dailyTracking": {
+        "2026-06-16": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-17": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        }
+      }
+    },
+    {
+      "id": "b5d79301-29c4-4110-8d83-5dddcbeda25d",
+      "sphere": "dashboard",
+      "project": "Ready 4 Friends",
+      "title": "Polishing",
+      "priority": "High",
+      "energy": "Easy",
+      "urgency": "urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "",
+      "manualMinutes": 0,
+      "queuedDate": "2026-06-24",
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 3,
+      "dailyTracking": {
+        "2026-06-13": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 3
+        },
+        "2026-06-18": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-19": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-24": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        }
+      }
+    },
+    {
       "id": "ea1b3615-144d-4462-9f7a-47f3a7ae6233",
       "sphere": "dashboard",
       "project": "Reminders",
@@ -39,84 +109,74 @@
       "dailyTracking": {}
     },
     {
-      "id": "d0acbe34-3689-4798-8f81-a64b095b85a0",
+      "id": "5a2fd7b4-105e-4370-a9b9-5ee60db58fbe",
       "sphere": "iowa",
       "project": "HealthD FEWFW EF WE FWEF WEF W",
-      "title": "HUIIIIIII",
-      "priority": "Med",
+      "title": "Synlab appointment",
+      "priority": "Low",
       "energy": "Easy",
-      "urgency": "not-urgent",
+      "urgency": "urgent",
       "done": false,
-      "deadline": null,
-      "notes": "",
+      "deadline": "2026-06-17",
+      "notes": "pwofncewäpafn\nwefvfweja\nfvpjfwea\nfopvj\nfweav",
       "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
+      "queuedDate": "2026-06-19",
+      "timeSpentMinutes": 8,
       "intent": "finish",
       "dailyTargetMinutes": null,
-      "rolloverCount": 0,
+      "rolloverCount": 2,
       "dailyTracking": {
-        "2026-06-20": {
+        "2026-06-13": {
           "intent": "finish",
           "timeSpentMinutes": 0,
           "dailyTargetMinutes": null
+        },
+        "2026-06-15": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 25
+        },
+        "2026-06-17": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 2
+        },
+        "2026-06-19": {
+          "intent": "time",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": 2
         }
       }
     },
     {
-      "id": "78555e27-1765-4d0c-a6e7-821de8c3c945",
+      "id": "3b73446d-1ab3-4bb2-a8bb-81390a5515fa",
       "sphere": "iowa",
-      "project": "HealthD FEWFW EF WE FWEF WEF W",
-      "title": "Ernie just SUCKS",
-      "priority": "Med",
+      "project": "Sport",
+      "title": "Create Workout Plan",
+      "priority": "Low",
       "energy": "Easy",
       "urgency": "not-urgent",
       "done": true,
-      "deadline": "2026-06-16",
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 1,
-      "dailyTracking": {
-        "2026-06-16": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-17": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      }
-    },
-    {
-      "id": "735676dd-a086-405f-bb85-dafaf8043515",
-      "sphere": "iowa",
-      "project": "HealthD FEWFW EF WE FWEF WEF W",
-      "title": "OWEImngfpiowemgewGFoöibäibäoibhöioböoibäoibäoihbn",
-      "priority": "High",
-      "energy": "Quick",
-      "urgency": "urgent",
-      "done": false,
       "deadline": null,
-      "notes": "öowergn¨pweognw\n'eg",
+      "notes": "•&nbsp;ihoh\nkjmöm\nopömsndsdad<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">sadsadad</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">sdsad</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">asd</span></div>",
       "manualMinutes": 0,
-      "queuedDate": null,
+      "queuedDate": "2026-06-24",
       "timeSpentMinutes": 0,
       "intent": "finish",
       "dailyTargetMinutes": null,
       "rolloverCount": 1,
       "dailyTracking": {
-        "2026-06-19": {
+        "2026-06-22": {
           "intent": "finish",
           "timeSpentMinutes": 0,
           "dailyTargetMinutes": null
         },
-        "2026-06-20": {
+        "2026-06-23": {
+          "intent": "finish",
+          "timeSpentMinutes": 0,
+          "dailyTargetMinutes": null
+        },
+        "2026-06-24": {
           "intent": "finish",
           "timeSpentMinutes": 0,
           "dailyTargetMinutes": null
@@ -276,25 +336,6 @@
       "dailyTracking": {}
     },
     {
-      "id": "3b73446d-1ab3-4bb2-a8bb-81390a5515fa",
-      "sphere": "iowa",
-      "project": "Sport",
-      "title": "Create Workout Plan",
-      "priority": "Low",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {}
-    },
-    {
       "id": "32a49518-057b-49a2-947d-c610a78c900e",
       "sphere": "siin",
       "project": "Business",
@@ -434,81 +475,6 @@
       }
     },
     {
-      "id": "b5d79301-29c4-4110-8d83-5dddcbeda25d",
-      "sphere": "dashboard",
-      "project": "Polishing",
-      "title": "Projects & Tasks",
-      "priority": "High",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "- when adding first task without having a project yet, dont show the (Auto-route to Random), better show \"Create first Project ☝🏼\", so we help user to think about creating projects. if the user still dont do it, it will auto route to \"Random\"\n- make note field expandable when text become longer\n- make text convertions into dot bullet points and to do checkboxes\n- tag creation/editing needs fixes",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 3,
-      "dailyTracking": {
-        "2026-06-13": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 3
-        },
-        "2026-06-18": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-19": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      }
-    },
-    {
-      "id": "5a2fd7b4-105e-4370-a9b9-5ee60db58fbe",
-      "sphere": "iowa",
-      "project": "HealthD FEWFW EF WE FWEF WEF W",
-      "title": "Synlab appointment",
-      "priority": "Low",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": true,
-      "deadline": "2026-06-17",
-      "notes": "pwofncewäpafn\nwefvfweja\nfvpjfwea\nfopvj\nfweav",
-      "manualMinutes": 0,
-      "queuedDate": "2026-06-19",
-      "timeSpentMinutes": 8,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 2,
-      "dailyTracking": {
-        "2026-06-13": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-15": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 25
-        },
-        "2026-06-17": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 2
-        },
-        "2026-06-19": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 2
-        }
-      }
-    },
-    {
       "id": "74ec8894-82ab-473d-9008-0eb098efacc1",
       "sphere": "dashboard",
       "project": "Database",
@@ -558,7 +524,8 @@
       "emoji": "💊",
       "notes": "",
       "history": {
-        "2026-06-15": true
+        "2026-06-15": true,
+        "2026-06-22": true
       }
     },
     {
@@ -589,17 +556,6 @@
       "history": {
         "2026-06-15": true
       }
-    },
-    {
-      "id": "082dce45-a088-435d-a51b-9670e29ef317",
-      "title": "laptop",
-      "type": "start",
-      "routine": "evening",
-      "frequency": "daily",
-      "targetCount": 5,
-      "emoji": "💻",
-      "notes": "",
-      "history": {}
     }
   ],
   "projects": [
@@ -613,34 +569,48 @@
         "8a1af152-d802-4196-b831-a9755f170808"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "eaf2b6b2-65ec-46bf-9397-71421d4684e7",
       "sphere": "iowa",
       "name": "Random",
       "emoji": "🎲",
-      "tagIds": [],
+      "tagIds": [
+        "395b62b2-0e24-4794-9b88-b47915ae207e",
+        "ad0dcfb7-0b4b-4af1-b874-af513f2fdb1c"
+      ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "22fe2656-eab1-4254-9e07-911d98c1613e",
       "sphere": "iowa",
       "name": "HealthD FEWFW EF WE FWEF WEF W",
       "emoji": "🥦",
-      "tagIds": [],
+      "tagIds": [
+        "395b62b2-0e24-4794-9b88-b47915ae207e",
+        "7b0b47fe-792e-4ce4-992b-6eba83585e42",
+        "8a1af152-d802-4196-b831-a9755f170808",
+        "a9b08a8f-2a9b-489b-ae7a-bea8f833bc0b",
+        "ad0dcfb7-0b4b-4af1-b874-af513f2fdb1c",
+        "b9b00268-343e-4f77-935b-59c6c4031ab4"
+      ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "1ac3d7f5-1fa1-4279-acea-0a8e2364f73d",
       "sphere": "dashboard",
-      "name": "Polishing",
-      "emoji": "💫",
+      "name": "Ready 4 Friends",
+      "emoji": "👊",
       "tagIds": [],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "2132008c-056c-4734-8209-1570759ad6b9",
@@ -649,7 +619,8 @@
       "emoji": "💪",
       "tagIds": [],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "81659210-84d9-4ff5-a38d-f2fa9be3a3f6",
@@ -660,7 +631,8 @@
         "b9b00268-343e-4f77-935b-59c6c4031ab4"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "a317d114-47ad-4c69-9ce9-4ce72b9c075f",
@@ -669,7 +641,8 @@
       "emoji": "🎲",
       "tagIds": [],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "becbaf91-9b77-4135-979b-9012032552f7",
@@ -678,7 +651,8 @@
       "emoji": "💡",
       "tagIds": [],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "e0893860-283e-4740-8635-1a5fc4d89383",
@@ -689,7 +663,8 @@
         "b9b00268-343e-4f77-935b-59c6c4031ab4"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "4c1ae3f9-0bcd-48a3-90a7-83533bcb516c",
@@ -700,7 +675,8 @@
         "395b62b2-0e24-4794-9b88-b47915ae207e"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "65b16a82-db5d-4a78-822a-1119471e3dfa",
@@ -711,7 +687,8 @@
         "395b62b2-0e24-4794-9b88-b47915ae207e"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "a7af486f-e2dc-4455-be00-aa9a48d82f11",
@@ -723,7 +700,8 @@
         "8a1af152-d802-4196-b831-a9755f170808"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "5a3b7dda-0958-430e-9edd-c312bc2cb408",
@@ -734,7 +712,8 @@
         "f2ecd8ba-4546-4404-be59-5ddecbdbea2f"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "b4d9f704-81e9-4f5b-ae47-8c478f52ebc5",
@@ -743,7 +722,8 @@
       "emoji": "👨‍⚖️",
       "tagIds": [],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "060b71e7-6702-447e-babf-4426112294e2",
@@ -754,7 +734,8 @@
         "8a1af152-d802-4196-b831-a9755f170808"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "ca206143-fb5c-408b-8130-d72019ec9e3a",
@@ -766,7 +747,8 @@
         "8a1af152-d802-4196-b831-a9755f170808"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "5f101df0-53d0-494a-9084-a70f14e82b28",
@@ -774,12 +756,13 @@
       "name": "Paywall",
       "emoji": "💳",
       "tagIds": [
-        "8a1af152-d802-4196-b831-a9755f170808",
         "7b0b47fe-792e-4ce4-992b-6eba83585e42",
+        "8a1af152-d802-4196-b831-a9755f170808",
         "b9b00268-343e-4f77-935b-59c6c4031ab4"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "a400d1f0-30a8-4a29-9d94-bc3e9b014868",
@@ -790,7 +773,8 @@
         "395b62b2-0e24-4794-9b88-b47915ae207e"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "ca2476d5-cade-4a2b-9ea7-ec568ea41bc8",
@@ -803,7 +787,8 @@
         "ad0dcfb7-0b4b-4af1-b874-af513f2fdb1c"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "2d1ba7e3-542f-4367-b5ff-15eecb56d4b4",
@@ -814,7 +799,8 @@
         "395b62b2-0e24-4794-9b88-b47915ae207e"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     },
     {
       "id": "d5c02396-808f-4d0e-b22b-0b25b004318d",
@@ -825,7 +811,8 @@
         "7b0b47fe-792e-4ce4-992b-6eba83585e42"
       ],
       "status": "on-track",
-      "milestone": "In progress"
+      "milestone": "In progress",
+      "sortOrder": 0
     }
   ],
   "spheres": [
@@ -893,13 +880,18 @@
       "id": "72fef044-a390-40f4-8850-a9f2cc74d808",
       "title": "Rave pills",
       "notes": "",
-      "intervalDays": 90,
-      "intervalLabel": "Every 3 Months",
-      "startDate": "2026-06-17",
+      "intervalDays": 30,
+      "intervalLabel": "Every Month",
+      "startDate": "2026-05-23",
       "sphere": "iowa",
-      "lastDoneDate": null,
-      "completionCount": 0,
-      "history": []
+      "lastDoneDate": "2026-06-23T00:00:00.000Z",
+      "completionCount": 1,
+      "history": [
+        {
+          "id": "ca1574bd-76ab-44b6-939e-7b9c5269229d",
+          "completedAt": "June 23, 2026 at 21:57"
+        }
+      ]
     },
     {
       "id": "7def23ea-d6e7-4e49-858c-cbb50263e044",
@@ -909,12 +901,94 @@
       "intervalLabel": "Every Week",
       "startDate": "2026-06-20",
       "sphere": "iowa",
-      "lastDoneDate": null,
-      "completionCount": 0,
-      "history": []
+      "lastDoneDate": "2026-06-23T00:00:00.000Z",
+      "completionCount": 1,
+      "history": [
+        {
+          "id": "705f4080-421e-4c30-a4e4-fe5dac638c05",
+          "completedAt": "June 23, 2026 at 21:57"
+        }
+      ]
     }
   ],
   "quickNotes": [
+    {
+      "id": "8d95a915-09ee-4559-99df-90295f496a91",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">widget order after onboarding</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">sample data</span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\"><br></span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">bug: when choosen no widget in onboarding, it choses all</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">add \"back\" after logged in directly as new user&nbsp;</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">edit projects</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">manage group in network (improve) + align with area edit</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">quick note pills dym´namic based on last entry</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">\"view more\" collpase for todays notes</span></div>",
+      "sphere": "dashboard",
+      "createdAt": "2026-06-24 08:57",
+      "isImportant": false
+    },
+    {
+      "id": "8e03da28-1aed-47a3-84b7-ddeeee8b3bac",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">one spot (settings) to control areas, groups etc</span></div>",
+      "sphere": "dashboard",
+      "createdAt": "2026-06-24 05:36",
+      "isImportant": false
+    },
+    {
+      "id": "4b580d84-28f3-46af-8a8f-f20114e3d4a3",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">vertical dot menu, where needed</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">bug: when choosen no widget in onboarding, it choses all</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">add \"back\" after logged in directly as new user&nbsp;<br></span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">rename widget network</span></div>",
+      "sphere": "dashboard",
+      "createdAt": "2026-06-24 05:36",
+      "isImportant": false
+    },
+    {
+      "id": "7b97e8a0-5317-4ca8-8d4a-391d132ecc60",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">bullet points as dots</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">move the quick action menu on destkop (in settings you can change your position)</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">project, change opacity when click on a project</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">align with the container vertically (projects/tasks)</span></div>",
+      "sphere": "dashboard",
+      "createdAt": "2026-06-24 05:04",
+      "isImportant": false
+    },
+    {
+      "id": "81619036-68cd-4a46-a968-33c4027d3e26",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">all pop up correction (mobile)</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><br></div>",
+      "sphere": "dashboard",
+      "createdAt": "2026-06-24 00:01",
+      "isImportant": false
+    },
+    {
+      "id": "a9350545-70fe-49de-8ca4-165e0bdfb964",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">mobile version quick notes \"favourites\", task, delete\" hover actrions implement</span></div>",
+      "sphere": "siin",
+      "createdAt": "2026-06-23 23:43",
+      "isImportant": false
+    },
+    {
+      "id": "9e171f17-4e33-43e6-9fb0-143fefcd9555",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">make the saved quick notes editable</span></div>",
+      "sphere": "siin",
+      "createdAt": "2026-06-23 23:42",
+      "isImportant": false
+    },
+    {
+      "id": "f58a3d82-dd2b-41c6-a8d8-b87039088d05",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">fade on the right side of the pilss</span></div>",
+      "sphere": "siin",
+      "createdAt": "2026-06-23 23:42",
+      "isImportant": false
+    },
+    {
+      "id": "2188c0a6-9dfe-4e87-a06e-cf0df0c98047",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">still same problem when deleting the checkbox</span></div>",
+      "sphere": "siin",
+      "createdAt": "2026-06-23 23:39",
+      "isImportant": false
+    },
+    {
+      "id": "0011ea30-b16d-4f85-a01a-33bacdeaac2e",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">double save when clicking save in quick widget</span></div>",
+      "sphere": "siin",
+      "createdAt": "2026-06-23 23:39",
+      "isImportant": false
+    },
+    {
+      "id": "fbff3ff5-0e0d-4171-ac4d-3abb1c9eaf9e",
+      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">edit project in the widget</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">fix \"save\" overlap in half mobile view in notes widget</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">bullet points creation •&nbsp;</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">apply todo/bulletpoint to all text fields</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">project widget: tags when more then one, show only one +3</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">delete habit in mobile</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\"><br></span></div>",
+      "sphere": "siin",
+      "createdAt": "2026-06-23 23:38",
+      "isImportant": false
+    },
     {
       "id": "a2f11bed-e17d-43fd-b7dc-57d255aacf0f",
       "text": "не откладывай на завтра то, что можно забыть сегодня",
@@ -1014,5 +1088,5 @@
       "isImportant": false
     }
   ],
-  "currentTrackingDate": "2026-06-22"
+  "currentTrackingDate": "2026-06-24"
 }

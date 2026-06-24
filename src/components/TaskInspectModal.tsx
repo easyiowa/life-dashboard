@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import TextareaAutosize from "react-textarea-autosize";
 import DatePickerInput from "@/components/ui/DatePickerInput";
+import ChecklistEditor from "@/components/ui/ChecklistEditor";
 import { secsToMins } from "@/lib/time";
 import { areaColor } from "@/lib/areaColors";
-import { X, Clock, CheckCircle2, Circle, ChevronDown } from "lucide-react";
+import { makeChecklistToggleHandler, stripHtml } from "@/lib/richText";
+import { X, Clock, CheckCircle2, Circle, ChevronDown, Pencil } from "lucide-react";
 import {
   useDashboard,
   type Task,
@@ -75,12 +76,14 @@ export default function TaskInspectModal({ task, onClose }: Props) {
   const [rawManualMins, setRawManualMins] = useState<string>("0");
   const [showSettings, setShowSettings]   = useState(false);
   const [localTargetMins, setLocalTargetMins] = useState<string>("");
+  const [isEditingNotes, setIsEditingNotes]   = useState(false);
 
   useEffect(() => {
     if (task) {
       setForm({ ...task });
       setRawManualMins(String(task.manualMinutes));
       setShowSettings(false);
+      setIsEditingNotes(false);
       setLocalTargetMins(task.dailyTracking?.[currentTrackingDate]?.dailyTargetMinutes?.toString() ?? "");
     }
   }, [task]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -175,16 +178,47 @@ export default function TaskInspectModal({ task, onClose }: Props) {
             />
           </div>
 
-          {/* Notes — front and centre for comfortable reading */}
+          {/* Notes — front and centre for comfortable reading. Read-only by default (so a
+              saved checklist/bullet stays tap-to-toggle without ever focusing a contentEditable
+              or popping the mobile keyboard); the Edit trigger switches to the same rich
+              ChecklistEditor Quick Notes and the Add Task modal use. */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notes</label>
-            <TextareaAutosize
-              value={form.notes}
-              onChange={(e) => setForm((f) => f ? { ...f, notes: e.target.value } : f)}
-              placeholder="Context, links, or details…"
-              minRows={3}
-              className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors resize-none"
-            />
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notes</label>
+              <button
+                type="button"
+                onClick={() => setIsEditingNotes((v) => !v)}
+                className="flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-violet-300 transition-colors"
+              >
+                <Pencil className="w-2.5 h-2.5" />
+                {isEditingNotes ? "Done" : "Edit"}
+              </button>
+            </div>
+
+            {isEditingNotes ? (
+              <ChecklistEditor
+                defaultValue={form.notes}
+                autoFocus
+                onChange={(html) => setForm((f) => f ? { ...f, notes: html } : f)}
+                placeholder="Context, links, or details…"
+                maxHeightVariant="modal"
+                className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] transition-colors"
+              />
+            ) : stripHtml(form.notes).trim() ? (
+              <div
+                className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white leading-relaxed"
+                onClick={makeChecklistToggleHandler((html) => setForm((f) => f ? { ...f, notes: html } : f))}
+                dangerouslySetInnerHTML={{ __html: form.notes }}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditingNotes(true)}
+                className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-slate-600 text-left hover:bg-white/[0.06] transition-colors"
+              >
+                Context, links, or details…
+              </button>
+            )}
           </div>
 
           {/* Today's Focus intent — mobile only; desktop keeps these inline in the queue row.
@@ -379,13 +413,22 @@ export default function TaskInspectModal({ task, onClose }: Props) {
 
           {/* Actions */}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 h-10 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all">
+            <button
+              type="button"
+              onClick={onClose}
+              onMouseDown={(e) => e.preventDefault()}
+              className="flex-1 h-10 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+            >
               Discard
             </button>
             <button
               type="button"
               onClick={handleSave}
               disabled={!form.title.trim()}
+              // Without this, mousedown blurs the still-focused Notes editor (when isEditingNotes),
+              // its toolbar unmounts mid-click, the layout shifts up underneath the pointer, and
+              // the browser's click lands somewhere other than this button on the first try.
+              onMouseDown={(e) => e.preventDefault()}
               className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.35)]"
             >
               Save Changes

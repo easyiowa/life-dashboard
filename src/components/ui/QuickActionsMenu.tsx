@@ -66,12 +66,13 @@ export default function QuickActionsMenu() {
     const desktopRect = navBtnRefDesktop.current?.getBoundingClientRect();
     const rect = mobileRect && mobileRect.width > 0 ? mobileRect : desktopRect;
     if (rect) {
-      // Desktop bar sits at the left edge — open the popover to its right.
-      // Mobile dock sits at the bottom — open the popover above it.
+      // Both bars now sit at the bottom of the viewport — open the popover above
+      // whichever one was clicked. Desktop is left-anchored so the popover aligns
+      // with its left edge; mobile is center-anchored so it's offset to stay centered.
       const isDesktop = rect === desktopRect;
       setNavPos(
         isDesktop
-          ? { top: rect.top, left: rect.right + 8 }
+          ? { bottom: window.innerHeight - rect.top + 8, left: rect.left }
           : { bottom: window.innerHeight - rect.top + 8, left: Math.max(8, rect.left - 112) }
       );
     }
@@ -111,8 +112,8 @@ export default function QuickActionsMenu() {
         })}
       </div>
 
-      {/* Desktop: vertical bar fixed along the left edge */}
-      <div className={`fixed left-6 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center gap-1 rounded-full p-1.5 shadow-2xl ${barClass}`}>
+      {/* Desktop: vertical bar anchored to the bottom-left corner */}
+      <div className={`fixed bottom-6 left-6 z-50 hidden md:flex flex-col items-center gap-1 rounded-full p-1.5 shadow-2xl ${barClass}`}>
         {activeActions.map((a) => {
           const def  = QUICK_ACTION_REGISTRY[a.id];
           const Icon = ICONS[a.id];

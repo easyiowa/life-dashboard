@@ -39,6 +39,21 @@ body {
   color: #e2e8f0;
 }
 
+/* Quick Notes checklist circle — enlarges the tap target to ~44x44px via an invisible
+   pseudo-element halo (clicks on it register on the host element, not a separate node),
+   without growing the visible 14px ring itself. Targets the bare class name so it applies
+   uniformly to the live ChecklistEditor and to historical notes saved before this rule
+   existed, since their frozen HTML already carries this one stable class. */
+.qn-check-circle {
+  position: relative;
+}
+.qn-check-circle::before {
+  content: "";
+  position: absolute;
+  inset: -15px;
+  border-radius: 9999px;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;

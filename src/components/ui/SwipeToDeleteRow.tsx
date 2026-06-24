@@ -3,16 +3,30 @@
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 
-// Swipe-to-delete reveal geometry — kept as named constants so the JS snap target
-// always matches the tray's actual layout (icon button width + symmetric padding
-// on each side, mirroring the pr-4/w-8 values used in the tray markup below).
-const DELETE_ICON_SIZE     = 32; // px — w-8/h-8 icon button
-const DELETE_TRAY_PADDING  = 16; // px — pr-4, mirrored on the icon's left side too
-const DELETE_REVEAL_OFFSET = DELETE_ICON_SIZE + DELETE_TRAY_PADDING * 2; // 64px
+// Swipe reveal geometry — kept as named constants so the JS snap target always matches the
+// tray's actual layout (icon button width + gaps + symmetric padding on each side, mirroring
+// the Tailwind values used in the tray markup below).
+const ACTION_ICON_SIZE = 32; // px — w-8/h-8 icon button
+const ACTION_GAP       = 8;  // px — gap-2 between stacked tray buttons
+const TRAY_PADDING     = 16; // px — pr-4, mirrored on the icon block's left side too
+
+function revealOffsetFor(actionCount: number): number {
+  return TRAY_PADDING * 2 + actionCount * ACTION_ICON_SIZE + Math.max(actionCount - 1, 0) * ACTION_GAP;
+}
+
+export interface SwipeAction {
+  icon: ReactNode;
+  label: string;
+  /** Background + icon color classes for the circular tray button, e.g. "bg-amber-500/20 text-amber-400". */
+  toneClassName: string;
+  onClick: () => void;
+}
 
 interface SwipeToDeleteRowProps {
-  /** Called when the user long-swipes past 60% of the row's width, or taps the revealed trash icon. */
-  onDelete: () => void;
+  /** Simple single-delete usage — ignored when `actions` is provided. */
+  onDelete?: () => void;
+  /** Full multi-button tray. When provided, replaces the single delete circle entirely. */
+  actions?: SwipeAction[];
   /** Fired on a clean tap (not a drag-release) — typically opens an inspect/edit modal. */
   onClick?: () => void;
   /** Tailwind rounding class shared by every layer so corners line up with the wrapped content. */
@@ -20,15 +34,23 @@ interface SwipeToDeleteRowProps {
   children: ReactNode;
 }
 
-// Mobile-only swipe-left-to-delete gesture, standardized across every dashboard list row.
-// Layering: stationary red-icon tray underneath, opaque-backed draggable foreground on top —
-// the opaque base prevents the tray from bleeding through translucent card backgrounds at rest.
+const DEFAULT_DELETE_TONE = "bg-white/[0.06] text-red-500";
+
+// Mobile-only swipe-left gesture, standardized across every dashboard list row. Layering:
+// stationary action tray underneath, opaque-backed draggable foreground on top — the opaque
+// base prevents the tray from bleeding through translucent card backgrounds at rest.
 export default function SwipeToDeleteRow({
   onDelete,
+  actions,
   onClick,
   roundedClassName = "rounded-xl",
   children,
 }: SwipeToDeleteRowProps) {
+  const resolvedActions: SwipeAction[] = actions ?? (onDelete
+    ? [{ icon: <Trash2 className="w-3.5 h-3.5" />, label: "Delete", toneClassName: DEFAULT_DELETE_TONE, onClick: onDelete }]
+    : []);
+  const revealOffset = revealOffsetFor(resolvedActions.length);
+
   const containerRef = useRef<HTMLDivElement>(null); // wraps tray + foreground — used to detect outside taps
   const rowRef = useRef<HTMLDivElement>(null);
   const touchRef = useRef<{ startX: number; startY: number; axis: "x" | "y" | null }>({ startX: 0, startY: 0, axis: null });
@@ -106,15 +128,17 @@ export default function SwipeToDeleteRow({
   function handleTouchEnd() {
     if (touchRef.current.axis === "x") {
       const width = rowRef.current?.offsetWidth ?? 1;
-      if (Math.abs(dragX) >= width * 0.6) {
-        // Long-swipe past 60% — commit the delete immediately, no need to settle on the anchor first.
-        onDelete();
+      // The long-swipe-past-60%-auto-commits shortcut only makes sense when there's exactly
+      // one unambiguous action to commit to — with a multi-button tray it's not clear which
+      // action a full swipe should mean, so that case always settles on the open anchor instead.
+      if (resolvedActions.length === 1 && Math.abs(dragX) >= width * 0.6) {
+        resolvedActions[0].onClick();
         setDragX(0);
         setIsOpen(false);
-      } else if (Math.abs(dragX) >= DELETE_REVEAL_OFFSET) {
+      } else if (Math.abs(dragX) >= revealOffset) {
         // Past the reveal point but short of the delete trigger — magnetically lock onto the
         // pre-calculated symmetric anchor instead of resting wherever the finger happened to lift.
-        setDragX(-DELETE_REVEAL_OFFSET);
+        setDragX(-revealOffset);
         setIsOpen(true);
       } else {
         // Short swipe — snap fully back closed.
@@ -138,21 +162,33 @@ export default function SwipeToDeleteRow({
     onClick?.();
   }
 
+  if (resolvedActions.length === 0) {
+    // No actions configured at all — render plain, no swipe machinery needed.
+    return (
+      <div onClick={onClick} className={onClick ? "cursor-pointer" : undefined}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className={`relative overflow-hidden ${roundedClassName}`}>
-      {/* Underlayer — stationary delete tray, fully covered by the foreground card at rest */}
-      <div className={`md:hidden absolute inset-0 flex items-center justify-end pr-4 bg-white/[0.02] ${roundedClassName}`}>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onDelete(); closeRow(); }}
-          aria-label="Delete"
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] text-red-500"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+      {/* Underlayer — stationary action tray, fully covered by the foreground card at rest */}
+      <div className={`md:hidden absolute inset-0 flex items-center justify-end gap-2 pr-4 bg-white/[0.02] ${roundedClassName}`}>
+        {resolvedActions.map((action) => (
+          <button
+            key={action.label}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); action.onClick(); closeRow(); }}
+            aria-label={action.label}
+            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${action.toneClassName}`}
+          >
+            {action.icon}
+          </button>
+        ))}
       </div>
 
-      {/* Foreground layer — the draggable card; opaque base blocks the red tray underneath at rest */}
+      {/* Foreground layer — the draggable card; opaque base blocks the tray underneath at rest */}
       <div
         ref={rowRef}
         onClick={handleRowClick}

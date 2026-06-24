@@ -852,6 +852,18 @@ export default function DailyFocusQueueCard() {
     return window.innerWidth < 768 && queuedTasks.length === 0;
   });
 
+  // The initializer above runs once at mount, but `tasks` is frequently still empty at that
+  // exact moment (Supabase hasn't resolved yet) — without this, a day that actually has tasks
+  // queued could get permanently stuck collapsed once that data arrives a moment later, since
+  // useState's lazy initializer never re-fires. This corrects that exactly once, and never
+  // fights a deliberate tap on the chevron afterward.
+  const hasUserToggled = useRef(false);
+  useEffect(() => {
+    if (hasUserToggled.current) return;
+    if (typeof window === "undefined" || window.innerWidth >= 768) return;
+    if (queuedTasks.length > 0 && collapsed) setCollapsed(false);
+  }, [queuedTasks.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <>
     <TaskInspectModal task={inspectTask} onClose={() => setInspectTask(null)} />
@@ -885,7 +897,7 @@ export default function DailyFocusQueueCard() {
             Call it a Day
           </button>
           <button
-            onClick={() => setCollapsed((v) => !v)}
+            onClick={() => { hasUserToggled.current = true; setCollapsed((v) => !v); }}
             className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-slate-300 transition-colors"
           >
             {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}

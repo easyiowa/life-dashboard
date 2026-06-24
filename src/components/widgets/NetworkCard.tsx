@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Users, Plus, X, Trash2, Pencil, FileText, Settings, Check, ChevronDown, CheckCircle2 } from "lucide-react";
+import { Users, Plus, X, Trash2, Pencil, FileText, Settings, MoreVertical, Check, ChevronDown, CheckCircle2 } from "lucide-react";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import SwipeToDeleteRow from "@/components/ui/SwipeToDeleteRow";
+import ScrollFadeContainer from "@/components/ui/ScrollFadeContainer";
 import {
   useDashboard,
   type NetworkContact,
@@ -725,21 +726,30 @@ export default function NetworkCard() {
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Network & Relationships</h2>
             <span className="hidden md:inline text-[10px] text-slate-700 tabular-nums">{networkContacts.length}</span>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all"
-          >
-            <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all"
+            >
+              <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
+            </button>
+            {/* Settings trigger — mobile only here (naked, no backing shape); desktop keeps
+                the circular gear button anchored to the filter-pill row below instead. */}
+            <button
+              type="button"
+              onClick={() => setIsGroupsModalOpen(true)}
+              title="Manage groups"
+              className="md:hidden flex-shrink-0 p-1 text-slate-500 hover:text-violet-300 active:opacity-70 transition-colors"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Filter pills + group manager toggle */}
         <div className="flex items-center gap-2 -mt-1">
           {/* Pills — swipeable single row on mobile, wraps on desktop */}
-          <div
-            className="flex items-center gap-2 flex-1 min-w-0 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: "none" }}
-          >
+          <ScrollFadeContainer className="flex-1 min-w-0">
             {/* Global overdue/due-soon quick filter — mirrors RecurringCard's "Now" pill */}
             {nowCount > 0 && (
               <button
@@ -772,14 +782,15 @@ export default function NetworkCard() {
                 </button>
               );
             })}
-          </div>
+          </ScrollFadeContainer>
 
-          {/* Manage groups — anchored to the right of the swipe track so it never scrolls off-screen */}
+          {/* Manage groups — desktop only; anchored to the right of the swipe track so it
+              never scrolls off-screen. Mobile moves this trigger up into the header instead. */}
           <button
             type="button"
             onClick={() => setIsGroupsModalOpen(true)}
             title="Manage groups"
-            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
+            className="hidden md:flex flex-shrink-0 w-7 h-7 rounded-full items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>

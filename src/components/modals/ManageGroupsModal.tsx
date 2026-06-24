@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { X, Settings, Plus, Pencil, Trash2, GripVertical, Check } from "lucide-react";
 import {
+  DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   useDashboard,
   type RelationshipGroup,
   GROUP_COLOR_PALETTE,
@@ -21,6 +29,20 @@ const DOT: Record<GroupColor, string> = {
   teal:    "bg-teal-400",
   orange:  "bg-orange-400",
   pink:    "bg-pink-400",
+};
+
+// Row background tints — same muted bg-{color}-500/10 + border-{color}-500/20 language as the
+// category filter pills elsewhere (e.g. NetworkCard's inactive pill), so a group's color reads
+// as a soft wash across the whole row instead of a separate dot.
+const ROW_TINT: Record<GroupColor, string> = {
+  rose:    "bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/15 hover:border-rose-500/30",
+  sky:     "bg-sky-500/10 border-sky-500/20 hover:bg-sky-500/15 hover:border-sky-500/30",
+  amber:   "bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/15 hover:border-amber-500/30",
+  emerald: "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30",
+  violet:  "bg-violet-500/10 border-violet-500/20 hover:bg-violet-500/15 hover:border-violet-500/30",
+  teal:    "bg-teal-500/10 border-teal-500/20 hover:bg-teal-500/15 hover:border-teal-500/30",
+  orange:  "bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/15 hover:border-orange-500/30",
+  pink:    "bg-pink-500/10 border-pink-500/20 hover:bg-pink-500/15 hover:border-pink-500/30",
 };
 
 function ColorSwatches({
@@ -48,6 +70,137 @@ function ColorSwatches({
   );
 }
 
+// ── Sortable existing-group row ───────────────────────────────────────────────
+
+interface SortableGroupRowProps {
+  group: RelationshipGroup;
+  isEditing: boolean;
+  editLabel: string;
+  editEmoji: string;
+  editEmojiLocked: boolean;
+  editColor: GroupColor;
+  setEditLabel: (v: string) => void;
+  setEditEmoji: (v: string) => void;
+  setEditEmojiLocked: (v: boolean) => void;
+  setEditColor: (v: GroupColor) => void;
+  onStartEdit: () => void;
+  onCommitEdit: () => void;
+  onCancelEdit: () => void;
+  onDelete: () => void;
+  canDelete: boolean;
+}
+
+function SortableGroupRow({
+  group, isEditing, editLabel, editEmoji, editEmojiLocked, editColor,
+  setEditLabel, setEditEmoji, setEditEmojiLocked, setEditColor,
+  onStartEdit, onCommitEdit, onCancelEdit, onDelete, canDelete,
+}: SortableGroupRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: group.id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  if (isEditing) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex flex-col gap-3 p-3 rounded-xl bg-violet-500/[0.06] border border-violet-500/20"
+      >
+        {/* Edit row: emoji + input */}
+        <div className="flex items-center gap-2">
+          <EmojiPickerButton
+            emoji={editEmoji}
+            locked={editEmojiLocked}
+            onPick={(e) => { setEditEmoji(e); setEditEmojiLocked(true); }}
+          />
+          <input
+            autoFocus
+            type="text"
+            value={editLabel}
+            onChange={(e) => setEditLabel(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onCommitEdit();
+              if (e.key === "Escape") onCancelEdit();
+            }}
+            className="flex-1 h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
+          />
+        </div>
+
+        {/* Color + actions */}
+        <div className="flex items-center justify-between pl-12">
+          <ColorSwatches value={editColor} onChange={setEditColor} />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="h-7 px-3 rounded-lg border border-white/[0.07] text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onCommitEdit}
+              disabled={!editLabel.trim()}
+              className="h-7 px-3 rounded-lg text-xs text-white font-medium disabled:opacity-30 transition-all flex items-center gap-1.5"
+              style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+            >
+              <Check className="w-3 h-3" />
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${ROW_TINT[group.color]} ${
+        isDragging ? "shadow-2xl scale-[1.01] z-50 opacity-80" : ""
+      }`}
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="text-slate-500 hover:text-slate-300 flex-shrink-0 cursor-grab active:cursor-grabbing transition-colors touch-none"
+        title="Drag to reorder"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+
+      {/* Emoji + label — the row's own tinted background now carries the color, no separate dot */}
+      <span className="flex-1 text-sm text-slate-200 truncate min-w-0">
+        {group.emoji} {group.label}
+      </span>
+
+      {/* Actions — always visible on mobile (touch has no hover state); desktop keeps the
+          hover-reveal so the list reads cleanly at rest on a pointer device. */}
+      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <button
+          type="button"
+          onClick={onStartEdit}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+          title="Edit group"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={!canDelete}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          title="Delete group"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -61,7 +214,21 @@ export default function ManageGroupsModal({ isOpen, onClose }: Props) {
     addRelationshipGroup,
     updateRelationshipGroup,
     deleteRelationshipGroup,
+    reorderRelationshipGroups,
   } = useDashboard();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = relationshipGroups.findIndex((g) => g.id === active.id);
+    const to   = relationshipGroups.findIndex((g) => g.id === over.id);
+    if (from !== -1 && to !== -1) reorderRelationshipGroups(from, to);
+  }
 
   // ── New group form ────────────────────────────────────────────────────────
   const [newLabel,       setNewLabel]       = useState("");
@@ -188,101 +355,32 @@ export default function ManageGroupsModal({ isOpen, onClose }: Props) {
               </span>
             </label>
 
-            <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
-              {relationshipGroups.map((g) => {
-                if (editId === g.id) {
-                  return (
-                    <div
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={relationshipGroups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                  {relationshipGroups.map((g) => (
+                    <SortableGroupRow
                       key={g.id}
-                      className="flex flex-col gap-3 p-3 rounded-xl bg-violet-500/[0.06] border border-violet-500/20"
-                    >
-                      {/* Edit row: emoji + input */}
-                      <div className="flex items-center gap-2">
-                        <EmojiPickerButton
-                          emoji={editEmoji}
-                          locked={editEmojiLocked}
-                          onPick={(e) => { setEditEmoji(e); setEditEmojiLocked(true); }}
-                        />
-                        <input
-                          autoFocus
-                          type="text"
-                          value={editLabel}
-                          onChange={(e) => setEditLabel(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") commitEdit();
-                            if (e.key === "Escape") cancelEdit();
-                          }}
-                          className="flex-1 h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
-                        />
-                      </div>
-
-                      {/* Color + actions */}
-                      <div className="flex items-center justify-between pl-12">
-                        <ColorSwatches value={editColor} onChange={setEditColor} />
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={cancelEdit}
-                            className="h-7 px-3 rounded-lg border border-white/[0.07] text-xs text-slate-500 hover:text-slate-300 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={commitEdit}
-                            disabled={!editLabel.trim()}
-                            className="h-7 px-3 rounded-lg text-xs text-white font-medium disabled:opacity-30 transition-all flex items-center gap-1.5"
-                            style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
-                          >
-                            <Check className="w-3 h-3" />
-                            Save
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={g.id}
-                    className="group flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.07] transition-all"
-                  >
-                    {/* Drag handle */}
-                    <GripVertical className="w-3.5 h-3.5 text-slate-700 flex-shrink-0 cursor-grab" />
-
-                    {/* Color dot */}
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${DOT[g.color]}`} />
-
-                    {/* Emoji + label */}
-                    <span className="flex-1 text-sm text-slate-200 truncate min-w-0">
-                      {g.emoji} {g.label}
-                    </span>
-
-                    {/* Actions — revealed on hover */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(g)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
-                        title="Edit group"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteRelationshipGroup(g.id)}
-                        disabled={relationshipGroups.length <= 1}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                        title="Delete group"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      group={g}
+                      isEditing={editId === g.id}
+                      editLabel={editLabel}
+                      editEmoji={editEmoji}
+                      editEmojiLocked={editEmojiLocked}
+                      editColor={editColor}
+                      setEditLabel={setEditLabel}
+                      setEditEmoji={setEditEmoji}
+                      setEditEmojiLocked={setEditEmojiLocked}
+                      setEditColor={setEditColor}
+                      onStartEdit={() => startEdit(g)}
+                      onCommitEdit={commitEdit}
+                      onCancelEdit={cancelEdit}
+                      onDelete={() => deleteRelationshipGroup(g.id)}
+                      canDelete={relationshipGroups.length > 1}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </div>
 
           {/* Close footer */}

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw, CheckCircle2, Trash2, Plus, AlertTriangle } from "lucide-react";
+import { RefreshCw, CheckCircle2, Trash2, Plus, AlertTriangle, MoreVertical } from "lucide-react";
 import { useDashboard, type RecurringTask } from "@/context/DashboardContext";
 import RecurringResponsibilityModal from "@/components/RecurringResponsibilityModal";
 import AddRecurringTaskModal from "@/components/AddRecurringTaskModal";
+import ManageAreasModal from "@/components/modals/ManageAreasModal";
 import { areaColor } from "@/lib/areaColors";
 import SwipeToDeleteRow from "@/components/ui/SwipeToDeleteRow";
+import ScrollFadeContainer from "@/components/ui/ScrollFadeContainer";
 
 // ── Countdown helpers ─────────────────────────────────────────────────────────
 
@@ -298,6 +300,7 @@ export default function RecurringCard() {
   const [isAddModalOpen,  setIsAddModalOpen]  = useState(false);
   const [inspectTask,     setInspectTask]     = useState<RecurringTask | null>(null);
   const [deleteTarget,    setDeleteTarget]    = useState<RecurringTask | null>(null);
+  const [showManageAreas, setShowManageAreas] = useState(false);
 
   const isNowFilter     = activeSphereId === NOW_FILTER;
   const activeSphereObj = isNowFilter ? undefined : (spheres.find((s) => s.id === activeSphereId) ?? spheres[0]);
@@ -338,6 +341,10 @@ export default function RecurringCard() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
+      <ManageAreasModal
+        isOpen={showManageAreas}
+        onClose={() => setShowManageAreas(false)}
+      />
       <RecurringResponsibilityModal
         task={inspectTask}
         onClose={() => setInspectTask(null)}
@@ -360,20 +367,26 @@ export default function RecurringCard() {
               Recurring Responsibilities
             </h2>
           </div>
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all duration-150"
-          >
-            <Plus className="w-3 h-3" />
-            <span className="hidden md:inline">Add</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-1 px-2.5 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[11px] font-medium hover:bg-violet-600/30 hover:border-violet-500/50 transition-all duration-150"
+            >
+              <Plus className="w-3 h-3" />
+              <span className="hidden md:inline">Add</span>
+            </button>
+            <button
+              onClick={() => setShowManageAreas(true)}
+              title="Manage areas"
+              className="flex-shrink-0 p-1 text-slate-500 hover:text-violet-300 active:opacity-70 transition-colors"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Sphere tabs — swipeable single row on mobile, wraps on desktop */}
-        <div
-          className="flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: "none" }}
-        >
+        <ScrollFadeContainer>
 
           {/* Global overdue/due-now quick filter */}
           {nowCount > 0 && (
@@ -411,7 +424,7 @@ export default function RecurringCard() {
           <span className="hidden md:block ml-auto flex-shrink-0 text-xs self-center text-slate-500">
             {visible.length} task{visible.length !== 1 ? "s" : ""}
           </span>
-        </div>
+        </ScrollFadeContainer>
 
         {/* Task rows */}
         <div className="flex flex-col gap-1">

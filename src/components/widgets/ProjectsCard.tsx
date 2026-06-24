@@ -16,44 +16,29 @@ import {
   Pause,
   Zap,
   Plus,
-  Settings,
-  Settings2,
+  MoreVertical,
   X,
   Target,
   Trash2,
   Pencil,
-  GripVertical,
   FileText,
 } from "lucide-react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import {
   useDashboard,
   type Task,
   type Priority,
   type Energy,
-  type Sphere,
 } from "@/context/DashboardContext";
 import TaskModal from "@/components/TaskModal";
 import TaskInspectModal from "@/components/TaskInspectModal";
 import ProjectEditModal from "@/components/ProjectEditModal";
+import ManageAreasModal from "@/components/modals/ManageAreasModal";
+import ManageProjectsModal from "@/components/modals/ManageProjectsModal";
 import { fmtSecs } from "@/lib/time";
 import { areaColor } from "@/lib/areaColors";
 import SwipeToDeleteRow from "@/components/ui/SwipeToDeleteRow";
+import ScrollFadeContainer from "@/components/ui/ScrollFadeContainer";
+import { stripHtml } from "@/lib/richText";
 
 // ── Style maps ────────────────────────────────────────────────────────────────
 
@@ -108,257 +93,6 @@ function Pill({ label, className }: { label: string; className: string }) {
   );
 }
 
-// ── Color palette for sphere management ───────────────────────────────────────
-
-const COLOR_PALETTE: { value: string; dot: string }[] = [
-  { value: "emerald", dot: "bg-emerald-500" },
-  { value: "violet",  dot: "bg-violet-500"  },
-  { value: "sky",     dot: "bg-sky-500"     },
-  { value: "amber",   dot: "bg-amber-500"   },
-  { value: "pink",    dot: "bg-pink-500"    },
-  { value: "teal",    dot: "bg-teal-500"    },
-  { value: "blue",    dot: "bg-blue-500"    },
-  { value: "rose",    dot: "bg-rose-500"    },
-  { value: "orange",  dot: "bg-orange-500"  },
-  { value: "indigo",  dot: "bg-indigo-500"  },
-];
-
-// Full class strings must be explicit for Tailwind JIT — no dynamic interpolation
-
-// ── Sortable sphere row ───────────────────────────────────────────────────────
-
-function SortableSphereItem({ sphere, canDelete }: { sphere: Sphere; canDelete: boolean }) {
-  const { updateSphere, deleteSphere } = useDashboard();
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: sphere.id });
-
-  const [name,    setName]    = useState(sphere.name);
-  const [color,   setColor]   = useState(sphere.labelColor);
-  const [desc,    setDesc]    = useState(sphere.description ?? "");
-  const [confirm, setConfirm] = useState(false);
-
-  // Re-sync if an external update changes the sphere's canonical values
-  useEffect(() => {
-    setName(sphere.name);
-    setColor(sphere.labelColor);
-    setDesc(sphere.description ?? "");
-  }, [sphere.name, sphere.labelColor, sphere.description]);
-
-  const isDirty =
-    name !== sphere.name ||
-    color !== sphere.labelColor ||
-    desc !== (sphere.description ?? "");
-
-  function save() {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    updateSphere(sphere.id, { name: trimmed, labelColor: color, description: desc.trim() || undefined });
-  }
-
-  const style = { transform: CSS.Transform.toString(transform), transition };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`rounded-xl border p-3 flex flex-col gap-2 transition-all duration-150 ${
-        isDragging
-          ? "shadow-2xl border-purple-500/30 bg-white/[0.04] scale-[1.01] z-50 opacity-80"
-          : "border-white/[0.06] bg-white/[0.02]"
-      }`}
-    >
-      {confirm ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-slate-300">
-            Delete <span className="text-white font-medium">"{sphere.name}"</span>? All tasks will be reassigned to the first area.
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setConfirm(false)}
-              className="flex-1 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-slate-400 hover:text-white transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => { deleteSphere(sphere.id); setConfirm(false); }}
-              className="flex-1 h-7 rounded-lg bg-red-600 hover:bg-red-500 text-xs text-white font-medium transition-all"
-            >
-              Confirm Delete
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center gap-2">
-            {/* Drag handle */}
-            <button
-              {...attributes}
-              {...listeners}
-              className="flex-shrink-0 text-slate-600 hover:text-slate-400 cursor-grab active:cursor-grabbing transition-colors touch-none"
-              title="Drag to reorder"
-            >
-              <GripVertical className="w-4 h-4" />
-            </button>
-            {/* Color dot */}
-            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${COLOR_PALETTE.find(c => c.value === color)?.dot ?? "bg-slate-500"}`} />
-            {/* Name input */}
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors"
-            />
-            {/* Save */}
-            {isDirty && (
-              <button
-                onClick={save}
-                className="px-2.5 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs text-white font-medium transition-all flex-shrink-0"
-              >
-                Save
-              </button>
-            )}
-            {/* Delete */}
-            <button
-              onClick={() => setConfirm(true)}
-              disabled={!canDelete}
-              className="w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              title={!canDelete ? "Cannot delete last area" : "Delete area"}
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
-          </div>
-
-          {/* Description */}
-          <input
-            type="text"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            placeholder="Short description…"
-            className="h-7 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-[11px] text-slate-300 placeholder:text-slate-700 outline-none focus:border-violet-500/50 transition-colors"
-          />
-
-          {/* Color picker — indented to align under name */}
-          <div className="flex gap-1.5 pl-10">
-            {COLOR_PALETTE.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => setColor(c.value)}
-                className={`w-4 h-4 rounded-full ${c.dot} transition-all ${
-                  color === c.value ? "ring-2 ring-white/60 ring-offset-1 ring-offset-[#0F1629]" : "opacity-50 hover:opacity-100"
-                }`}
-                title={c.value}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ── Manage Spheres modal ──────────────────────────────────────────────────────
-
-function ManageSpheresModal({ onClose }: { onClose: () => void }) {
-  const { spheres, addSphere, reorderSpheres } = useDashboard();
-
-  const [newName,  setNewName]  = useState("");
-  const [newColor, setNewColor] = useState("blue");
-  const [newErr,   setNewErr]   = useState(false);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const from = spheres.findIndex((s) => s.id === active.id);
-    const to   = spheres.findIndex((s) => s.id === over.id);
-    if (from !== -1 && to !== -1) reorderSpheres(from, to);
-  }
-
-  function handleAdd() {
-    if (!newName.trim()) { setNewErr(true); return; }
-    addSphere(newName.trim(), newColor);
-    setNewName("");
-    setNewColor("blue");
-    setNewErr(false);
-  }
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#0F1629] border border-white/[0.08] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-
-        {/* Header */}
-        <div className="bg-[#0F1629] border-b border-white/[0.06] px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Settings2 className="w-4 h-4 text-violet-400" />
-            <h2 className="text-sm font-semibold text-white">Manage Areas</h2>
-          </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="p-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
-
-          {/* Sortable sphere list */}
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={spheres.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col gap-2">
-                {spheres.map((s) => (
-                  <SortableSphereItem key={s.id} sphere={s} canDelete={spheres.length > 1} />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-
-          {/* Divider */}
-          <div className="border-t border-white/[0.05]" />
-
-          {/* Add new sphere */}
-          <div className="flex flex-col gap-3">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">New Area</p>
-            <div className="flex items-center gap-2">
-              <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${COLOR_PALETTE.find(c => c.value === newColor)?.dot ?? "bg-slate-500"}`} />
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => { setNewName(e.target.value); setNewErr(false); }}
-                placeholder="Area name…"
-                className={`flex-1 h-9 px-3 rounded-xl bg-white/[0.04] border text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors ${
-                  newErr ? "border-red-500/60" : "border-white/[0.07]"
-                }`}
-              />
-              <button
-                onClick={handleAdd}
-                className="px-3 h-9 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs text-white font-medium transition-all flex-shrink-0 flex items-center gap-1"
-              >
-                <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
-              </button>
-            </div>
-            {newErr && <p className="text-[10px] text-red-400 -mt-1">Name is required.</p>}
-            <div className="flex gap-1.5">
-              {COLOR_PALETTE.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setNewColor(c.value)}
-                  className={`w-4 h-4 rounded-full ${c.dot} transition-all ${
-                    newColor === c.value ? "ring-2 ring-white/60 ring-offset-1 ring-offset-[#0F1629]" : "opacity-50 hover:opacity-100"
-                  }`}
-                  title={c.value}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Multi-axis sort weights ───────────────────────────────────────────────────
 
 const URGENCY_W:  Record<string, number> = { urgent: 2, "not-urgent": 1 };
@@ -387,7 +121,7 @@ function TaskRow({
   const isThisTaskActive = activeTaskId === task.id && timerIsRunning;
   const isQueued         = (task.queuedDate ?? null) === currentTrackingDate;
   const timeLabel        = fmtDuration(loggedSeconds);
-  const hasNote          = !!(task.notes && task.notes.trim().length > 0);
+  const hasNote          = !!(task.notes && stripHtml(task.notes).trim().length > 0);
   const noteIconRef      = useRef<HTMLSpanElement>(null);
   const [notePos, setNotePos] = useState<{ top: number; left: number } | null>(null);
 
@@ -466,9 +200,8 @@ function TaskRow({
             <div
               style={{ position: "fixed", top: notePos.top, left: notePos.left, transform: "translateX(-50%)", zIndex: 9999 }}
               className="w-max max-w-xs bg-slate-900/95 border border-white/[0.08] text-slate-200 text-xs rounded-lg px-3 py-2.5 shadow-2xl backdrop-blur-md whitespace-pre-wrap break-words leading-relaxed pointer-events-none"
-            >
-              {task.notes}
-            </div>,
+              dangerouslySetInnerHTML={{ __html: task.notes }}
+            />,
             document.body
           )}
 
@@ -526,8 +259,12 @@ export default function ProjectsCard() {
   const [showCompletedInProject, setShowCompletedInProject] = useState<Record<string, boolean>>({});
   const [showModal,            setShowModal]             = useState(false);
   const [inspectTask,          setInspectTask]           = useState<Task | null>(null);
-  const [showManageSpheres,    setShowManageSpheres]     = useState(false);
+  const [showManageAreas,      setShowManageAreas]       = useState(false);
+  const [showManageProjects,   setShowManageProjects]    = useState(false);
   const [editProjectId,        setEditProjectId]         = useState<string | null>(null);
+  const [menuOpen,              setMenuOpen]             = useState(false);
+  const [menuPos,               setMenuPos]              = useState({ top: 0, left: 0 });
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!calendarJump || calendarJump.type !== "task") return;
@@ -592,19 +329,14 @@ export default function ProjectsCard() {
         allTagObjs,
         urgencyScore,
         openTaskCount: openTasks.length,
-        index: 0, // re-assigned after sort
       };
     })
     .sort((a, b) => {
       if (b.urgencyScore !== a.urgencyScore) return b.urgencyScore - a.urgencyScore;
       if (b.openTaskCount !== a.openTaskCount) return b.openTaskCount - a.openTaskCount;
       return a.progress - b.progress; // less complete rises
-    })
-    .map((project, i) => ({ ...project, index: i }));
+    });
 
-  const avgProgress = sphereProjects.length > 0
-    ? Math.round(sphereProjects.reduce((s, p) => s + p.progress, 0) / sphereProjects.length)
-    : 0;
   const totalTasks = sphereProjects.reduce((s, p) => s + p.taskTotal, 0);
   const doneTasks  = sphereProjects.reduce((s, p) => s + p.taskDone,  0);
 
@@ -624,7 +356,8 @@ export default function ProjectsCard() {
     <>
       <TaskModal open={showModal} onClose={() => setShowModal(false)} defaultSphere={activeSphere} />
       <TaskInspectModal task={inspectTask} onClose={() => setInspectTask(null)} />
-      {showManageSpheres && <ManageSpheresModal onClose={() => setShowManageSpheres(false)} />}
+      <ManageAreasModal isOpen={showManageAreas} onClose={() => setShowManageAreas(false)} />
+      <ManageProjectsModal isOpen={showManageProjects} onClose={() => setShowManageProjects(false)} />
       <ProjectEditModal
         project={projects.find((p) => p.id === editProjectId) ?? null}
         onClose={() => setEditProjectId(null)}
@@ -646,16 +379,50 @@ export default function ProjectsCard() {
             >
               <Plus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
             </button>
+            <button
+              ref={menuBtnRef}
+              onClick={() => {
+                const rect = menuBtnRef.current?.getBoundingClientRect();
+                if (rect) setMenuPos({ top: rect.bottom + 8, left: rect.right - 176 });
+                setMenuOpen((o) => !o);
+              }}
+              title="Manage areas & projects"
+              className="flex-shrink-0 p-1 text-slate-500 hover:text-violet-300 active:opacity-70 transition-colors"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
           </div>
         </div>
+
+        {/* Areas / Projects context menu — portaled to <body>, see CalendarCard's month picker for the same pattern */}
+        {menuOpen && createPortal(
+          <>
+            <div className="fixed inset-0 z-[100]" onClick={() => setMenuOpen(false)} />
+            <div
+              className="fixed z-[110] w-44 bg-[#0d1426] border border-white/[0.12] rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5"
+              style={{ top: menuPos.top, left: menuPos.left }}
+            >
+              <button
+                onClick={() => { setMenuOpen(false); setShowManageAreas(true); }}
+                className="text-left px-2.5 py-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+              >
+                Manage Areas
+              </button>
+              <button
+                onClick={() => { setMenuOpen(false); setShowManageProjects(true); }}
+                className="text-left px-2.5 py-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+              >
+                Manage Projects
+              </button>
+            </div>
+          </>,
+          document.body
+        )}
 
         {/* Sphere tabs + manage button */}
         <div className="flex items-center gap-2">
           {/* Deduplicated sphere pills — swipeable single row on mobile, wraps on desktop */}
-          <div
-            className="flex items-center gap-2 flex-1 min-w-0 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: "none" }}
-          >
+          <ScrollFadeContainer className="flex-1 min-w-0">
             {[...new Map(spheres.map((s) => [s.id, s])).values()].map((sphere) => {
               const isActive = activeSphereObj?.id === sphere.id;
               const pill     = areaColor(sphere.labelColor);
@@ -671,15 +438,7 @@ export default function ProjectsCard() {
                 </button>
               );
             })}
-          </div>
-          {/* Manage spheres — anchored to the right of the swipe track so it never scrolls off-screen */}
-          <button
-            onClick={() => setShowManageSpheres(true)}
-            title="Manage areas"
-            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border bg-white/[0.04] border-white/[0.05] text-slate-600 hover:text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/40 transition-all duration-150"
-          >
-            <Settings className="w-3.5 h-3.5" />
-          </button>
+          </ScrollFadeContainer>
           {/* Expand / Collapse All — pushed to far right, desktop only */}
           {sphereProjects.length > 0 && (
             <button
@@ -691,26 +450,6 @@ export default function ProjectsCard() {
               {isAnyProjectOpen ? "▲ Collapse All" : "▼ Expand All"}
             </button>
           )}
-        </div>
-
-        {/* Sub-header */}
-        <div className="flex items-center justify-between -mt-1 pb-1 border-b border-white/[0.05]">
-          <div className="min-w-0 flex-1">
-            {activeSphereObj?.description && (
-              <p className={`text-xs text-slate-400 font-sans border-l-2 pl-2 truncate whitespace-nowrap overflow-hidden ${areaColor(activeSphereObj.labelColor).borderAccent}`}>
-                {activeSphereObj.description}
-              </p>
-            )}
-          </div>
-          <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
-            <div className="h-1.5 w-16 rounded-full bg-white/[0.05] overflow-hidden">
-              <div
-                className={`h-full rounded-full bg-gradient-to-r ${barGradient(avgProgress)} transition-all duration-700`}
-                style={{ width: `${avgProgress}%` }}
-              />
-            </div>
-            <span className="text-xs text-slate-400 font-medium">{avgProgress}% avg</span>
-          </div>
         </div>
 
         {/* Project list */}
@@ -733,15 +472,17 @@ export default function ProjectsCard() {
                   className="group flex flex-col gap-1.5 px-3 py-2 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:border-white/[0.08] hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="hidden md:block text-[10px] font-mono text-slate-600 w-4 flex-shrink-0">
-                      {String(project.index + 1).padStart(2, "0")}
-                    </span>
-                    <span className="text-sm font-medium text-white flex-1 leading-none flex items-center gap-1.5 min-w-0">
+                    {/* De-emphasized while expanded — shifts visual weight onto the task rows
+                        below. Real `opacity` (not text-white/40's color-alpha) so the emoji
+                        actually dims too — color-emoji glyphs ignore the CSS `color` property,
+                        but not paint-level opacity. */}
+                    <span className={`text-sm font-medium text-white flex-1 leading-none flex items-center gap-1.5 min-w-0 transition-opacity duration-200 ${isOpen ? "opacity-40" : ""}`}>
                       {project.emoji && <span className="text-base leading-none flex-shrink-0">{project.emoji}</span>}
                       <span className="truncate whitespace-nowrap overflow-hidden">{project.name}</span>
                     </span>
-                    {/* Visible tags — up to 3, then overflow tooltip */}
-                    {project.allTagObjs.slice(0, 3).map((tag) => (
+                    {/* Visible tag — just the first, then overflow tooltip. Keeps the title
+                        string the lion's share of the row instead of competing with a row of pills. */}
+                    {project.allTagObjs.slice(0, 1).map((tag) => (
                       <span
                         key={tag.id}
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${TAG_COLORS[tag.color] ?? TAG_COLORS.violet}`}
@@ -749,15 +490,15 @@ export default function ProjectsCard() {
                         {tag.label}
                       </span>
                     ))}
-                    {project.allTagObjs.length > 3 && (
-                      <div className="relative group/overflow flex-shrink-0">
+                    {project.allTagObjs.length > 1 && (
+                      <div className="relative flex items-center group/overflow flex-shrink-0">
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-white/[0.06] text-slate-400 border border-white/[0.08] cursor-default select-none">
-                          +{project.allTagObjs.length - 3}
+                          +{project.allTagObjs.length - 1}
                         </span>
                         {/* Hover tooltip listing the hidden tags */}
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/overflow:flex flex-col gap-1 bg-[#0d1426] border border-white/[0.14] rounded-xl px-3 py-2.5 shadow-2xl z-[60] min-w-max pointer-events-none">
                           <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-widest mb-0.5">More tags</p>
-                          {project.allTagObjs.slice(3).map((tag) => (
+                          {project.allTagObjs.slice(1).map((tag) => (
                             <span
                               key={tag.id}
                               className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLORS[tag.color] ?? TAG_COLORS.violet}`}
@@ -768,7 +509,6 @@ export default function ProjectsCard() {
                         </div>
                       </div>
                     )}
-                    <span className="hidden md:inline-block text-sm font-semibold text-white w-10 text-right tabular-nums">{project.progress}%</span>
                     {/* Edit button */}
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditProjectId(project.id); }}
@@ -832,7 +572,7 @@ export default function ProjectsCard() {
                       {project.projectTasks.length === 0 ? (
                         <p className="text-xs text-slate-600 text-center py-3 px-3">No tasks yet.</p>
                       ) : (
-                        <div className="flex flex-col gap-0.5 pt-1 pl-2 pr-0.5">
+                        <div className="flex flex-col gap-0.5 pt-1">
                           {activeTasks.map((task) => (
                             <TaskRow key={task.id} task={task} onInspect={setInspectTask} loggedSeconds={(project.taskLoggedSecsMap[task.id] ?? 0) + (task.manualMinutes ?? 0) * 60} />
                           ))}

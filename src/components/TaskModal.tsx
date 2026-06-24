@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Plus } from "lucide-react";
-import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import ChecklistEditor from "@/components/ui/ChecklistEditor";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import {
   useDashboard,
@@ -101,6 +101,11 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
   // ── Core form state ──────────────────────────────────────────────────────────
   const [form,       setForm]       = useState<FormData>(blank);
   const [titleError, setTitleError] = useState(false);
+  // Bumped every time the form resets on open — used as the Notes ChecklistEditor's `key` so
+  // it remounts (and re-seeds its defaultValue) exactly when the reset's new notes value is
+  // actually ready, rather than capturing whatever form.notes was during the open=true render
+  // that fires a tick before this same effect updates it.
+  const [notesResetKey, setNotesResetKey] = useState(0);
 
   // ── New Project panel state ──────────────────────────────────────────────────
   const [showNewProject,        setShowNewProject]        = useState(false);
@@ -148,6 +153,7 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
         fallbackProject;
 
       setForm({ ...blank(), sphere: targetSphere, project: targetProject, title: defaultTitle ?? "", notes: defaultNotes ?? "" });
+      setNotesResetKey((k) => k + 1);
       setTitleError(false);
       setShowNewProject(false);
       setNewProjectName("");
@@ -553,16 +559,16 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
             </div>
           </div>
 
-          {/* Notes */}
+          {/* Notes — rich text (checklist + bullet list), saved as HTML */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notes</label>
-            <AutoExpandingTextarea
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+            <ChecklistEditor
+              key={notesResetKey}
+              defaultValue={form.notes}
+              onChange={(html) => setForm((f) => ({ ...f, notes: html }))}
               placeholder="Optional context or links…"
-              minRows={3}
               maxHeightVariant="modal"
-              className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
+              className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] transition-colors"
             />
           </div>
 
@@ -572,7 +578,13 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
               className="flex-1 h-10 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all">
               Cancel
             </button>
-            <button type="submit"
+            <button
+              type="submit"
+              // Without this, mousedown blurs the still-focused Notes editor, its toolbar
+              // unmounts mid-click, the layout shifts up underneath the pointer, and the
+              // browser's click lands somewhere other than this button — same race fixed on
+              // Quick Notes' Save button.
+              onMouseDown={(e) => e.preventDefault()}
               className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm text-white font-medium transition-all shadow-[0_0_20px_rgba(124,58,237,0.35)]">
               Add Task
             </button>

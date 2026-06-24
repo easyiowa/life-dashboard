@@ -5,6 +5,7 @@ import { Pencil } from "lucide-react";
 import { useDashboard, type DailyCheckIn } from "@/context/DashboardContext";
 import MindsetTrendsModal from "@/components/MindsetTrendsModal";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import ScrollFadeContainer from "@/components/ui/ScrollFadeContainer";
 
 // ── Mood definitions ──────────────────────────────────────────────────────────
 
@@ -172,10 +173,7 @@ export default function MindfulCheckIn() {
         <span className="order-1 md:order-1 text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0 mr-1">
           How&apos;s your headspace?
         </span>
-        <div
-          className="order-3 md:order-2 basis-full md:basis-auto flex items-center gap-2 flex-nowrap overflow-x-auto whitespace-nowrap md:flex-wrap md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: "none" }}
-        >
+        <ScrollFadeContainer className="order-3 md:order-2 basis-full md:basis-auto">
           {MOODS.map((m) => (
             <button
               key={m.key}
@@ -188,7 +186,7 @@ export default function MindfulCheckIn() {
               {m.emoji} {m.label}
             </button>
           ))}
-        </div>
+        </ScrollFadeContainer>
         <button
           type="button"
           onClick={() => setShowTrends(true)}

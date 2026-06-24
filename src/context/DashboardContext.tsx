@@ -69,6 +69,7 @@ export interface Project {
   tagIds: string[]; // references Tag.id — supports multiple tags
   status: "ahead" | "on-track" | "at-risk";
   milestone: string;
+  sortOrder: number; // manual per-area order, set via "Manage Projects" drag-reorder
 }
 
 export interface ActiveTask {
@@ -207,6 +208,13 @@ interface State {
   running: boolean;
   elapsed: number;
   committedSecs: number; // elapsed already written to task.timeSpentMinutes; avoids double-count on finish
+  // Wall-clock ms timestamp of when the *current* running segment began (null while paused/stopped).
+  // elapsed is re-derived from this every tick (committedSecs + (Date.now() - startedAt) / 1000)
+  // rather than incremented by the interval itself — a backgrounded tab throttles setInterval to
+  // as little as one callback per minute, so a counter that only ever does "+1 per tick" silently
+  // drifts behind real time; recomputing from an absolute timestamp self-corrects on the very next
+  // tick (or immediately on tab refocus — see the visibilitychange listener on the ticking effect).
+  startedAt: number | null;
   sessions: FocusSession[];
   recurringTasks: RecurringTask[];
   quickNotes: QuickNote[];
@@ -246,7 +254,10 @@ type Action =
   | { type: "UPDATE_SPHERE"; id: string; fields: Partial<Pick<Sphere, "name" | "labelColor" | "description">> }
   | { type: "DELETE_SPHERE"; id: string }
   | { type: "REORDER_SPHERES"; startIndex: number; endIndex: number }
+  | { type: "REORDER_RELATIONSHIP_GROUPS"; startIndex: number; endIndex: number }
   | { type: "UPDATE_PROJECT"; id: string; fields: Partial<Omit<Project, "id">> }
+  | { type: "DELETE_PROJECT"; id: string }
+  | { type: "REORDER_PROJECTS"; sphereName: string; startIndex: number; endIndex: number }
   | { type: "ADD_TAG"; tag: Omit<Tag, "id">; _id?: string }
   | { type: "UPDATE_TAG"; id: string; fields: Partial<Omit<Tag, "id">> }
   | { type: "DELETE_TAG"; id: string }
@@ -271,6 +282,17 @@ type Action =
 
 function mkDateString(d: Date): string {
   return d.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local time
+}
+
+// Single source of truth for "how many seconds has the current timer segment actually run,
+// right now" — used by the reducer's TICK/PAUSE_SESSION/FINISH_SESSION cases and by the
+// startGlobalTimer/pauseGlobalTimer/pauseSession/finishSession wrapper functions below, so
+// none of them ever fall back to a possibly-stale `elapsed` left over from before a
+// backgrounded-tab throttling gap.
+function computeLiveElapsed(s: Pick<State, "running" | "startedAt" | "committedSecs" | "elapsed">): number {
+  return s.running && s.startedAt != null
+    ? s.committedSecs + Math.floor((Date.now() - s.startedAt) / 1000)
+    : s.elapsed;
 }
 
 function mkSession(task: ActiveTask | null, elapsed: number, id?: string): FocusSession {
@@ -319,14 +341,19 @@ function reducer(state: State, action: Action): State {
       const tasks = interruptedMinutes > 0 && state.activeTask
         ? addDailyMinutes(tasksAfterInterrupt, state.activeTask.id, state.currentTrackingDate, interruptedMinutes)
         : tasksAfterInterrupt;
-      return { ...state, activeTask: action.task, running: true, elapsed: 0, committedSecs: 0, sessions, tasks };
+      return { ...state, activeTask: action.task, running: true, elapsed: 0, committedSecs: 0, startedAt: Date.now(), sessions, tasks };
     }
     case "START_FREE":
-      return { ...state, running: true };
+      // Resuming an already-active-but-paused task: committedSecs carries the prior segments'
+      // total forward, and a fresh startedAt baselines the next absolute-delta calculation.
+      return { ...state, running: true, startedAt: Date.now() };
 
     case "PAUSE_SESSION": {
+      // Recompute the live value from the absolute timestamp rather than trusting state.elapsed,
+      // which may be stale if the tab was backgrounded since the last tick.
+      const liveElapsed = computeLiveElapsed(state);
       // Commit the uncommitted delta to the task's timeSpentMinutes so the progress bar updates immediately.
-      const pauseDelta = state.elapsed - state.committedSecs;
+      const pauseDelta = liveElapsed - state.committedSecs;
       const pauseMinutes = state.activeTask && pauseDelta > 0 ? secsToMins(pauseDelta) : 0;
       const pauseTasksRoot = pauseMinutes > 0
         ? state.tasks.map((t) =>
@@ -338,20 +365,21 @@ function reducer(state: State, action: Action): State {
       const pauseTasks = pauseMinutes > 0 && state.activeTask
         ? addDailyMinutes(pauseTasksRoot, state.activeTask.id, state.currentTrackingDate, pauseMinutes)
         : pauseTasksRoot;
-      return { ...state, running: false, committedSecs: state.elapsed, tasks: pauseTasks };
+      return { ...state, running: false, elapsed: liveElapsed, committedSecs: liveElapsed, startedAt: null, tasks: pauseTasks };
     }
 
     case "RESET":
       // Abandon the current session without logging any time.
-      return { ...state, activeTask: null, running: false, elapsed: 0, committedSecs: 0 };
+      return { ...state, activeTask: null, running: false, elapsed: 0, committedSecs: 0, startedAt: null };
 
     case "FINISH_SESSION": {
+      const liveElapsed = computeLiveElapsed(state);
       const sessions =
-        state.elapsed > 0
-          ? [...state.sessions, mkSession(state.activeTask, state.elapsed, action._sessionId)]
+        liveElapsed > 0
+          ? [...state.sessions, mkSession(state.activeTask, liveElapsed, action._sessionId)]
           : state.sessions;
       // Only commit the portion not yet written during pause — avoids double-counting.
-      const uncommittedSecs = state.elapsed - state.committedSecs;
+      const uncommittedSecs = liveElapsed - state.committedSecs;
       const uncommittedMinutes = state.activeTask && uncommittedSecs > 0 ? secsToMins(uncommittedSecs) : 0;
       const finishTasksRoot = uncommittedMinutes > 0
         ? state.tasks.map((t) =>
@@ -363,7 +391,7 @@ function reducer(state: State, action: Action): State {
       const tasks = uncommittedMinutes > 0 && state.activeTask
         ? addDailyMinutes(finishTasksRoot, state.activeTask.id, state.currentTrackingDate, uncommittedMinutes)
         : finishTasksRoot;
-      return { ...state, activeTask: null, running: false, elapsed: 0, committedSecs: 0, sessions, tasks };
+      return { ...state, activeTask: null, running: false, elapsed: 0, committedSecs: 0, startedAt: null, sessions, tasks };
     }
 
     case "SET_ESTIMATE":
@@ -371,7 +399,10 @@ function reducer(state: State, action: Action): State {
         ? { ...state, activeTask: { ...state.activeTask, estimatedMinutes: action.minutes } }
         : state;
     case "TICK":
-      return state.running ? { ...state, elapsed: state.elapsed + 1 } : state;
+      // Absolute-delta recompute, not a "+1" increment — see the startedAt field comment above.
+      return state.running && state.startedAt != null
+        ? { ...state, elapsed: state.committedSecs + Math.floor((Date.now() - state.startedAt) / 1000) }
+        : state;
 
     case "ADD_TASK": {
       const task: Task = { ...action.task, id: action._id ?? crypto.randomUUID() };
@@ -674,6 +705,31 @@ function reducer(state: State, action: Action): State {
       return { ...state, projects: updatedProjects };
     }
 
+    case "DELETE_PROJECT": {
+      const proj = state.projects.find((p) => p.id === action.id);
+      if (!proj) return state;
+      return {
+        ...state,
+        projects: state.projects.filter((p) => p.id !== action.id),
+        tasks: state.tasks.filter((t) => !(t.project === proj.name && t.sphere === proj.sphere)),
+      };
+    }
+
+    case "REORDER_PROJECTS": {
+      const scoped = state.projects
+        .filter((p) => p.sphere === action.sphereName)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+      const [moved] = scoped.splice(action.startIndex, 1);
+      scoped.splice(action.endIndex, 0, moved);
+      const newOrderById = new Map(scoped.map((p, i) => [p.id, i]));
+      return {
+        ...state,
+        projects: state.projects.map((p) =>
+          newOrderById.has(p.id) ? { ...p, sortOrder: newOrderById.get(p.id)! } : p
+        ),
+      };
+    }
+
     case "ADD_SPHERE": {
       const sphere: Sphere = {
         id: action._id ?? crypto.randomUUID(),
@@ -722,6 +778,13 @@ function reducer(state: State, action: Action): State {
       const [moved] = next.splice(action.startIndex, 1);
       next.splice(action.endIndex, 0, moved);
       return { ...state, spheres: next };
+    }
+
+    case "REORDER_RELATIONSHIP_GROUPS": {
+      const next = [...state.relationshipGroups];
+      const [moved] = next.splice(action.startIndex, 1);
+      next.splice(action.endIndex, 0, moved);
+      return { ...state, relationshipGroups: next };
     }
 
     case "ADD_HABIT": {
@@ -853,6 +916,7 @@ function buildInitialState(): State {
     running:       false,
     elapsed:       0,
     committedSecs: 0,
+    startedAt:     null,
     sessions:      [],
   };
 }
@@ -905,6 +969,7 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     tagIds:    ((p.project_tags as { tag_id: string }[]) ?? []).map(pt => pt.tag_id),
     status:    p.status as Project["status"],
     milestone: p.milestone as string,
+    sortOrder: (p.sort_order as number) ?? 0,
   }));
 
   const tasks: Task[] = (tasksRes.data ?? []).map((t: Record<string, unknown>) => ({
@@ -1019,6 +1084,25 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     : "";
   const showNightlyReview = savedTrackingDate !== today && dismissedDate !== today;
 
+  // Re-hydrate the active timer segment from whatever's actually in the row — this is what lets
+  // a headless trigger (e.g. a Telegram bot writing these same columns via a backend route)
+  // start/stop a session while the dashboard is closed, and have it appear correctly the moment
+  // it's opened. Gated on active_task_id (not just the snapshot/running flag) so a deleted task
+  // — which ON DELETE SET NULL clears from active_task_id but can't reach into this JS object —
+  // can't leave a ghost "running" timer behind.
+  const hasActiveTimer  = !!dashState?.active_task_id;
+  const activeTask      = hasActiveTimer ? ((dashState?.active_task_snapshot as ActiveTask | null) ?? null) : null;
+  const timerRunning     = hasActiveTimer && !!dashState?.timer_running;
+  const timerCommittedSecs = (dashState?.timer_committed_secs as number) ?? 0;
+  const timerStartedAtMs  = timerRunning && dashState?.timer_started_at
+    ? new Date(dashState.timer_started_at as string).getTime()
+    : null;
+  // Pre-computed so the very first paint already shows real elapsed time — the next tick
+  // recomputes the same way and simply continues from here, no visible jump.
+  const liveElapsedAtLoad = timerRunning && timerStartedAtMs != null
+    ? timerCommittedSecs + Math.floor((Date.now() - timerStartedAtMs) / 1000)
+    : timerCommittedSecs;
+
   // Auto-provision defaults only for a genuinely brand-new account.
   // Two guards required:
   //   1. No fetch error — a network/RLS failure also returns data=null, which would
@@ -1055,6 +1139,8 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     relationshipGroups, networkContacts, recurringTasks, historicalLogs,
     dailyCheckIn, currentTrackingDate: savedTrackingDate,
     yesterdayRecap: (dashState?.yesterday_recap as string) ?? "", showNightlyReview,
+    activeTask, running: timerRunning, elapsed: liveElapsedAtLoad,
+    committedSecs: timerCommittedSecs, startedAt: timerRunning ? timerStartedAtMs : null,
   };
 }
 
@@ -1110,12 +1196,15 @@ interface DashboardContextType {
   updateSphere: (id: string, fields: Partial<Pick<Sphere, "name" | "labelColor" | "description">>) => void;
   deleteSphere: (id: string) => void;
   reorderSpheres: (startIndex: number, endIndex: number) => void;
+  reorderRelationshipGroups: (startIndex: number, endIndex: number) => void;
   updateProject: (id: string, fields: Partial<Omit<Project, "id">>) => void;
+  deleteProject: (id: string) => void;
+  reorderProjects: (sphereName: string, startIndex: number, endIndex: number) => void;
   addTask: (task: Omit<Task, "id">, projectId?: string) => void;
   updateTask: (id: string, fields: Partial<Task>) => void;
   toggleTaskComplete: (id: string) => void;
   deleteTask: (id: string) => void;
-  addProject: (project: Omit<Project, "id">) => string;
+  addProject: (project: Omit<Project, "id" | "sortOrder">) => string;
   addManualTime: (projectId: string, minutes: number) => void;
   startTask: (task: ActiveTask) => void;
   startFree: () => void;
@@ -1175,13 +1264,30 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Timer tick ────────────────────────────────────────────────────────────────
+  // The 1s interval is just a cheap "wake me up to recompute" pulse — TICK derives elapsed
+  // from the absolute startedAt timestamp (see the reducer), so it's correct even though
+  // background tabs throttle setInterval down to roughly once a minute. The visibilitychange/
+  // focus listeners close the remaining gap: the instant the tab becomes visible/focused again,
+  // force one immediate recompute rather than waiting for that throttled interval to fire.
   useEffect(() => {
     if (state.running) {
       intervalRef.current = setInterval(() => dispatch({ type: "TICK" }), 1000);
     } else {
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      return;
     }
-    return () => { if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; } };
+
+    function snapToNow() {
+      if (document.visibilityState === "visible") dispatch({ type: "TICK" });
+    }
+    document.addEventListener("visibilitychange", snapToNow);
+    window.addEventListener("focus", snapToNow);
+
+    return () => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      document.removeEventListener("visibilitychange", snapToNow);
+      window.removeEventListener("focus", snapToNow);
+    };
   }, [state.running]);
 
   // ── Agent-server sync (snapshot for AI assistant context) ────────────────────
@@ -1236,6 +1342,26 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // ── Supabase write helpers ────────────────────────────────────────────────────
   const db = supabase && user ? supabase : null;
   const uid = user?.id;
+
+  // Mirrors the active timer segment to user_dashboard_state on every meaningful transition
+  // (start/resume/pause/finish/reset — not every per-second tick, since elapsed is derivable
+  // from started_at + committed_secs by anyone reading the row). This is what lets a headless
+  // trigger (e.g. a Telegram bot hitting a backend route that writes these same columns) work
+  // at all — loadDashboardData() re-hydrates activeTask/running/startedAt/committedSecs from
+  // here on every load, so the web dashboard catches up to whatever the row says regardless of
+  // whether this tab was the one that started or stopped the session.
+  useEffect(() => {
+    if (!db || !uid) return;
+    db.from("user_dashboard_state").upsert({
+      user_id: uid,
+      active_task_id: state.activeTask?.id ?? null,
+      active_task_snapshot: state.activeTask ?? null,
+      timer_running: state.running,
+      timer_started_at: state.startedAt != null ? new Date(state.startedAt).toISOString() : null,
+      timer_committed_secs: state.committedSecs,
+    }).then(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, state.activeTask, state.running, state.startedAt, state.committedSecs]);
 
   return (
     <DashboardContext.Provider
@@ -1404,17 +1530,28 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             Promise.all(next.map((s, i) => db.from("spheres").update({ sort_order: i }).eq("id", s.id))).catch(console.error);
           }
         },
+        reorderRelationshipGroups: (startIndex, endIndex) => {
+          dispatch({ type: "REORDER_RELATIONSHIP_GROUPS", startIndex, endIndex });
+          if (db) {
+            const next = [...stateRef.current.relationshipGroups];
+            const [moved] = next.splice(startIndex, 1);
+            next.splice(endIndex, 0, moved);
+            Promise.all(next.map((g, i) => db.from("relationship_groups").update({ sort_order: i }).eq("id", g.id))).catch(console.error);
+          }
+        },
 
         projects: state.projects,
         addProject: (project) => {
           const _id = crypto.randomUUID();
-          dispatch({ type: "ADD_PROJECT", project, _id });
+          const sortOrder = stateRef.current.projects.filter((p) => p.sphere === project.sphere).length;
+          dispatch({ type: "ADD_PROJECT", project: { ...project, sortOrder }, _id });
           if (db && uid) {
             const sId = getSphereId(project.sphere);
             Promise.resolve(db.from("projects").insert({
               id: _id, user_id: uid, sphere_id: sId,
               name: project.name, emoji: project.emoji ?? "📁",
               status: project.status, milestone: project.milestone,
+              sort_order: sortOrder,
             })).then(async () => {
               if (project.tagIds?.length) {
                 await db.from("project_tags").insert(project.tagIds.map(tid => ({ project_id: _id, tag_id: tid })));
@@ -1442,6 +1579,25 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
               }
             };
             run().catch(console.error);
+          }
+        },
+        deleteProject: (id) => {
+          dispatch({ type: "DELETE_PROJECT", id });
+          if (db) {
+            db.from("tasks").delete().eq("project_id", id).then(() => {
+              db.from("projects").delete().eq("id", id).then(() => {});
+            });
+          }
+        },
+        reorderProjects: (sphereName, startIndex, endIndex) => {
+          dispatch({ type: "REORDER_PROJECTS", sphereName, startIndex, endIndex });
+          if (db) {
+            const scoped = [...stateRef.current.projects]
+              .filter((p) => p.sphere === sphereName)
+              .sort((a, b) => a.sortOrder - b.sortOrder);
+            const [moved] = scoped.splice(startIndex, 1);
+            scoped.splice(endIndex, 0, moved);
+            Promise.all(scoped.map((p, i) => db.from("projects").update({ sort_order: i }).eq("id", p.id))).catch(console.error);
           }
         },
 
@@ -1710,9 +1866,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         startTask:   (task) => dispatch({ type: "START_TASK", task }),
         startFree:   ()     => dispatch({ type: "START_FREE" }),
         pauseSession: () => {
+          // Snapshot the live-recomputed elapsed *before* dispatching — PAUSE_SESSION clears
+          // startedAt, so stateRef.current would read back as already-paused/stale afterward.
+          const liveElapsed = computeLiveElapsed(stateRef.current);
           dispatch({ type: "PAUSE_SESSION" });
           if (db && stateRef.current.activeTask) {
-            const pauseDelta = stateRef.current.elapsed - stateRef.current.committedSecs;
+            const pauseDelta = liveElapsed - stateRef.current.committedSecs;
             const pauseMins = pauseDelta > 0 ? secsToMins(pauseDelta) : 0;
             if (pauseMins > 0) {
               const tId = stateRef.current.activeTask.id;
@@ -1724,9 +1883,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         resetTimer:    ()          => dispatch({ type: "RESET" }),
         finishSession: () => {
           const _sessionId = crypto.randomUUID();
+          const elapsed = computeLiveElapsed(stateRef.current);
           dispatch({ type: "FINISH_SESSION", _sessionId });
-          if (db && uid && stateRef.current.elapsed > 0) {
-            const { activeTask, elapsed, committedSecs, currentTrackingDate } = stateRef.current;
+          if (db && uid && elapsed > 0) {
+            const { activeTask, committedSecs, currentTrackingDate } = stateRef.current;
             const uncommittedMins = secsToMins(elapsed - committedSecs);
             if (activeTask && uncommittedMins > 0) {
               const cur = stateRef.current.tasks.find(t => t.id === activeTask.id);
