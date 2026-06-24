@@ -12,6 +12,8 @@ import {
 import { secsToMins } from "@/lib/time";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { seedOnboardingTemplate } from "@/services/onboardingSeeder";
+import { cleanSlateTemplate } from "@/config/industry-templates";
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -59,6 +61,7 @@ export interface Task {
   dailyTargetMinutes?: number | null;  // kept for backward compat
   rolloverCount?: number;              // increments when unfinished at day end
   dailyTracking?: Record<string, DailyTrackingEntry>; // per-date isolated tracking
+  isSample?: boolean;                   // seeded by the onboarding template seeder — Dudu tracks deletions of these
 }
 
 export interface Project {
@@ -70,6 +73,7 @@ export interface Project {
   status: "ahead" | "on-track" | "at-risk";
   milestone: string;
   sortOrder: number; // manual per-area order, set via "Manage Projects" drag-reorder
+  isSample?: boolean; // seeded by the onboarding template seeder — Dudu tracks deletions of these
 }
 
 export interface ActiveTask {
@@ -970,6 +974,7 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     status:    p.status as Project["status"],
     milestone: p.milestone as string,
     sortOrder: (p.sort_order as number) ?? 0,
+    isSample:  (p.is_sample as boolean) ?? false,
   }));
 
   const tasks: Task[] = (tasksRes.data ?? []).map((t: Record<string, unknown>) => ({
@@ -990,6 +995,7 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     dailyTargetMinutes: (t.daily_target_minutes as number) ?? null,
     rolloverCount:      (t.rollover_count as number) ?? 0,
     dailyTracking:      (t.daily_tracking as Record<string, DailyTrackingEntry>) ?? {},
+    isSample:           (t.is_sample as boolean) ?? false,
   }));
 
   const sessions: FocusSession[] = (sessionsRes.data ?? []).map((s: Record<string, unknown>) => ({
@@ -1103,36 +1109,11 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     ? timerCommittedSecs + Math.floor((Date.now() - timerStartedAtMs) / 1000)
     : timerCommittedSecs;
 
-  // Auto-provision defaults only for a genuinely brand-new account.
-  // Two guards required:
-  //   1. No fetch error — a network/RLS failure also returns data=null, which would
-  //      trigger a ghost insert even when the user has real spheres in the DB.
-  //   2. All other tables must also be empty — if the user has any tasks, projects,
-  //      habits, notes, or history alongside zero spheres they intentionally deleted
-  //      them; re-inserting defaults would be a regression loop.
-  const isNewAccount =
-    !spheresRes.error &&
-    spheres.length === 0 &&
-    tasks.length === 0 &&
-    projects.length === 0 &&
-    habits.length === 0 &&
-    quickNotes.length === 0 &&
-    historicalLogs.length === 0;
-
-  if (isNewAccount) {
-    const DEFAULTS = [
-      { name: "Private",  labelColor: "emerald" },
-      { name: "Business", labelColor: "violet"  },
-    ];
-    const toInsert = DEFAULTS.map((d, i) => ({
-      id: crypto.randomUUID(), name: d.name, labelColor: d.labelColor,
-      sortOrder: i,
-    }));
-    await Promise.all(toInsert.map(s =>
-      supabase!.from("spheres").insert({ id: s.id, user_id: userId, name: s.name, label_color: s.labelColor, sort_order: s.sortOrder })
-    ));
-    spheres.push(...toInsert.map(s => ({ id: s.id, name: s.name, labelColor: s.labelColor, description: undefined })));
-  }
+  // Default-area provisioning now happens exactly once, inside the onboarding
+  // seeder (src/services/onboardingSeeder.ts) — every account picks either the
+  // Clean Slate or an industry template during onboarding, which always seeds
+  // its own areas. A client-side "spheres.length === 0" fallback here used to
+  // race against that seeder and could insert a second Private/Business pair.
 
   return {
     spheres, tags, projects, tasks, sessions, habits, quickNotes,
@@ -1204,6 +1185,10 @@ interface DashboardContextType {
   updateTask: (id: string, fields: Partial<Task>) => void;
   toggleTaskComplete: (id: string) => void;
   deleteTask: (id: string) => void;
+  sampleDeleteCount: number;
+  deleteAllSampleData: () => Promise<void>;
+  hasDraggedOnce: boolean;
+  notifyDragStart: () => void;
   addProject: (project: Omit<Project, "id" | "sortOrder">) => string;
   addManualTime: (projectId: string, minutes: number) => void;
   startTask: (task: ActiveTask) => void;
@@ -1235,6 +1220,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured);
   const [calendarJump, setCalendarJump] = useState<CalendarJump | null>(null);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
+  // Counts deletions of sample (onboarding-seeded) tasks/projects this session — DuduAssistant
+  // watches this to offer a one-click "delete all samples" once the user starts cleaning up.
+  const [sampleDeleteCount, setSampleDeleteCount] = useState(0);
+  // Flips true the instant the user starts their first widget drag — DuduAssistant
+  // watches this to fire the rearrange tip immediately rather than waiting on a timer.
+  const [hasDraggedOnce, setHasDraggedOnce] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
@@ -1582,6 +1573,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           }
         },
         deleteProject: (id) => {
+          if (stateRef.current.projects.find(p => p.id === id)?.isSample) {
+            setSampleDeleteCount(c => c + 1);
+          }
           dispatch({ type: "DELETE_PROJECT", id });
           if (db) {
             db.from("tasks").delete().eq("project_id", id).then(() => {
@@ -1666,9 +1660,31 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           if (db) db.from("tasks").update({ done: newDone }).eq("id", id).then(() => {});
         },
         deleteTask: (id) => {
+          if (stateRef.current.tasks.find(t => t.id === id)?.isSample) {
+            setSampleDeleteCount(c => c + 1);
+          }
           dispatch({ type: "DELETE_TASK", id });
           if (db) db.from("tasks").delete().eq("id", id).then(() => {});
         },
+        sampleDeleteCount,
+        deleteAllSampleData: async () => {
+          if (!db || !uid) return;
+          // Leaf tables first so nothing churns through a transient ON DELETE SET NULL
+          // before its own is_sample-scoped delete pass runs a moment later.
+          const leafFirstTables = [
+            "tasks", "focus_sessions", "quick_notes", "network_contacts",
+            "recurring_tasks", "habits", "projects", "spheres",
+          ];
+          for (const table of leafFirstTables) {
+            await db.from(table).delete().eq("user_id", uid).eq("is_sample", true);
+          }
+          // "Reset to Clean Slate" means re-establishing the two baseline areas, not
+          // leaving the dashboard completely empty.
+          await seedOnboardingTemplate(cleanSlateTemplate, uid);
+          window.location.reload();
+        },
+        hasDraggedOnce,
+        notifyDragStart: () => setHasDraggedOnce(true),
 
         habits: state.habits,
         addHabit: (habit) => {

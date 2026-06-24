@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield } from "lucide-react";
+import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield, MessageSquare } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import DashboardBlueprintModal from "@/components/DashboardBlueprintModal";
 import ActiveWidgetsModal from "@/components/ActiveWidgetsModal";
 import QuickActionsConfigModal from "@/components/QuickActionsConfigModal";
 import FounderDashboard from "@/components/admin/FounderDashboard";
@@ -90,9 +89,9 @@ const ALL_IDS = [
 const PIN_ENABLED_KEY = "ld_pin_enabled";
 const PIN_VALUE_KEY   = "ld_pin_value";
 
-interface Props { isOpen: boolean; onClose: () => void }
+interface Props { isOpen: boolean; onClose: () => void; onOpenBlueprint?: () => void }
 
-export default function SettingsModal({ isOpen, onClose }: Props) {
+export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Props) {
   const { user, signOut, updateDisplayName, updatePassword, isConfigured } = useAuth();
 
   const [displayName, setDisplayName] = useState("");
@@ -112,11 +111,10 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
 
   const [widgetMarketplaceOpen, setWidgetMarketplaceOpen] = useState(false);
   const [pendingWidgets,        setPendingWidgets]        = useState<string[]>(ALL_IDS);
-  const [blueprintOpen,         setBlueprintOpen]         = useState(false);
   const [quickActionsOpen,      setQuickActionsOpen]      = useState(false);
   const [quickActionsConfig,    setQuickActionsConfig]    = useState<QuickActionConfigItem[]>([]);
   const [founderOpen,           setFounderOpen]           = useState(false);
-  const [founderMode,           setFounderMode]           = useState<"workbench" | "insights" | "admins">("workbench");
+  const [founderMode,           setFounderMode]           = useState<"workbench" | "insights" | "admins" | "dudu">("workbench");
   const [isAdmin,                setIsAdmin]               = useState(false);
 
   // Membership check against the real admins whitelist — replaces the old
@@ -153,7 +151,6 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
       setPinEnabled(localStorage.getItem(PIN_ENABLED_KEY) === "true");
       setPinValue(localStorage.getItem(PIN_VALUE_KEY) ?? "");
       setWidgetMarketplaceOpen(false);
-      setBlueprintOpen(false);
 
       // Seed widget selection from saved layout
       const savedLayout = user?.user_metadata?.widget_layout as string[] | undefined;
@@ -170,6 +167,18 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
       setTimeout(() => nameInputRef.current?.focus(), 50);
     }
   }, [isOpen, user]);
+
+  // Blueprint Mode now lives outside this modal (DuduBlueprintBridge), so picking up
+  // its changes here means listening for the same broadcast DashboardGrid already
+  // listens to, instead of owning the apply handler directly.
+  useEffect(() => {
+    function onLayoutChanged(e: Event) {
+      const detail = (e as CustomEvent<string[]>).detail;
+      if (Array.isArray(detail)) setPendingWidgets(detail.filter(id => ALL_IDS.includes(id)));
+    }
+    window.addEventListener("ld:widget-layout", onLayoutChanged);
+    return () => window.removeEventListener("ld:widget-layout", onLayoutChanged);
+  }, []);
 
   // Auto-dismiss toasts
   useEffect(() => {
@@ -252,11 +261,6 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
   function handleMarketplaceSave(selected: string[]) {
     setPendingWidgets(selected);
     persistWidgets(selected);
-  }
-
-  function handleBlueprintApply(newOrder: string[]) {
-    setPendingWidgets(newOrder);
-    persistWidgets(newOrder);
   }
 
   function handleQuickActionsSave(config: QuickActionConfigItem[]) {
@@ -375,7 +379,7 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
                 <span className="ml-auto text-[10px] text-slate-600">{pendingWidgets.length} active</span>
               </button>
               <button
-                onClick={() => setBlueprintOpen(true)}
+                onClick={() => onOpenBlueprint?.()}
                 className="w-full h-10 rounded-xl border border-violet-500/25 bg-violet-500/[0.06] hover:bg-violet-500/[0.12] text-sm font-medium text-violet-300 hover:text-violet-200 transition-all flex items-center gap-2.5 px-4"
               >
                 <span className="text-base leading-none shrink-0">🧩</span>
@@ -424,6 +428,14 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
                   >
                     <Shield className="w-4 h-4 shrink-0" />
                     <span>Manage Admins</span>
+                    <span className="ml-auto text-[10px] text-purple-700">private</span>
+                  </button>
+                  <button
+                    onClick={() => { setFounderMode("dudu"); setFounderOpen(true); }}
+                    className="w-full h-10 rounded-xl border border-purple-500/20 bg-purple-500/[0.04] hover:bg-purple-500/[0.10] text-sm font-medium text-purple-300/90 hover:text-purple-200 transition-all flex items-center gap-2.5 px-4"
+                  >
+                    <MessageSquare className="w-4 h-4 shrink-0" />
+                    <span>Dudu&apos;s help</span>
                     <span className="ml-auto text-[10px] text-purple-700">private</span>
                   </button>
                 </div>
@@ -533,14 +545,6 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
         onClose={() => setWidgetMarketplaceOpen(false)}
         initialSelected={pendingWidgets}
         onSave={handleMarketplaceSave}
-      />
-
-      {/* Blueprint Mode — z-[60] overlays on top of this modal (z-50) */}
-      <DashboardBlueprintModal
-        isOpen={blueprintOpen}
-        onClose={() => setBlueprintOpen(false)}
-        initialOrder={pendingWidgets}
-        onApply={handleBlueprintApply}
       />
 
       {/* Edit Quick Actions — z-[60] overlays on top of this modal (z-50) */}

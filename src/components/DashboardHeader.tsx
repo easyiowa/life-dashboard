@@ -6,6 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import SettingsModal from "@/components/SettingsModal";
 import WorkbenchBeacon from "@/components/WorkbenchBeacon";
 
+interface Props {
+  /** Opens Blueprint Mode directly (owned by DuduBlueprintBridge) — forwarded to SettingsModal's own trigger button. */
+  onOpenBlueprint?: () => void;
+}
+
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -21,7 +26,7 @@ function formatDate() {
   });
 }
 
-export default function DashboardHeader() {
+export default function DashboardHeader({ onOpenBlueprint }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [beaconOpen,   setBeaconOpen]   = useState(false);
   const [beaconUnread, setBeaconUnread] = useState(true);
@@ -80,7 +85,7 @@ export default function DashboardHeader() {
         />
       </div>
 
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onOpenBlueprint={onOpenBlueprint} />
       <WorkbenchBeacon isOpen={beaconOpen} onClose={() => setBeaconOpen(false)} />
     </>
   );

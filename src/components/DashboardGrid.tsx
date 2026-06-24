@@ -25,6 +25,7 @@ import { motion } from "framer-motion";
 
 import SortableWidget from "@/components/SortableWidget";
 import { useAuth } from "@/context/AuthContext";
+import { useDashboard } from "@/context/DashboardContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 import TimeTrackerCard    from "@/components/widgets/TimeTrackerCard";
@@ -89,6 +90,7 @@ function OverlayCard({ label }: { label: string }) {
 
 export default function DashboardGrid() {
   const { user } = useAuth();
+  const { notifyDragStart } = useDashboard();
   const [widgetIds, setWidgetIds] = useState<string[]>(DEFAULT_ORDER);
   const [activeId,  setActiveId]  = useState<string | null>(null);
 
@@ -132,7 +134,8 @@ export default function DashboardGrid() {
     setActiveId(active.id as string);
     // Haptic feedback on mobile devices that support it
     if (typeof navigator !== "undefined") navigator.vibrate?.(15);
-  }, []);
+    notifyDragStart();
+  }, [notifyDragStart]);
 
   const onDragEnd = useCallback(({ active, over }: DragEndEvent) => {
     setActiveId(null);

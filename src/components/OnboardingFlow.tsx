@@ -10,6 +10,12 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import {
+  startupTemplate, personalLifeTemplate, financeTemplate, mediaTemplate,
+  marketingTemplate, educationTemplate, legalTemplate, realEstateTemplate, gastroTemplate, retailTemplate,
+} from "@/config/industry-templates";
+import type { IndustryTemplate } from "@/config/industry-templates";
+import { seedSelectedTemplates } from "@/services/onboardingSeeder";
 
 // ── Calendar slides ────────────────────────────────────────────────────────────
 
@@ -1017,19 +1023,35 @@ function IdentityStep({ onNext }: { onNext: (name: string) => void }) {
 type Intent = "personal" | "projects";
 
 const INDUSTRIES: { id: string; label: string; emoji: string }[] = [
-  { id: "startups",    label: "Startups",    emoji: "🚀" },
-  { id: "creative",    label: "Creative",    emoji: "🎨" },
-  { id: "events",      label: "Events",      emoji: "📅" },
-  { id: "health",      label: "Health",      emoji: "🩺" },
-  { id: "finance",     label: "Finance",     emoji: "💰" },
-  { id: "media",       label: "Media",       emoji: "📺" },
-  { id: "marketing",   label: "Marketing",   emoji: "📈" },
-  { id: "education",   label: "Education",   emoji: "🎓" },
-  { id: "legal",       label: "Legal",       emoji: "⚖️" },
-  { id: "real-estate", label: "Real Estate", emoji: "🏢" },
-  { id: "gastro",      label: "Gastro",      emoji: "🍳" },
-  { id: "retail",      label: "Retail",      emoji: "🛍️" },
+  { id: "startups",      label: "Startups",     emoji: "🚀" },
+  { id: "creative",      label: "Creative",     emoji: "🎨" },
+  { id: "events",        label: "Events",       emoji: "📅" },
+  { id: "health",        label: "Health",       emoji: "🩺" },
+  { id: "finance",       label: "Finance",      emoji: "💰" },
+  { id: "media",         label: "Media",        emoji: "📺" },
+  { id: "marketing",     label: "Marketing",    emoji: "📈" },
+  { id: "education",     label: "Education",    emoji: "🎓" },
+  { id: "legal",         label: "Legal",        emoji: "⚖️" },
+  { id: "real-estate",   label: "Real Estate",  emoji: "🏢" },
+  { id: "gastro",        label: "Gastro",       emoji: "🍳" },
+  { id: "retail",        label: "Retail",       emoji: "🛍️" },
 ];
+
+// Maps an INDUSTRIES chip label straight to its onboarding sample-data template.
+// Chips with no entry here (Creative/Events/Health) fall through to Clean Slate.
+// Personal & Family Life has no chip — it's seeded separately via the big
+// "My Personal Life" intent card instead (see handleFinish).
+const TEMPLATE_BY_INDUSTRY_LABEL: Record<string, IndustryTemplate> = {
+  "Startups":     startupTemplate,
+  "Finance":      financeTemplate,
+  "Media":        mediaTemplate,
+  "Marketing":    marketingTemplate,
+  "Education":    educationTemplate,
+  "Legal":        legalTemplate,
+  "Real Estate":  realEstateTemplate,
+  "Gastro":       gastroTemplate,
+  "Retail":       retailTemplate,
+};
 
 function IntentStep({
   nickname,
@@ -1255,6 +1277,12 @@ function MarketplaceStep({
     });
   }
 
+  const allSelected = WIDGETS.every(w => selected.includes(w.id));
+
+  function toggleSelectAll() {
+    setUserPicked(allSelected ? new Set() : new Set(WIDGETS.map(w => w.id)));
+  }
+
   async function finish() {
     setLoading(true);
     await onFinish(selected);
@@ -1326,6 +1354,19 @@ function MarketplaceStep({
       </div>
 
       <button
+        type="button"
+        onClick={toggleSelectAll}
+        className="flex items-center justify-center gap-2 w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+      >
+        <span className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+          allSelected ? "bg-violet-600 border-violet-600" : "border-white/[0.15]"
+        }`}>
+          {allSelected && <Check className="w-3 h-3 text-white" />}
+        </span>
+        {allSelected ? "Deselect All Widgets" : "Select All Widgets"}
+      </button>
+
+      <button
         onClick={() => void finish()}
         disabled={loading}
         className="w-full h-12 rounded-xl font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)]"
@@ -1352,6 +1393,32 @@ export default function OnboardingFlow() {
 
   async function handleFinish(selectedWidgets: string[]) {
     if (!supabase || !user) return;
+
+    // Seed FIRST, before anything that can flip auth state. auth.updateUser below sets
+    // is_onboarded: true, which AuthGate reacts to immediately via onAuthStateChange —
+    // if that fired before seeding finished, the user could land on a freshly-switched
+    // dashboard with no areas yet (the duplicate-area / blank-screen race this fixes).
+    // Best-effort: a failed seed still lets onboarding complete rather than stranding
+    // the user on this screen, but it can no longer run concurrently with the redirect.
+    //
+    // Stack every selected track into one dashboard: the big "My Personal Life" intent
+    // card seeds personalLifeTemplate, and every selected industry chip with a matching
+    // entry seeds its own template alongside it — so e.g. Personal Life + Lawyer gives
+    // you both areas at once instead of forcing a single either/or choice. Chips with no
+    // template mapping (Creative/Events/Health) are simply absent here, never swapped
+    // for cleanSlateTemplate — the merge-vs-fallback policy itself lives in
+    // seedSelectedTemplates (src/services/onboardingSeeder.ts), not here.
+    const templatesToSeed: IndustryTemplate[] = [];
+    if (intents.includes("personal")) templatesToSeed.push(personalLifeTemplate);
+    for (const label of industries) {
+      const template = TEMPLATE_BY_INDUSTRY_LABEL[label];
+      if (template) templatesToSeed.push(template);
+    }
+
+    // MarketplaceStep's finish() already awaits this whole function before clearing its
+    // spinner, so the loader stays up for the full duration of every template seeded here.
+    await seedSelectedTemplates(templatesToSeed, user.id);
+
     await supabase.auth.updateUser({
       data: {
         is_onboarded:  true,
