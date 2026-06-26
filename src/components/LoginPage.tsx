@@ -97,7 +97,7 @@ function FoundersNote() {
           Well, additionally, my girlfriend (now fianc&eacute;e), with her terrifying ability to know me better than I know myself, looked at the chaos one day and said: <span className="italic text-zinc-400">&ldquo;You have ADHD!&rdquo;</span> She was, as always, completely right.
         </p>
         <p>
-          What you see here, the &ldquo;Life Dashboard&rdquo;, is a single, clean space designed to put everything into one fast overview and free up massive headspace. We seriously need to find a proper name for it, so ideas are very welcome.
+          What you see here, the &ldquo;Call it a day!&rdquo; Dashboard, Life Manager or whatever you want to call for now. It&rsquo;s a single, clean space designed to put everything into one fast overview and free up massive headspace. I don&rsquo;t know what to call it yet&hellip; maybe you can help me?
         </p>
         <p>
           You are the early adopters. Take it for a spin, build your layout, and tell me: what would you love to see here to help with your own life? The plan is to give this dashboard a &ldquo;brain&rdquo; next to help us organize effortlessly, track what matters, and keep closer tabs on our friendships.
@@ -177,13 +177,13 @@ export default function LoginPage() {
             {/* Brand mark */}
             <div className="flex flex-col items-center gap-3 mb-8">
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.35)]"
-                style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{ background: "#f35600" }}
               >
                 <LayoutDashboard className="w-7 h-7 text-white" />
               </div>
               <div className="text-center">
-                <h1 className="text-xl font-semibold text-white tracking-tight">Life Dashboard</h1>
+                <h1 className="text-xl font-semibold text-white tracking-tight">Call it a Day</h1>
                 <p className="text-xs text-slate-500 mt-1">Forget less, enjoy more.</p>
               </div>
             </div>

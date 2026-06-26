@@ -22,6 +22,9 @@ export { legalTemplate } from "./legal";
 export { realEstateTemplate } from "./real-estate";
 export { gastroTemplate } from "./gastro";
 export { retailTemplate } from "./retail";
+export { creativeTemplate } from "./creative";
+export { eventsTemplate } from "./events";
+export { healthTemplate } from "./health";
 
 import { cleanSlateTemplate } from "./clean-slate";
 import { startupTemplate } from "./startup";
@@ -34,6 +37,9 @@ import { legalTemplate } from "./legal";
 import { realEstateTemplate } from "./real-estate";
 import { gastroTemplate } from "./gastro";
 import { retailTemplate } from "./retail";
+import { creativeTemplate } from "./creative";
+import { eventsTemplate } from "./events";
+import { healthTemplate } from "./health";
 import type { IndustryTemplate } from "./types";
 
 /** Registry of all selectable onboarding templates, keyed by IndustryTemplate.id. */
@@ -49,4 +55,7 @@ export const INDUSTRY_TEMPLATES: Record<string, IndustryTemplate> = {
   [realEstateTemplate.id]: realEstateTemplate,
   [gastroTemplate.id]: gastroTemplate,
   [retailTemplate.id]: retailTemplate,
+  [creativeTemplate.id]: creativeTemplate,
+  [eventsTemplate.id]: eventsTemplate,
+  [healthTemplate.id]: healthTemplate,
 };

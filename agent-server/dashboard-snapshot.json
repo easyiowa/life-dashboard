@@ -1,20 +1,403 @@
 {
-  "tasks": [],
-  "habits": [],
-  "projects": [],
-  "spheres": [
+  "tasks": [
     {
-      "id": "bdad8e2d-dffd-41ae-a50b-1beb55634628",
-      "name": "Private",
-      "labelColor": "amber"
+      "id": "e2b3f8f9-ae1e-46b1-8e70-b22e680777cf",
+      "sphere": "Artist Bookings",
+      "project": "February Closing Set",
+      "title": "Finalise rider and hospitality details with Raresh's booking agent",
+      "priority": "High",
+      "energy": "Quick",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "Flight from Madrid confirmed. Hotel: Standard room, check-in Friday 18:00. Rider: still waiting on confirmed guest-list allocation and stage plot. Chase by Thursday.",
+      "manualMinutes": 0,
+      "queuedDate": "2026-06-26",
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
     },
     {
-      "id": "55095581-1d85-4f50-808b-5751583eae19",
-      "name": "Business",
+      "id": "4e1afb26-be69-4c93-8ebc-677b89276d2a",
+      "sphere": "Artist Bookings",
+      "project": "Spring Residency Series",
+      "title": "Negotiate a three-date residency deal with Inland agency for Function",
+      "priority": "Med",
+      "energy": "Flow",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "Proposed dates: March, May, July. Target fee band per night. Offer merchandise split as sweetener. Get exclusivity radius clause in writing.",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
+    },
+    {
+      "id": "1e426722-ed4b-4f1a-93ae-3673776bf7b9",
+      "sphere": "Portfolio & Brand",
+      "project": "Portfolio Refresh",
+      "title": "Update hero section of portfolio website with spring work",
+      "priority": "Med",
+      "energy": "Flow",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "Replace top 6 images, refresh bio copy, and update the booking CTA button link.",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
+    },
+    {
+      "id": "b586d364-0730-4863-a190-9e6f9edc1dd9",
+      "sphere": "Portfolio & Brand",
+      "project": "Portfolio Refresh",
+      "title": "TFP shoots with new faces from Model Agency",
+      "priority": "Med",
+      "energy": "Flow",
+      "urgency": "not-urgent",
+      "done": true,
+      "deadline": null,
+      "notes": "Artsy pics for my portfolio",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
+    },
+    {
+      "id": "28201515-9c0c-4320-8f81-abfe59a7de9f",
+      "sphere": "Client Coaching",
+      "project": "Client Meal Plans",
+      "title": "Build and send updated 4-week meal plan for Maria — plateau phase adjustment",
+      "priority": "High",
+      "energy": "Flow",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "Maria has stalled at the same weight for 10 days. Reduce refined carbs on non-training days, increase protein to 1.8g/kg, add one refeed day on Saturday. Send via the client portal with a voice note explaining the rationale.",
+      "manualMinutes": 0,
+      "queuedDate": "2026-06-26",
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
+    },
+    {
+      "id": "948b0023-e1dd-4e2a-8247-bf629316565a",
+      "sphere": "Client Coaching",
+      "project": "Client Meal Plans",
+      "title": "Review weekly food diary submissions for all active 1:1 clients",
+      "priority": "Med",
+      "energy": "Flow",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "Clients: Maria, Tomas, Riitta, and Aleksi. Flag anyone under 1,400 kcal daily average — risk of metabolic adaptation. Leave personalised feedback comment in the portal for each.",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
+    },
+    {
+      "id": "662ca6b1-10b1-401a-81d0-695e2e4a8190",
+      "sphere": "Client Coaching",
+      "project": "12-Week Group Programme",
+      "title": "Send Week 5 progress summary and encouragement message to the group",
+      "priority": "Med",
+      "energy": "Flow",
+      "urgency": "not-urgent",
+      "done": true,
+      "deadline": null,
+      "notes": "Group average: 2.1 kg lost over 5 weeks. Highlight the non-scale wins — energy, sleep, clothing fit. Keep the tone celebratory.",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
+    }
+  ],
+  "habits": [
+    {
+      "id": "c7ba573d-2e91-4724-8b45-6fe130035792",
+      "title": "Check Resident Advisor event listings and new artist activity",
+      "type": "start",
+      "routine": "morning",
+      "frequency": "daily",
+      "targetCount": 1,
+      "emoji": "⭐",
+      "notes": "",
+      "history": {
+        "2026-06-22": true,
+        "2026-06-23": true,
+        "2026-06-24": true,
+        "2026-06-25": true,
+        "2026-06-26": true
+      }
+    },
+    {
+      "id": "6e57c8c4-dc0d-4faa-b515-133b0954cfc6",
+      "title": "Reply to all booking inquiries and DM artist interest messages",
+      "type": "start",
+      "routine": "evening",
+      "frequency": "daily",
+      "targetCount": 1,
+      "emoji": "⭐",
+      "notes": "",
+      "history": {
+        "2026-06-24": true,
+        "2026-06-25": true,
+        "2026-06-26": true
+      }
+    },
+    {
+      "id": "a6d316b2-3e65-4a7b-8fca-7006bc8dafee",
+      "title": "Send inquiry follow-up emails",
+      "type": "start",
+      "routine": "day",
+      "frequency": "weekly",
+      "targetCount": 1,
+      "emoji": "⭐",
+      "notes": "",
+      "history": {
+        "2026-06-26": true
+      }
+    },
+    {
+      "id": "22464f4a-574f-46de-bb74-3752efa5c94c",
+      "title": "30-minute walk or movement session",
+      "type": "start",
+      "routine": "day",
+      "frequency": "daily",
+      "targetCount": 1,
+      "emoji": "⭐",
+      "notes": "",
+      "history": {
+        "2026-06-22": true,
+        "2026-06-23": true,
+        "2026-06-24": true,
+        "2026-06-25": true,
+        "2026-06-26": true
+      }
+    },
+    {
+      "id": "d1092431-09d3-469c-8108-2734e3a3f471",
+      "title": "Post one piece of value-driven content to Instagram or newsletter",
+      "type": "start",
+      "routine": "day",
+      "frequency": "weekly",
+      "targetCount": 1,
+      "emoji": "⭐",
+      "notes": "",
+      "history": {
+        "2026-06-26": true
+      }
+    }
+  ],
+  "projects": [
+    {
+      "id": "9ece2a97-3e40-4914-a03f-e27acd0ed15b",
+      "sphere": "Artist Bookings",
+      "name": "February Closing Set",
+      "emoji": "🎛️",
+      "tagIds": [
+        "a0e925dd-11e8-4c14-afaa-0f1c7fe21ac4",
+        "decc11cb-7570-4cc8-8ede-4231ba0b68a7"
+      ],
+      "status": "on-track",
+      "milestone": "",
+      "sortOrder": 0,
+      "isSample": true
+    },
+    {
+      "id": "1cbb8f83-f95a-4f06-aed2-d56f4c8a6dcf",
+      "sphere": "Artist Bookings",
+      "name": "Spring Residency Series",
+      "emoji": "🔊",
+      "tagIds": [
+        "6b1e0079-e289-4816-a809-4f08bc00fed4",
+        "9f0048c2-9711-41ac-a4ae-8c111e57a519"
+      ],
+      "status": "on-track",
+      "milestone": "",
+      "sortOrder": 0,
+      "isSample": true
+    },
+    {
+      "id": "8f86d88a-a354-4207-ad94-84ab784ce37c",
+      "sphere": "Portfolio & Brand",
+      "name": "Portfolio Refresh",
+      "emoji": "🖼️",
+      "tagIds": [
+        "768b8927-99fa-440f-8c3f-f562e522a5b3",
+        "d1bcecb4-deeb-44c3-b6e3-4b492f64719c"
+      ],
+      "status": "on-track",
+      "milestone": "",
+      "sortOrder": 0,
+      "isSample": true
+    },
+    {
+      "id": "70650176-1b0a-4bdd-b3dd-3339276441cd",
+      "sphere": "Client Coaching",
+      "name": "Client Meal Plans",
+      "emoji": "🥗",
+      "tagIds": [
+        "81012852-f808-42a8-a41d-62b6617d0198",
+        "a3b5dc87-5bbd-4d2b-91ea-eb4452e8e4b3"
+      ],
+      "status": "on-track",
+      "milestone": "",
+      "sortOrder": 0,
+      "isSample": true
+    },
+    {
+      "id": "e7aed1f5-6207-44fa-89bc-004705d69b65",
+      "sphere": "Client Coaching",
+      "name": "12-Week Group Programme",
+      "emoji": "👥",
+      "tagIds": [
+        "416c809c-ba64-4b10-9970-4675c39d53d0",
+        "5d9ce3a0-03bf-4377-a852-16ac1333b35d"
+      ],
+      "status": "on-track",
+      "milestone": "",
+      "sortOrder": 0,
+      "isSample": true
+    }
+  ],
+  "spheres": [
+    {
+      "id": "caad307e-5abb-4606-809f-3aac00578a0b",
+      "name": "Artist Bookings",
+      "labelColor": "violet"
+    },
+    {
+      "id": "97c6601d-9a6e-41b3-81ca-c59ec3ea6679",
+      "name": "Portfolio & Brand",
+      "labelColor": "violet"
+    },
+    {
+      "id": "6deea858-2004-4810-a920-77a2f7c3244d",
+      "name": "Client Coaching",
+      "labelColor": "emerald"
+    },
+    {
+      "id": "9b90f192-61af-4455-b708-2a680b77844e",
+      "name": "Content & Brand",
       "labelColor": "sky"
     }
   ],
-  "recurringTasks": [],
-  "quickNotes": [],
-  "currentTrackingDate": "2026-06-24"
+  "recurringTasks": [
+    {
+      "id": "2cbb8103-9f2b-4417-b2da-17ac7d2f2171",
+      "title": "Pay artist and agent invoices within agreed payment window",
+      "notes": "",
+      "intervalDays": 30,
+      "intervalLabel": "Monthly accounts run",
+      "sphere": "Artist Bookings",
+      "lastDoneDate": null,
+      "completionCount": 0,
+      "history": []
+    },
+    {
+      "id": "c5f04c09-696f-4c3a-a8f7-46c4b4b0f50e",
+      "title": "Back up all client galleries to cold storage",
+      "notes": "",
+      "intervalDays": 7,
+      "intervalLabel": "Weekly, every Sunday",
+      "sphere": "Portfolio & Brand",
+      "lastDoneDate": null,
+      "completionCount": 0,
+      "history": []
+    },
+    {
+      "id": "da9bcaa4-0065-4361-acc7-f88cd0d2e865",
+      "title": "Post one piece of new work to Instagram and website blog",
+      "notes": "",
+      "intervalDays": 7,
+      "intervalLabel": "Weekly",
+      "sphere": "Portfolio & Brand",
+      "lastDoneDate": null,
+      "completionCount": 0,
+      "history": []
+    },
+    {
+      "id": "629f2b64-08d2-4596-83c2-c4a57ad86f25",
+      "title": "Review all active client food diaries and leave feedback",
+      "notes": "",
+      "intervalDays": 7,
+      "intervalLabel": "Every Monday",
+      "sphere": "Client Coaching",
+      "lastDoneDate": null,
+      "completionCount": 0,
+      "history": []
+    },
+    {
+      "id": "6cb32e24-48ea-4292-b4e7-7a437f8d57d2",
+      "title": "Send weekly newsletter to subscriber list",
+      "notes": "",
+      "intervalDays": 7,
+      "intervalLabel": "Every Thursday",
+      "sphere": "Content & Brand",
+      "lastDoneDate": null,
+      "completionCount": 0,
+      "history": []
+    }
+  ],
+  "quickNotes": [
+    {
+      "id": "7c8266b0-a433-4998-94d9-13ca78dc2b31",
+      "text": "Agent contacts: Inland (Function) — bookings@inlandagency.com. Planet Rhythm (Roel Salemink) — contact via RA messages. Prologue (Luis Flores) — email only, no WhatsApp.",
+      "sphere": "Artist Bookings",
+      "createdAt": "2026-06-26 10:30",
+      "isImportant": true
+    },
+    {
+      "id": "82da5c72-28b8-4ce0-994d-37a9f8709ac2",
+      "text": "Maria plateau note: consider a 2-day diet break at maintenance calories before restarting the deficit. Evidence supports this resetting leptin sensitivity. Bring up at next check-in.",
+      "sphere": "Client Coaching",
+      "createdAt": "2026-06-26 09:00",
+      "isImportant": true
+    },
+    {
+      "id": "5608be1f-1730-499c-9b19-c31bfe9e886a",
+      "text": "Golden hour window this week: 20:45–21:10. Book outdoor sessions to end at 20:30.",
+      "sphere": "Portfolio & Brand",
+      "createdAt": "2026-06-26 08:15",
+      "isImportant": true
+    },
+    {
+      "id": "e7aa358c-1c46-4104-9f22-8d3d35993081",
+      "text": "Recipe idea: Greek yoghurt overnight oats with chia and berries — 35g protein, under 400 kcal. Test this week and photograph for Instagram if it holds together well.",
+      "sphere": "Content & Brand",
+      "createdAt": "2026-06-25 13:39",
+      "isImportant": true
+    }
+  ],
+  "currentTrackingDate": "2026-06-26"
 }

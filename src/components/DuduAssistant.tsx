@@ -53,6 +53,8 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
   const sampleTriggerFiredRef = useRef(false);
   const rearrangeTipShownRef = useRef(false);
 
+  const [windowClickCount, setWindowClickCount] = useState(0);
+
   // ── Load dismissed-trigger history once, on mount ──────────────────────────
   useEffect(() => {
     if (!supabase || !userId) { setDismissedLoaded(true); return; }
@@ -132,10 +134,10 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
     return () => clearInterval(interval);
   }, [message]);
 
-  // ── Trigger 1: Welcome — 30s after mount ────────────────────────────────────
+  // ── Trigger 1: Welcome — fires on the user's very first click anywhere ───────
   useEffect(() => {
     if (!dismissedLoaded || dismissed.has("welcome_msg")) return;
-    const timer = setTimeout(() => {
+    const handler = () => {
       showMessage({
         triggerKey: "welcome_msg",
         text: `Hey ${displayName}, nice to see u here! I'm Dudu, your otter assistant! From time to time I'll help you out with things. Look around!`,
@@ -143,8 +145,10 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
           { label: "Nice to meet you!", onClick: () => resolveTrigger("welcome_msg", "dismissed_welcome") },
         ],
       });
-    }, 30_000);
-    return () => clearTimeout(timer);
+    };
+    // { once: true } auto-removes the listener after the first invocation
+    window.addEventListener("click", handler, { once: true });
+    return () => window.removeEventListener("click", handler);
   }, [dismissedLoaded, dismissed, displayName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Trigger 2: Rearrange tip ──────────────────────────────────────────────────
@@ -170,22 +174,28 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
     });
   }, [dismissed]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 2a — idle backup, 45s after mount
+  // 2a — click-counter path: accumulate every window click, fire at exactly 3
   useEffect(() => {
     if (!dismissedLoaded || dismissed.has("rearrange_tip")) return;
-    const timer = setTimeout(showRearrangeTip, 45_000);
-    return () => clearTimeout(timer);
-  }, [dismissedLoaded, dismissed, showRearrangeTip]);
+    const handler = () => setWindowClickCount(c => c + 1);
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, [dismissedLoaded, dismissed]);
 
-  // 2b — active interception, fires the instant a drag starts
+  useEffect(() => {
+    if (windowClickCount !== 3) return;
+    showRearrangeTip();
+  }, [windowClickCount, showRearrangeTip]);
+
+  // 2b — drag path: fires the instant the first widget drag is detected
   useEffect(() => {
     if (!dismissedLoaded || !hasDraggedOnce) return;
     showRearrangeTip();
   }, [dismissedLoaded, hasDraggedOnce, showRearrangeTip]);
 
-  // ── Trigger 3: Sample cleanup catch — fires the instant the count hits 2 ───
+  // ── Trigger 3: Sample cleanup catch — fires on any deletion (count > 0) ────
   useEffect(() => {
-    if (sampleDeleteCount !== 2 || sampleTriggerFiredRef.current) return;
+    if (sampleDeleteCount === 0 || sampleTriggerFiredRef.current) return;
     sampleTriggerFiredRef.current = true;
     showMessage({
       triggerKey: "sample_cleanup",
@@ -203,6 +213,19 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
       ],
     });
   }, [sampleDeleteCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Collapse the entire component (avatar + bubble) once every one-shot
+  // trigger has been dismissed and no bubble is currently active.
+  // welcome_msg / rearrange_tip both call persistDismissal so they enter
+  // `dismissed`; sample_cleanup does not, but its bubble keeps bubbleOpen
+  // true while it's on screen, so the guard is never evaluated mid-display.
+  const hasAnythingToShow =
+    bubbleOpen ||
+    !dismissedLoaded ||
+    !dismissed.has("welcome_msg") ||
+    !dismissed.has("rearrange_tip");
+
+  if (!hasAnythingToShow) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-2">

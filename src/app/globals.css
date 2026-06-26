@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Theme tokens ──────────────────────────────────────────────────────────
+ * .dark is the default look (preserves existing users' appearance).
+ * .light overrides the same variables for the warm-paper palette.
+ */
+:root, .dark {
+  --bg-canvas: #0b0f19;
+  --bg-card: #161926;
+  --text-primary: #f8f9fa;
+  --text-muted: #94a3b8;
+  --accent-primary: #7c3aed;
+  --accent-hover: #8b5cf6;
+  --border-main: rgba(255, 255, 255, 0.07);
+  --font-heading: var(--font-craft-heading, system-ui), sans-serif;
+  --font-body: var(--font-craft-body, system-ui), sans-serif;
+}
+
+.light {
+  --bg-canvas: #f6f5f1;
+  --bg-card: #ffffff;
+  --text-primary: #1c1917;
+  --text-muted: #7c776e;
+  --accent-primary: #f35600;
+  --accent-hover: #d64b00;
+  --border-main: rgba(0, 0, 0, 0.06);
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   15%, 45%, 75% { transform: translateX(-6px); }
@@ -53,9 +81,416 @@
 }
 
 body {
-  background: #0B0F19;
-  color: #e2e8f0;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-body);
 }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading) !important;
+}
+
+/* ── Light-mode utility interception ─────────────────────────────────────
+ * Per-component .tsx classNames are left untouched. These selectors
+ * reinterpret the existing literal Tailwind utility classes when .light
+ * is active on a containing ancestor, so the dark-mode markup keeps
+ * working exactly as before with zero source changes.
+ */
+
+/* Core typography */
+.light .text-white { color: var(--text-primary) !important; }
+.light .text-slate-600 { color: var(--text-muted) !important; }
+
+/* Core structure */
+.light .bg-\[\#0B0F19\] { background-color: var(--bg-canvas) !important; }
+.light .bg-\[\#0F1629\],
+.light .bg-white\/\[0\.03\] { background-color: var(--bg-card) !important; }
+
+/* Borders & dividers */
+.light .border-white\/\[0\.07\] { border-color: var(--border-main) !important; }
+
+/* Brand highlight (violet → burnt orange) */
+.light .bg-violet-600,
+.light .bg-purple-600 { background-color: #f35600 !important; color: #ffffff !important; }
+.light .hover\:bg-violet-500:hover { background-color: var(--accent-hover) !important; }
+.light .text-violet-600,
+.light .text-purple-600,
+.light .text-violet-500 { color: #f35600 !important; }
+.light .border-violet-600,
+.light .border-purple-600 { border-color: #f35600 !important; }
+.light .bg-violet-600\/10,
+.light .bg-purple-600\/10 { background-color: rgba(243, 86, 0, 0.1) !important; color: #f35600 !important; }
+.light .shadow-violet-600\/\[0\.1\] { box-shadow: none !important; }
+
+/* Lavender banner ghost text */
+.light .text-purple-200,
+.light .text-violet-200,
+.light .text-indigo-200 { color: #2e1065 !important; }
+
+/* Input / textarea surfaces — crisp paper instead of dark-tan blocks */
+.light input,
+.light textarea,
+.light .bg-white\/\[0\.04\] {
+  background-color: rgba(28, 25, 23, 0.03) !important;
+  border: 1px solid rgba(28, 25, 23, 0.08) !important;
+  color: #1c1917 !important;
+}
+.light input::placeholder,
+.light textarea::placeholder { color: #a8a29e !important; }
+
+/* CTA text contrast on accent-primary buttons */
+.light .accent-primary { color: #ffffff !important; }
+
+/* Projects & Tasks row depth — restore nested-row framing */
+.light .bg-white\/\[0\.02\] {
+  background-color: rgba(245, 235, 214, 0.35) !important;
+}
+.light .border-white\/\[0\.04\] {
+  border-color: rgba(28, 25, 23, 0.06) !important;
+}
+
+/* Remaining white-alpha surfaces used for badges/pills in the Projects &
+ * Tasks widget ("+N" overflow tag at ProjectsCard.tsx:495, status pill at
+ * ProjectsCard.tsx:73/554, Expand-All button at ProjectsCard.tsx:448) — these
+ * read as nearly invisible hairlines on a near-white card without a tint. */
+.light .bg-white\/\[0\.05\] { background-color: rgba(245, 235, 214, 0.4) !important; }
+.light .bg-white\/\[0\.06\] { background-color: rgba(245, 235, 214, 0.45) !important; }
+.light .border-white\/\[0\.05\],
+.light .border-white\/\[0\.08\] { border-color: var(--border-main) !important; }
+
+/* Row/card hover states. Dark mode raises brightness on hover (toward
+ * white) because the canvas is dark; that exact rule inverted on a light
+ * canvas reads as "hover turns the card whiter/washes out," which is the
+ * opposite of a normal light-mode press affordance. Every hover:bg-white/[…]
+ * utility app-wide is remapped to an ink-press tint — a small dose of the
+ * near-black ink color, deepening the surface slightly instead of bleaching
+ * it — scaling with the original bracket value's intended emphasis. */
+.light .hover\:bg-white\/\[0\.02\]:hover { background-color: rgba(28, 25, 23, 0.025) !important; }
+.light .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(28, 25, 23, 0.035) !important; }
+.light .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(28, 25, 23, 0.06) !important; }
+.light .hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(28, 25, 23, 0.07) !important; }
+.light .hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(28, 25, 23, 0.08) !important; }
+.light .hover\:bg-white\/\[0\.10\]:hover,
+.light .hover\:bg-white\/10:hover { background-color: rgba(28, 25, 23, 0.1) !important; }
+.light .hover\:border-white\/\[0\.08\]:hover,
+.light .hover\:border-white\/10:hover { border-color: rgba(28, 25, 23, 0.1) !important; }
+/* CalendarCard.tsx:560 — hover:brightness-125 lightens an already-pastel
+ * event pill further on a dark canvas; invert to a gentle darken instead. */
+.light .hover\:brightness-125:hover { filter: brightness(0.92) !important; }
+
+/* Resurrect washed-out task/project labels and action icons */
+.light .text-slate-400,
+.light .text-slate-500 { color: #1c1917 !important; }
+
+/* Progress meters (TasksCard.tsx:92, ProjectsCard.tsx barGradient() at 78-80/527)
+ * use bg-gradient-to-r plus from-violet and to-violet gradient-stop classes —
+ * flatten the gradient outright rather than fighting Tailwind's internal
+ * gradient custom properties. */
+.light .from-violet-500,
+.light .from-violet-600,
+.light .from-violet-700 {
+  background-image: none !important;
+  background-color: #f35600 !important;
+}
+
+/* "+ Add" badge (TasksCard.tsx:64, ProjectsCard.tsx:378). Guarded against
+ * .bg-violet-500\/20 since DailyFocusQueueCard's velocityBadgeClass() reuses
+ * the bare text-violet-300/border-violet-500/30 pair for its 50-79% velocity
+ * tier — a deliberately separate semantic scale (emerald/violet/amber/rose)
+ * that must keep its own violet identity, not inherit the brand accent. */
+.light .bg-violet-600\/20 { background-color: rgba(243, 86, 0, 0.15) !important; }
+.light .border-violet-500\/30:not(.bg-violet-500\/20) { border-color: rgba(243, 86, 0, 0.3) !important; }
+.light .text-violet-300:not(.bg-violet-500\/20) { color: var(--accent-primary) !important; }
+
+/* Remaining violet/purple brand accents — header icon, active focus button,
+ * "N open" counter, and hover states on the queue/note/edit icons
+ * (ProjectsCard.tsx:188,215-216,230-231,371,390,516,551). Guarded with
+ * :not(.bg-violet-500\/15) so the unrelated "Flow" energy-pill and "violet"
+ * tag-color swatches (which share the bare text-violet-400 class) are left
+ * untouched — those are a deliberately separate per-task color system. */
+/* :not(.bg-violet-500\/10) additionally protects the named "violet" area/
+ * relationship color's chip text (areaColors.ts violet.text pairs with
+ * violet.bgTint = "bg-violet-500/10" — used by CalendarCard's monthChip()
+ * for area-tagged event pills, e.g. the "scsdcdsc" pill on Sun 28). */
+.light .text-violet-400:not(.bg-violet-500\/15):not(.bg-violet-500\/10) { color: #f35600 !important; }
+.light .text-purple-400 { color: #f35600 !important; }
+.light .hover\:text-violet-300:hover,
+.light .hover\:text-violet-400:hover,
+.light .hover\:text-purple-400:hover { color: var(--accent-hover) !important; }
+/* :not(.text-violet-200) protects the named "violet" tag/project-color swatch
+ * (ProjectEditModal/TaskModal/ManageProjectsModal TAG_COLORS.violet), which
+ * pairs this exact bg with text-violet-200 + border-violet-400/60 — a user-
+ * chosen color identity, distinct from the active-focus-button reuse of the
+ * same bg class (which pairs with text-violet-300 + ring-violet-400/40). */
+.light .bg-violet-500\/25:not(.text-violet-200) { background-color: rgba(243, 86, 0, 0.2) !important; }
+.light .hover\:bg-violet-500\/10:hover,
+.light .hover\:bg-violet-500\/20:hover { background-color: rgba(243, 86, 0, 0.12) !important; }
+.light .hover\:bg-violet-600\/30:hover { background-color: rgba(243, 86, 0, 0.22) !important; }
+.light .hover\:border-violet-500\/30:hover,
+.light .hover\:border-violet-500\/50:hover { border-color: rgba(243, 86, 0, 0.4) !important; }
+.light .ring-violet-400\/40 { --tw-ring-color: rgba(243, 86, 0, 0.4) !important; }
+.light .border-violet-400\/40,
+.light .hover\:border-violet-500\/40:hover { border-color: rgba(243, 86, 0, 0.4) !important; }
+
+/* Today's Focus widget (DailyFocusQueueCard.tsx) ─────────────────────────
+ * text-slate-300 is the actual cause of the near-invisible "Add from
+ * backlog" task-list text and the faint "Performance Archive" header —
+ * it was never covered by the slate-400/500/600/700 sweep done earlier. */
+.light .text-slate-300 { color: #1c1917 !important; }
+
+/* The "Add from backlog" panel (line 354) and "Today's Aggregation" panel
+ * (line 759) both use this exact border+bg pair as their accent-callout
+ * chrome — flatten the leftover violet tint to the burnt-orange brand. */
+.light .border-violet-500\/20.bg-violet-600\/\[0\.04\] {
+  background-color: rgba(243, 86, 0, 0.05) !important;
+  border-color: rgba(243, 86, 0, 0.25) !important;
+}
+.light .focus\:border-violet-500\/60:focus { border-color: #f35600 !important; }
+
+/* Remaining white-alpha chrome unique to this widget's archive/backlog rows */
+.light .border-white\/\[0\.06\],
+.light .border-white\/\[0\.10\] { border-color: var(--border-main) !important; }
+.light .bg-white\/\[0\.01\] { background-color: rgba(245, 235, 214, 0.2) !important; }
+.light .hover\:bg-white\/\[0\.04\]:hover,
+.light .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(28, 25, 23, 0.045) !important; }
+.light .hover\:bg-white\/\[0\.1\]:hover { background-color: rgba(28, 25, 23, 0.1) !important; }
+.light .hover\:border-white\/\[0\.20\]:hover { border-color: rgba(28, 25, 23, 0.15) !important; }
+
+/* Completed task rows (TasksCard.tsx:109, ProjectsCard.tsx:135) render with
+ * only "border-transparent opacity-40" — no background class at all — so on
+ * a near-white canvas the row reads as blank/missing. Give it a visible
+ * almond surface and dial opacity back just enough to keep the done-state cue. */
+.light .border-transparent.opacity-40 {
+  background-color: rgba(245, 235, 214, 0.3) !important;
+  border-color: rgba(28, 25, 23, 0.05) !important;
+  opacity: 0.65 !important;
+}
+
+/* Completed-section headers and faint separators stay legibly muted */
+.light .text-slate-600,
+.light .text-slate-700 { color: #7c776e !important; }
+
+/* Completed task rows — grayed-out, struck-through, de-emphasized */
+.light .line-through,
+.light del,
+.light .line-through * {
+  color: #a8a29e !important;
+  text-decoration-color: #a8a29e !important;
+  opacity: 0.6 !important;
+}
+
+/* ── Cross-widget light-mode sweep (FocusTimer, ActivityLog, Network,
+ * Recurring, HabitTracker, Settings/Admin, Calendar, Recap banner) ───────
+ * Found by diffing dark/light screenshots widget-by-widget. */
+
+/* text-slate-200 was the one slate shade never covered by the 300-700 sweep
+ * — it's what made contact names (NetworkCard.tsx:519) and recurring task
+ * titles (RecurringCard.tsx:243) nearly invisible on the cream canvas. */
+.light .text-slate-200 { color: #1c1917 !important; }
+
+/* Buttons using an inline gradient style (SettingsModal "Save Name" /
+ * "Save Lock Settings" / passcode save) bypass class-based overrides
+ * entirely — only an !important stylesheet rule beats an inline style. */
+.light button[style*="linear-gradient(to right, #8B5CF6, #7C3AED)"] {
+  background-image: none !important;
+  background-color: #f35600 !important;
+}
+
+/* Focus Timer ring + Activity Log ring (raw SVG stroke/stop-color attributes,
+ * not Tailwind classes — TimeTrackerCard.tsx:164-186, ActivityLogCard.tsx:312-320) */
+.light svg circle[stroke="rgba(255,255,255,0.04)"] { stroke: rgba(28, 25, 23, 0.08) !important; }
+.light svg circle[stroke="rgba(167,139,250,0.6)"] { stroke: rgba(243, 86, 0, 0.6) !important; }
+.light stop[stop-color="#7C3AED"] { stop-color: #f35600 !important; }
+.light stop[stop-color="#a78bfa"] { stop-color: #ff9456 !important; }
+
+/* Admin panel (SettingsModal.tsx Workbench/User Insights/Manage Admins/
+ * Dudu's help, ManageAdminsTab, FounderDashboard, WorkbenchBeacon) uses an
+ * entirely separate purple-500 shade family that had zero coverage — every
+ * row was rendering at its dark-mode opacity directly on the cream canvas. */
+.light .text-purple-300,
+.light .text-purple-300\/75,
+.light .text-purple-300\/90 { color: #f35600 !important; }
+.light .text-purple-700 { color: #7c776e !important; }
+.light .hover\:text-purple-200:hover,
+.light .hover\:text-violet-200:hover { color: var(--accent-hover) !important; }
+.light .border-purple-400,
+.light .border-purple-500,
+.light .border-purple-500\/15,
+.light .border-purple-500\/20,
+.light .border-purple-500\/30,
+.light .border-purple-500\/40,
+.light .border-purple-500\/50 { border-color: rgba(243, 86, 0, 0.4) !important; }
+.light .hover\:border-purple-400:hover,
+.light .hover\:border-purple-500\/40:hover { border-color: rgba(243, 86, 0, 0.5) !important; }
+.light .focus\:border-purple-500\/40:focus,
+.light .focus\:border-purple-500\/50:focus,
+.light .focus-within\:border-purple-500\/50:focus-within { border-color: #f35600 !important; }
+.light .bg-purple-500,
+.light .bg-purple-500\/15,
+.light .bg-purple-500\/\[0\.04\],
+.light .bg-purple-500\/\[0\.07\],
+.light .bg-purple-500\/\[0\.08\] { background-color: rgba(243, 86, 0, 0.08) !important; }
+.light .hover\:bg-purple-500\/\[0\.10\]:hover,
+.light .hover\:bg-purple-500\/\[0\.14\]:hover { background-color: rgba(243, 86, 0, 0.16) !important; }
+.light .bg-purple-600\/20 { background-color: rgba(243, 86, 0, 0.15) !important; }
+.light .bg-purple-950\/20 { background-color: rgba(245, 235, 214, 0.4) !important; }
+.light .border-l-purple-500 { border-color: #f35600 !important; }
+
+/* Remaining decorative violet-500/600 accent panels, today-indicators, and
+ * focus rings (TimeTrackerCard, HabitTrackerCard "today" cell, CalendarCard
+ * Week/Month toggle, MorningRecapBanner, ActivityLogCard accent row). Each
+ * bracket value below is a distinct literal class from the ones already
+ * covered earlier in this file. */
+.light .text-violet-300\/80,
+.light .text-violet-400\/50,
+.light .text-violet-400\/70,
+.light .text-violet-400\/80 { color: #f35600 !important; }
+.light .border-violet-400,
+.light .border-violet-500,
+.light .border-violet-500\/15,
+.light .border-violet-500\/40,
+.light .border-violet-500\/55 { border-color: rgba(243, 86, 0, 0.4) !important; }
+/* :not(.bg-violet-500\/10) protects NetworkCard's named "violet" relationship
+ * color (NetworkCard.tsx:27 pill: "bg-violet-500/10 border-violet-500/20
+ * text-violet-400") from the decorative-panel reuse of the same border class. */
+.light .border-violet-500\/20:not(.bg-violet-500\/10) { border-color: rgba(243, 86, 0, 0.3) !important; }
+/* border-violet-500/50 is shared between decorative selection chrome (e.g.
+ * HabitModal.tsx:193 "Assign Routine" active pill, OnboardingFlow, EmojiPicker)
+ * and three protected semantic systems that must keep their violet identity:
+ * the "Flow" energy pill and NetworkCard's "violet" relationship color (both
+ * pair it with .text-violet-300), and DailyFocusQueueCard's "finish" intent
+ * pill (pairs it with .bg-violet-600\/25). Guarded against both. */
+.light .border-violet-500\/50:not(.text-violet-300):not(.bg-violet-600\/25) { border-color: #f35600 !important; }
+.light .hover\:border-violet-500:hover { border-color: #f35600 !important; }
+.light .focus\:border-violet-400:focus,
+.light .focus\:border-violet-500\/50:focus,
+.light .focus-within\:border-violet-500\/50:focus-within { border-color: #f35600 !important; }
+.light .bg-violet-500,
+.light .bg-violet-500\/50,
+.light .bg-violet-500\/\[0\.06\],
+.light .bg-violet-500\/\[0\.07\],
+.light .bg-violet-500\/\[0\.08\] { background-color: rgba(243, 86, 0, 0.1) !important; }
+.light .hover\:bg-violet-500\/\[0\.12\]:hover { background-color: rgba(243, 86, 0, 0.18) !important; }
+.light .bg-violet-600\/10,
+.light .bg-violet-600\/15,
+.light .bg-violet-600\/25,
+.light .bg-violet-600\/\[0\.03\],
+.light .bg-violet-600\/\[0\.05\],
+.light .bg-violet-600\/\[0\.06\],
+.light .bg-violet-600\/\[0\.07\],
+.light .bg-violet-600\/\[0\.08\] { background-color: rgba(243, 86, 0, 0.08) !important; }
+.light .hover\:bg-violet-600\/\[0\.06\]:hover { background-color: rgba(243, 86, 0, 0.14) !important; }
+.light .ring-violet-500\/20,
+.light .ring-violet-500\/25 { --tw-ring-color: rgba(243, 86, 0, 0.3) !important; }
+
+/* Pill/toggle active-state text app-wide (HabitModal "Start"/"Stop" toggle,
+ * priority/energy/status badges, etc.) consistently follows the pattern
+ * bg-{color}-X00/NN border-{color}-500/NN text-{color}-300 — a translucent
+ * tinted background with matching pastel text, designed for a dark canvas.
+ * On the cream canvas every one of these pastel-300 text colors is too
+ * light to read. Darken each to its own -800 shade so the hue/semantics
+ * stay intact, just legible. */
+.light .text-emerald-300 { color: #065f46 !important; }
+.light .text-red-300 { color: #991b1b !important; }
+.light .text-amber-300 { color: #92400e !important; }
+.light .text-rose-300 { color: #9f1239 !important; }
+.light .text-sky-300 { color: #075985 !important; }
+.light .text-blue-300 { color: #1e40af !important; }
+.light .text-teal-300 { color: #115e59 !important; }
+.light .text-indigo-300 { color: #3730a3 !important; }
+.light .text-pink-300 { color: #9d174d !important; }
+.light .text-orange-300 { color: #9a3412 !important; }
+.light .text-green-300 { color: #166534 !important; }
+/* CalendarCard.tsx EVENT_COLOR.violet and DailyFocusQueueCard's 50-79%
+ * velocity tier both pair text-violet-300 with bg-violet-500/20 — already
+ * excluded from the brand-orange mapping to preserve their violet identity,
+ * but that left them at native pale violet-300 with no light-mode darkening
+ * pass at all. Give that one protected combo its own dark-violet treatment. */
+.light .text-violet-300.bg-violet-500\/20 { color: #4c1d95 !important; }
+
+/* ── Deep structural polish pass ───────────────────────────────────────── */
+
+/* 1. Focus Timer active-task title (TimeTrackerCard.tsx:86) — text-violet-200
+ * is shared with the Recap banner message and the "violet" tag swatch
+ * (both fine as deep eggplant), but this specific header reads better as
+ * plain high-contrast ink. Scoped via its unique parent
+ * (bg-violet-600/10, TimeTrackerCard.tsx:83 — no other component pairs
+ * that exact bracket value with a nested text-violet-200). */
+.light .bg-violet-600\/10 .text-violet-200 { color: #1c1917 !important; }
+
+/* 4. Area/Sphere pill active state (areaColors.ts pillActive: "bg-{color}-500
+ * border-{color}-500 text-white ...") — the blanket .text-white rule darkens
+ * this to ink, which is illegible against a solid saturated color fill.
+ * Force it back to white specifically when paired with one of the 10 solid
+ * area-color fills (not their /10, /20, /25 translucent counterparts). */
+.light .bg-emerald-500.text-white,
+.light .bg-violet-500.text-white,
+.light .bg-sky-500.text-white,
+.light .bg-amber-500.text-white,
+.light .bg-pink-500.text-white,
+.light .bg-teal-500.text-white,
+.light .bg-blue-500.text-white,
+.light .bg-rose-500.text-white,
+.light .bg-orange-500.text-white,
+.light .bg-indigo-500.text-white { color: #ffffff !important; }
+
+/* 5. Headspace widget (MindfulCheckIn.tsx:142,169) — its check-in/mood-pill
+ * containers used the same almond-tinted inner-panel treatment as nested
+ * rows elsewhere, which reads as a mismatched surface next to the solid
+ * white cards everywhere else. Promote it to the standard white card. */
+.light .border-white\/\[0\.07\].bg-white\/\[0\.02\] {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-main) !important;
+}
+
+/* 6. Today's Focus / general selection borders — soften the solid, fully
+ * opaque brand-orange border used on hover/selection states to a translucent
+ * tint so it reads as a crisp accent line rather than a heavy block stroke. */
+.light .hover\:border-violet-500:hover { border-color: rgba(243, 86, 0, 0.55) !important; }
+
+/* 7. Habit Tracker build/stop side accents (HabitTrackerCard.tsx:212-213)
+ * and ProjectsCard's "queued today" left accent (ProjectsCard.tsx:137) use
+ * border-l-{color} to set just the left edge, but the generic
+ * .border-white\/\[0\.04\] rule above sets the border-color *shorthand*
+ * with !important — which also assigns border-left-color and silently wins
+ * over Tailwind's unprefixed, non-important border-l-* utility. Re-assert
+ * the left edge explicitly, after that rule, so the accent stripe returns. */
+.light .border-l-emerald-500\/60 { border-left-color: rgba(16, 185, 129, 0.6) !important; }
+.light .border-l-rose-500\/60 { border-left-color: rgba(244, 63, 94, 0.6) !important; }
+.light .border-l-purple-500 { border-left-color: #f35600 !important; }
+
+/* 8. Quick Actions toggle (QuickActionsConfigModal.tsx:150) — the knob is
+ * always bg-white; on the deactivated track's bg-white/[0.12] (already
+ * mapped to a near-white tint by the input/textarea shared rule) the white
+ * knob disappears entirely. Give the deactivated track a visible neutral
+ * fill so the knob has something to contrast against, and flip the active
+ * track to brand orange via a compound unique to this toggle's dimensions. */
+.light .w-9.h-5.bg-white\/\[0\.12\] { background-color: rgba(28, 25, 23, 0.15) !important; }
+.light .w-9.h-5.bg-violet-500 { background-color: #f35600 !important; }
+
+/* 9. Admin/Workbench/Settings modal wrappers hardcode one of several
+ * near-black hex values for their dark-mode panel surface — none of these
+ * were covered by the two values (#0B0F19, #0F1629) mapped early on. */
+.light .bg-\[\#0d1426\],
+.light .bg-\[\#0B0F1C\],
+.light .bg-\[\#0D1120\],
+.light .bg-\[\#0B0F1A\],
+.light .bg-\[\#15192B\],
+.light .bg-\[\#131929\],
+.light .bg-\[\#0c1120\],
+.light .bg-\[\#090D1A\],
+.light .bg-\[\#080B14\] { background-color: var(--bg-card) !important; }
+
+/* 10. Active Widgets selector preview cards (ActiveWidgetsModal.tsx:871-877)
+ * — the selected-state glow shadow is a dark-mode "luminous halo" effect
+ * that just reads as a blurry smudge on a white card. Drop the glow, keep
+ * a crisp, slightly heavier brand-orange border as the selection indicator. */
+.light .border-violet-500\/50.shadow-\[0_0_16px_rgba\(139\,92\,246\,0\.25\)\] {
+  box-shadow: none !important;
+  border-width: 1.5px !important;
+  border-color: #f35600 !important;
+}
+
 
 /* Quick Notes checklist circle — enlarges the tap target to ~44x44px via an invisible
    pseudo-element halo (clicks on it register on the host element, not a separate node),
@@ -70,6 +505,712 @@ body {
   position: absolute;
   inset: -15px;
   border-radius: 9999px;
+}
+
+/* ── Light-mode micro-element sweep (inline buttons, modals, badges, recap) ── */
+
+/* 1. FORCE INLINE-GRADIENT DIALOG BUTTONS TO BRAND ORANGE
+ * Account Settings modal buttons ("Save Name", "Save Lock Settings", "Post")
+ * use inline linear-gradient styles that bypass utility class mapping entirely.
+ * Catch multiple gradient direction patterns and flatten to solid brand orange. */
+.light button[style*="linear-gradient"],
+.light button[style*="rgb(139"],
+.light button[style*="rgb(124"] {
+  background-image: none !important;
+  background-color: #f35600 !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 2. SANITIZE INTERACTIVE POPOVER CALENDAR SELECTION WIDGETS
+ * When date picker popovers (birthdate, contact edit) open in light mode,
+ * force clean light-canvas composition across the calendar surface. */
+.light .react-datepicker.light-theme-picker {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-main) !important;
+  box-shadow: 0 12px 32px rgba(28, 25, 23, 0.15) !important;
+}
+.light .light-theme-picker .react-datepicker__header {
+  background-color: var(--bg-card) !important;
+  border-bottom-color: var(--border-main) !important;
+}
+.light .light-theme-picker .react-datepicker__month-container {
+  background-color: var(--bg-card) !important;
+}
+.light .light-theme-picker .react-datepicker__day-name {
+  color: #1c1917 !important;
+  font-weight: 600;
+}
+.light .light-theme-picker .react-datepicker__day {
+  color: #1c1917 !important;
+  background-color: transparent !important;
+}
+.light .light-theme-picker .react-datepicker__day:hover:not(.react-datepicker__day--disabled) {
+  background-color: rgba(243, 86, 0, 0.12) !important;
+  color: #1c1917 !important;
+}
+.light .light-theme-picker .react-datepicker__day--today {
+  color: #f35600 !important;
+  font-weight: 600;
+}
+.light .light-theme-picker .react-datepicker__day--selected,
+.light .light-theme-picker .react-datepicker__day--keyboard-selected {
+  background-color: #f35600 !important;
+  color: #ffffff !important;
+}
+.light .light-theme-picker .react-datepicker__day--selected:hover,
+.light .light-theme-picker .react-datepicker__day--keyboard-selected:hover {
+  background-color: #d64b00 !important;
+}
+.light .light-theme-picker .react-datepicker__month-select,
+.light .light-theme-picker .react-datepicker__year-select {
+  background-color: rgba(28, 25, 23, 0.04) !important;
+  border: 1px solid var(--border-main) !important;
+  color: #1c1917 !important;
+}
+.light .light-theme-picker .react-datepicker__month-select:focus,
+.light .light-theme-picker .react-datepicker__year-select:focus {
+  border-color: #f35600 !important;
+  outline: none !important;
+}
+
+/* 3. DARK-STATE TO LIGHT-STATE ACTION BUTTON REVERSAL
+ * Session management button (Log Out action) at base of settings interface.
+ * Ensure it renders cleanly with readable text against the light modal. */
+.light button[data-action="logout"],
+.light button[aria-label*="logout"],
+.light button[aria-label*="Log Out"],
+.light .logout-button {
+  background-color: rgba(243, 86, 0, 0.12) !important;
+  border: 1px solid rgba(243, 86, 0, 0.2) !important;
+  color: #1c1917 !important;
+  padding: 0.5rem 1rem !important;
+}
+.light button[data-action="logout"]:hover,
+.light button[aria-label*="logout"]:hover,
+.light button[aria-label*="Log Out"]:hover,
+.light .logout-button:hover {
+  background-color: rgba(243, 86, 0, 0.18) !important;
+  border-color: rgba(243, 86, 0, 0.3) !important;
+}
+
+/* 4. MULTIPLY CONTRAST ON SEMANTIC ROLE & CATEGORY BADGES
+ * Role badges (ADMIN pill), categorical labels (PROJECTS tracking badges)
+ * in Manage Admins and User Insights views. Remap faded lavender to high-
+ * contrast charcoal or brand orange with sharp structural margins. */
+.light .bg-purple-500\/\[0\.15\],
+.light .bg-purple-600\/\[0\.12\],
+.light .bg-purple-700\/\[0\.08\] {
+  background-color: rgba(243, 86, 0, 0.1) !important;
+}
+.light [class*="badge"][class*="purple"],
+.light [class*="badge"][class*="violet"],
+.light .role-badge,
+.light .category-badge {
+  background-color: rgba(243, 86, 0, 0.12) !important;
+  border-color: rgba(243, 86, 0, 0.25) !important;
+  color: #1c1917 !important;
+  font-weight: 600;
+}
+.light .role-badge .text-purple-300,
+.light .category-badge .text-purple-300,
+.light .role-badge .text-violet-300,
+.light .category-badge .text-violet-300 {
+  color: #f35600 !important;
+}
+
+/* 5. CLEAN RECAP BANNER LINE SEPARATION
+ * Horizontal rule lines and border perimeters in Morning/Recap banner area.
+ * Ensure crisp, high-contrast definitions that frame message against title. */
+.light .bg-gradient-to-r.border-b,
+.light [class*="recap"][class*="border"],
+.light [class*="banner"][class*="border-b"] {
+  border-bottom-color: rgba(28, 25, 23, 0.15) !important;
+  border-bottom-width: 1px !important;
+}
+.light hr,
+.light [role="separator"] {
+  border-color: rgba(28, 25, 23, 0.1) !important;
+  opacity: 1 !important;
+}
+
+/* ── Advanced component-specific visibility fixes ────────────────────────── */
+
+/* 1. COMPONENT TAG PILL SELECTION STATES (TASK & PROJECT MODALS)
+ * Task/Project modal tag selection clusters (Launch, Product, Business, Brand, Clients).
+ * When tag pills are toggled into selected state, ensure text label and close "x" icon
+ * are fully visible with proper contrast against the pill background. */
+.light [class*="tag-pill"][class*="selected"],
+.light [class*="tag"][class*="active"],
+.light .tag.selected,
+.light button[class*="pill"][class*="selected"] {
+  color: #ffffff !important;
+}
+.light [class*="tag-pill"][class*="selected"] .text,
+.light [class*="tag-pill"][class*="selected"] span,
+.light [class*="tag"][class*="active"] .text,
+.light .tag.selected .text,
+.light button[class*="pill"][class*="selected"] .text {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+.light [class*="tag-pill"][class*="selected"] [class*="close"],
+.light [class*="tag-pill"][class*="selected"] [class*="dismiss"],
+.light [class*="tag-pill"][class*="selected"] button,
+.light [class*="tag"][class*="active"] [class*="close"],
+.light .tag.selected [class*="close"],
+.light button[class*="pill"][class*="selected"] [class*="close"] {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* 2. HEADSPACE SEMANTIC PALETTE PROTECTION
+ * Mood state-badge buttons (Energized, Calm, etc.) retain native semantic colors.
+ * Explicitly exclude from brand orange override, darken text to -800 equivalent. */
+.light [class*="headspace"] [class*="mood"],
+.light [class*="headspace"] [class*="state"],
+.light .mood-pill,
+.light .mood-badge {
+  background-color: var(--bg-card) !important;
+  border-color: currentColor !important;
+}
+.light [class*="headspace"] .text-amber-300,
+.light [class*="headspace"] .text-violet-300,
+.light [class*="headspace"] .text-teal-300,
+.light [class*="headspace"] .text-emerald-300,
+.light [class*="headspace"] .text-rose-300 {
+  color: inherit !important;
+}
+.light .mood-pill.selected,
+.light .mood-badge.selected {
+  color: #1c1917 !important;
+}
+.light .mood-pill.selected .text-amber-300 { color: #92400e !important; }
+.light .mood-pill.selected .text-violet-300 { color: #4c1d95 !important; }
+.light .mood-pill.selected .text-teal-300 { color: #115e59 !important; }
+.light .mood-pill.selected .text-emerald-300 { color: #065f46 !important; }
+.light .mood-pill.selected .text-rose-300 { color: #9f1239 !important; }
+
+/* 3. TODAY'S FOCUS BUTTON ACTIONS CHROME UNIFICATION
+ * Active intention buttons (Finish, Continue, etc.) replace violet stroke with
+ * brand orange or charcoal. Intercept active/highlighted outline borders. */
+.light [class*="focus"][class*="action"] [class*="outline"],
+.light [class*="focus"][class*="button"][class*="active"],
+.light [class*="intention"][class*="pill"],
+.light .focus-action-button.active {
+  border-color: #f35600 !important;
+  outline-color: rgba(243, 86, 0, 0.3) !important;
+}
+.light [class*="focus"][class*="action"] [class*="outline"]:focus,
+.light [class*="focus"][class*="button"][class*="active"]:focus,
+.light .focus-action-button.active:focus {
+  border-color: #f35600 !important;
+  box-shadow: 0 0 0 2px rgba(243, 86, 0, 0.2) !important;
+}
+
+/* 4. FOCUS TIMER CUSTOM INTERFACE INPUT VISIBILITY
+ * Time duration selector (25 min) strips gray mask box, darkens units label.
+ * Target the numerical input and trailing "min"/"mins" unit text. */
+.light [class*="timer"] [class*="duration"],
+.light [class*="timer"] [class*="time"],
+.light .time-select,
+.light .duration-input {
+  background-color: transparent !important;
+  border: 1px solid var(--border-main) !important;
+}
+.light [class*="timer"] [class*="unit"],
+.light [class*="timer"] .unit-label,
+.light .time-select .unit,
+.light .duration-input .unit {
+  color: #1c1917 !important;
+  opacity: 1 !important;
+}
+.light [class*="timer"] [class*="minute"],
+.light [class*="timer"] .minutes,
+.light .time-select span:last-child,
+.light .duration-input span:last-child {
+  color: #1c1917 !important;
+  font-weight: 500 !important;
+}
+
+/* ── Precise light-mode micro-fixes ─────────────────────────────────────
+ *
+ * FIX A — Today's Focus "Finish" action pill border
+ * .border-violet-500\/50 is guarded from the generic orange sweep (line 372)
+ * with :not(.bg-violet-600\/25) to preserve the "Flow" energy pill and
+ * NetworkCard's violet relationship color. The "Finish" pill pairs exactly
+ * those two classes; a compound rule here overrides the guard and maps its
+ * active-selection border to brand orange. */
+.light .border-violet-500\/50.bg-violet-600\/25 {
+  border-color: #f35600 !important;
+}
+
+/* FIX B — Focus Timer "25 min" time-goal selector visibility
+ * b1) <select> was omitted from the generic .light input surface reset at
+ *     line 131. Include it so the duration picker renders on the paper
+ *     canvas instead of retaining its dark-mode surface. */
+.light select {
+  background-color: rgba(28, 25, 23, 0.03) !important;
+  border: 1px solid rgba(28, 25, 23, 0.08) !important;
+  color: #1c1917 !important;
+}
+/* b2) Clear the gray/dark active-state mask on the numeric input or select
+ *     when it receives focus or is open — catches bg-slate-N and bg-gray-N
+ *     classes that may have slipped through to the element's active state. */
+.light input[type="number"]:focus,
+.light input[type="number"]:active,
+.light select:focus,
+.light select:active,
+.light select:focus-visible {
+  background-color: rgba(28, 25, 23, 0.04) !important;
+  border-color: rgba(243, 86, 0, 0.5) !important;
+  color: #1c1917 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+/* b3) The "min"/"mins" unit label goes invisible on the off-white canvas when
+ *     the sibling input gains focus — driven by Tailwind peer-focus:text-white
+ *     (and common variant shades) or a JS class toggle. Force it permanently
+ *     to woodblock charcoal so it stays legible in all focus states. */
+.light .peer-focus\:text-white,
+.light .peer-focus\:text-slate-100,
+.light .peer-focus\:text-gray-100,
+.light .peer-focus\:text-zinc-100 {
+  color: #1c1917 !important;
+}
+.light input:focus ~ span,
+.light input:focus + span,
+.light select:focus ~ span,
+.light select:focus + span {
+  color: #1c1917 !important;
+}
+
+/* Focus timer time-selection chip — number input ghost and unit label fix */
+.light input[type="number"],
+.light input[type="number"]:focus,
+.light input[type="number"]:active,
+.light input[type="number"]::selection {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border-color: transparent !important;
+}
+.light input[type="number"] ~ span,
+.light input[type="number"] + span,
+.light input[type="number"] ~ *,
+.light input[type="number"] + * {
+  color: #1c1917 !important;
+}
+
+/* ── Light-mode visual sweep — pass 3 ───────────────────────────────────── */
+
+/* 1. Hero plant / Monstera illustration
+ * Dark mode wraps the asset in opacity/mix-blend-mode for atmosphere; on the
+ * cream canvas those same filters wash it out. Strip every filter primitive
+ * and force full opacity so the illustration renders crisply. */
+.light img[alt*="plant" i],
+.light img[alt*="monstera" i],
+.light img[src*="plant"],
+.light img[src*="monstera"],
+.light [class*="plant"],
+.light [class*="monstera"] {
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+/* 2. Morning Velocity / Recap banner
+ * The banner's own border and inline text still pull violet-family values
+ * that the earlier gradient-rule didn't reach. Target the gradient wrapper
+ * itself and all text inside it. */
+.light .bg-gradient-to-r[class*="violet"],
+.light .bg-gradient-to-r[class*="purple"],
+.light [class*="recap"],
+.light [class*="morning-banner"],
+.light [class*="velocity-banner"] {
+  border-color: rgba(243, 86, 0, 0.35) !important;
+}
+.light [class*="recap"] *,
+.light [class*="morning-banner"] *,
+.light [class*="velocity-banner"] * {
+  color: #1c1917 !important;
+}
+.light [class*="recap"] [class*="accent"],
+.light [class*="morning-banner"] [class*="accent"],
+.light [class*="velocity-banner"] [class*="accent"] {
+  color: #f35600 !important;
+}
+
+/* 3. Headspace mood pills & Network filter chips — semantic violet identity
+ * The generic orange sweep claims any active bg-violet or bg-purple pill.
+ * These two widget families use deliberate violet-as-semantic-meaning (mood
+ * alignment, relationship-type categories) and must stay violet when active.
+ * Detect them via their widget ancestor and re-assert the deep violet fill
+ * with white text when the pill carries an "active" / selected state class. */
+.light [class*="headspace"] button[class*="violet"][class*="active"],
+.light [class*="headspace"] button[class*="purple"][class*="active"],
+.light [class*="headspace"] [aria-pressed="true"][class*="violet"],
+.light [class*="headspace"] [aria-pressed="true"][class*="purple"],
+.light [class*="mindful"] button[class*="violet"][class*="active"],
+.light [class*="mindful"] [aria-pressed="true"][class*="violet"],
+.light [class*="network"] button[class*="violet"][class*="active"],
+.light [class*="network"] button[class*="purple"][class*="active"],
+.light [class*="network"] [aria-pressed="true"][class*="violet"],
+.light [class*="network"] [aria-pressed="true"][class*="purple"],
+.light [class*="network"] [aria-selected="true"][class*="violet"],
+.light [class*="network"] [aria-selected="true"][class*="purple"] {
+  background-color: #4c1d95 !important;
+  border-color: #6d28d9 !important;
+  color: #ffffff !important;
+}
+.light [class*="headspace"] button[class*="violet"][class*="active"] *,
+.light [class*="headspace"] [aria-pressed="true"][class*="violet"] *,
+.light [class*="mindful"] button[class*="violet"][class*="active"] *,
+.light [class*="network"] button[class*="violet"][class*="active"] *,
+.light [class*="network"] [aria-pressed="true"][class*="violet"] *,
+.light [class*="network"] [aria-selected="true"][class*="violet"] * {
+  color: #ffffff !important;
+}
+
+/* 4. Calendar yellow event chips — birthday / anniversary tags
+ * Tailwind's amber/yellow palette produces "amber-300" text on an
+ * "amber-500/20" or "yellow-400/20" tint — unreadable on the cream canvas.
+ * Darken the text inside any yellow/amber event chip to charcoal. */
+.light .bg-yellow-500\/20 *,
+.light .bg-yellow-400\/20 *,
+.light .bg-amber-400\/20 *,
+.light .bg-amber-500\/20 *,
+.light .bg-yellow-500\/25 *,
+.light .bg-amber-500\/25 * {
+  color: #1c1917 !important;
+}
+.light .text-yellow-300,
+.light .text-yellow-400,
+.light .text-amber-400 { color: #78350f !important; }
+
+/* 5. Quick Notes archive search bar — double-border / ghost ring removal
+ * The search input renders with both the generic .light input border (from
+ * line 131) AND a focus-ring pseudo or an extra wrapper border. Collapse both
+ * sources to a single 1 px stroke and suppress all pseudo-element rings. */
+.light [class*="archive"] input[type="search"],
+.light [class*="archive"] input[type="text"],
+.light [class*="notes"] input[type="search"],
+.light [class*="notes"] input[type="text"],
+.light [class*="search"] input {
+  border: 1px solid rgba(28, 25, 23, 0.1) !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+.light [class*="archive"] input[type="search"]::before,
+.light [class*="archive"] input[type="search"]::after,
+.light [class*="notes"] input[type="search"]::before,
+.light [class*="notes"] input[type="search"]::after {
+  display: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 6. Projects & Tasks — queued-today task row: left-bar only, no box ring
+ * The "queued in Today's Focus" highlighted row uses a full border-orange
+ * ring (border class + ring utility). In light mode that reads as a heavy
+ * four-sided orange box. Keep only the left accent stripe and suppress the
+ * three remaining sides and any ring utility. */
+.light .border-l-purple-500,
+.light .border-l-orange-500,
+.light [class*="queued"],
+.light [class*="focused-task"],
+.light [class*="in-focus"] {
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-color: transparent !important;
+}
+
+/* ── Velocity Recap banner — precise orange remap ────────────────────────
+ * The banner card uses border-violet-50/20 + bg-violet-600/[0.06] for its
+ * container chrome. Neither was covered by the earlier compound-selector
+ * rules, so violet leaked through. Force both surface and border to orange.
+ * border-violet-500/15 is an interior section divider inside the same banner.
+ * text-violet-200 is the paragraph text — override the #2e1065 mapping set
+ * at line 127 so it reads in plain high-contrast charcoal instead. */
+.light .border-violet-50\/20,
+.light .bg-violet-600\/\[0\.06\] {
+  background-color: rgba(243, 86, 0, 0.06) !important;
+  border-color: rgba(243, 86, 0, 0.2) !important;
+}
+.light .text-violet-200 {
+  color: #1c1917 !important;
+}
+.light .border-violet-500\/15 {
+  border-color: rgba(243, 86, 0, 0.15) !important;
+}
+
+/* ── DUDU SPEECH BUBBLE SANITIZATION ─────────────────────────────────────
+ * Bubble panel and trigger button use bg-[#0d1426]/90. The /90 opacity
+ * modifier generates a separate Tailwind class not caught by the base
+ * .bg-[#0d1426] rule. Force it to a solid paper surface. */
+.light .bg-\[\#0d1426\]\/90 {
+  background-color: #fafaf9 !important;
+}
+.light .animate-dudu-fade-slide-in,
+.light .animate-dudu-fade-slide-out {
+  border-color: rgba(28, 25, 23, 0.12) !important;
+}
+.light .animate-dudu-fade-slide-in *,
+.light .animate-dudu-fade-slide-out * {
+  color: #1c1917 !important;
+}
+/* Dismiss button uses hover:text-white — block that on the paper surface. */
+.light .animate-dudu-fade-slide-in .hover\:text-white:hover,
+.light .animate-dudu-fade-slide-out .hover\:text-white:hover {
+  color: #1c1917 !important;
+}
+/* Secondary action buttons (bg-white/[0.04]) need a visible ink-tinted fill. */
+.light .animate-dudu-fade-slide-in .bg-white\/\[0\.04\],
+.light .animate-dudu-fade-slide-out .bg-white\/\[0\.04\] {
+  background-color: rgba(28, 25, 23, 0.06) !important;
+  border-color: rgba(28, 25, 23, 0.12) !important;
+}
+.light .animate-dudu-fade-slide-in .hover\:bg-white\/\[0\.08\]:hover,
+.light .animate-dudu-fade-slide-out .hover\:bg-white\/\[0\.08\]:hover {
+  background-color: rgba(28, 25, 23, 0.1) !important;
+}
+
+/* ── BLUEPRINT DRAG-AND-DROP TRANSITION STATES ───────────────────────────
+ * DragOverlay card (DashboardBlueprintModal.tsx:178) uses bg-[#0F1629]/95
+ * — not covered by the base bg-[#0F1629] rule. Map to opaque white card. */
+.light .bg-\[\#0F1629\]\/95 {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+}
+.light .bg-\[\#0F1629\]\/95 .text-violet-300 {
+  color: #1c1917 !important;
+}
+/* Ghost/placeholder slot (isDragging): lift border-white/[0.05] to a faint ink
+ * stroke so the dashed outline slot stays visible on the paper canvas. */
+.light .opacity-25.border-white\/\[0\.05\] {
+  border-color: rgba(28, 25, 23, 0.1) !important;
+}
+
+/* ── AREA PILL ACTIVE STATE: PRESERVE NATIVE COLOR IDENTITY ──────────────
+ * areaColors.ts pillActive = "bg-{color}-500 border-{color}-500 text-white".
+ * The earlier .light .bg-{color}-500 rules remap each color to a translucent
+ * orange fill — the matching .light .bg-{color}-500.text-white rule only
+ * fixes the text color, leaving white text on a near-transparent surface.
+ * Re-assert each color's solid native hue so the pill stays legible. */
+.light .bg-violet-500.text-white  { background-color: #7c3aed !important; border-color: #7c3aed !important; }
+.light .bg-emerald-500.text-white { background-color: #10b981 !important; border-color: #10b981 !important; }
+.light .bg-sky-500.text-white     { background-color: #0ea5e9 !important; border-color: #0ea5e9 !important; }
+.light .bg-amber-500.text-white   { background-color: #f59e0b !important; border-color: #f59e0b !important; }
+.light .bg-pink-500.text-white    { background-color: #ec4899 !important; border-color: #ec4899 !important; }
+.light .bg-teal-500.text-white    { background-color: #14b8a6 !important; border-color: #14b8a6 !important; }
+.light .bg-blue-500.text-white    { background-color: #3b82f6 !important; border-color: #3b82f6 !important; }
+.light .bg-rose-500.text-white    { background-color: #f43f5e !important; border-color: #f43f5e !important; }
+.light .bg-indigo-500.text-white  { background-color: #6366f1 !important; border-color: #6366f1 !important; }
+
+/* TasksCard sphere filter pills hardcode bg-violet-600 text-white for the
+ * active state. Keep rounded-full pill buttons in violet, not brand orange. */
+.light button.rounded-full.bg-violet-600 {
+  background-color: #7c3aed !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* ── DESKTOP-ONLY GLOW CONFINEMENT ──────────────────────────────────────
+ * areaColors.ts pillActive uses md:shadow-[…] (viewport-width-gated, not
+ * hover-gated). Touch tablets ≥768px still receive the shadow halo.
+ * TasksCard's hardcoded active pill has no md: guard at all.
+ * Suppress ALL box-shadows on rounded-full pill buttons on touch-primary
+ * devices where (hover: none) is true, regardless of viewport width. */
+@media (hover: none) {
+  .light button.rounded-full {
+    box-shadow: none !important;
+  }
+}
+
+/* ── NOTES ARCHIVE SEARCH INPUT ──────────────────────────────────────────
+ * Strip the hardcoded inner grey strip that the browser (or an ancestor
+ * background rule) injects behind the native input element. */
+.light .NotesArchive input,
+.light input[placeholder="Search notes..."] {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+/* Guarantee legible text and muted placeholder inside the light-mode field. */
+.light input[placeholder="Search notes..."] {
+  color: #1c1917 !important;
+}
+.light input[placeholder="Search notes..."]::placeholder {
+  color: #78716c !important;
+}
+
+/* ── NOTES ARCHIVE SEARCH: STRUCTURAL OVERRIDE PASS ─────────────────────
+ * Force the outer wrapper row, all nested layout containers, and the input
+ * itself to a flat transparent/white surface, clearing any dark-mode fill
+ * that escapes the class-level rules above. */
+.light div:has(> input[placeholder="Search notes..."]),
+.light input[placeholder="Search notes..."],
+.light .NotesArchive input,
+.light input[placeholder="Search notes..."] ~ div {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+/* Catch any arbitrary Tailwind bg utilities (bg-white/5, bg-neutral-900, etc.)
+ * applied directly to the input element in dark-mode markup. */
+.light input[placeholder="Search notes..."] {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* ── 1. COMPREHENSIVE FILTER & DROP-SHADOW OBLITERATION ─────────────────
+ * Universal kill across every element, pseudo-element, interactive state,
+ * explicit form/role targets, and any div carrying a shadow utility class.
+ * -webkit-filter added for Safari/older Chrome parity.
+ * Higher-specificity !important rules in this file still win the cascade. */
+.light *,
+.light *::before,
+.light *::after,
+.light *:focus,
+.light *:active,
+.light *[data-state="active"],
+.light button,
+.light [role="button"],
+.light input,
+.light div[class*="shadow-"] {
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  text-shadow: none !important;
+}
+
+/* ── 1B. INTERACTIVE STATE SHADOW INTERCEPT ──────────────────────────────
+ * Explicitly target hover, focus, and active pseudo-class states on buttons
+ * so component-level drop-shadows applied only on interaction are caught. */
+.light button:hover,
+.light button:focus,
+.light button:active,
+.light [data-state="active"] {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* ── 2. ONBOARDING STEP PROGRESS DOTS ────────────────────────────────────
+ * Step indicator dots in the top-center onboarding header
+ * (OnboardingFlow.tsx:1619-1624). The active slot is a wider pill (w-6 h-2);
+ * past and future slots are square dots (w-2 h-2) with different fills. */
+.light .w-6.h-2.bg-violet-500 {
+  background-color: #f35600 !important;
+}
+.light .w-2.h-2.bg-violet-500\/40 {
+  background-color: rgba(28, 25, 23, 0.25) !important;
+}
+.light .w-2.h-2.bg-white\/\[0\.12\] {
+  background-color: rgba(28, 25, 23, 0.12) !important;
+}
+
+/* ── 3A. AUTH LOGO ICON CONTAINER ────────────────────────────────────────
+ * The brand mark wrapper on the login screen uses an inline style with
+ * linear-gradient(135deg, #8B5CF6, #7C3AED) (LoginPage.tsx:181).
+ * Our existing override only targets <button> — extend it to <div>. */
+.light div[style*="linear-gradient"][style*="8B5CF6"],
+.light div[style*="linear-gradient"][style*="7C3AED"] {
+  background: #f35600 !important;
+  background-image: none !important;
+}
+
+/* ── 3B. FOUNDER NOTE TEXT CONTRAST ──────────────────────────────────────
+ * FoundersNote() uses the zinc color scale (LoginPage.tsx:84,87,92,108)
+ * which is a separate Tailwind palette from slate — not covered by the
+ * slate-* sweep done earlier in this file. */
+.light .text-zinc-300 { color: #1c1917 !important; }
+.light .text-zinc-400 { color: #78716c !important; }
+.light .text-zinc-500 { color: #a8a29e !important; }
+.light .text-zinc-600 { color: #a8a29e !important; }
+/* Avatar fallback container uses bg-zinc-800 — lift to a light tinted surface. */
+.light .bg-zinc-800 { background-color: rgba(28, 25, 23, 0.08) !important; }
+
+/* ── 2B. DUDU PRIMARY BUTTON — WHITE TEXT ON ORANGE ─────────────────────
+ * The primary action button inside the bubble (DuduAssistant.tsx:225) has
+ * class bg-violet-600 text-white. In light mode bg-violet-600 → orange, but
+ * the broad .animate-dudu-fade-slide-in * rule at (0,2,0) overrides text-white
+ * to charcoal, leaving dark text on an orange fill. The compound rule below
+ * has specificity (0,3,0) so it beats the bubble wildcard and restores white. */
+.light .animate-dudu-fade-slide-in .bg-violet-600,
+.light .animate-dudu-fade-slide-out .bg-violet-600 {
+  color: #ffffff !important;
+}
+
+/* ── 3. ONBOARDING AMBIENT BLOB CONTAINMENT ──────────────────────────────
+ * The decorative glow circle (OnboardingFlow.tsx:1601) uses
+ * blur-[120px] to soft-feather its edges. Our global filter:none rule
+ * strips that blur, leaving a sharp visible circle on the cream canvas.
+ * Hide the blob elements entirely — the cream bg-canvas is the correct
+ * "clean linen" background; no decorative overlay is needed in light mode. */
+.light .blur-\[120px\],
+.light .blur-\[100px\],
+.light .blur-\[80px\] {
+  display: none !important;
+}
+
+/* ── 4. WIDGET SELECTION CTA — ONBOARDING & MODAL ────────────────────────
+ * Widget card "Selected" footer button in the onboarding marketplace step
+ * uses bg-violet-600/30 (OnboardingFlow.tsx:972) — not covered earlier.
+ * Map it and its hover counterpart to brand orange tints. */
+.light .bg-violet-600\/30 {
+  background-color: rgba(243, 86, 0, 0.2) !important;
+}
+.light .hover\:bg-violet-600\/40:hover {
+  background-color: rgba(243, 86, 0, 0.28) !important;
+}
+/* The "Selected" button pairs bg-violet-600/30 with text-violet-300 — that
+ * combination is excluded from the generic border-violet-500/50 orange remap
+ * by its :not(.text-violet-300) guard (line 372). Override it here explicitly
+ * via the compound selector and push text to legible charcoal on pale orange. */
+.light .bg-violet-600\/30.text-violet-300 {
+  border-color: rgba(243, 86, 0, 0.5) !important;
+  color: #1c1917 !important;
+}
+/* Selected card in ActiveWidgetsModal (bg-violet-600/15 + border-violet-500/50)
+ * replaces the now-suppressed glow with a crisp brand-orange border stroke. */
+.light .bg-violet-600\/15.border-violet-500\/50 {
+  border-color: rgba(243, 86, 0, 0.55) !important;
+  border-width: 1.5px !important;
+}
+
+/* ── ABSOLUTE SHADOW VARIABLE RESET ──────────────────────────────────────
+ * Zero-out all Tailwind shadow/ring/blur CSS variables so the engine cannot
+ * compose a glow or drop-shadow layer anywhere in the light theme. */
+.light *,
+.light *::before,
+.light *::after,
+.light button,
+.light [role="button"],
+.light [role="checkbox"],
+.light input {
+  --tw-shadow: 0 0 0 0 transparent !important;
+  --tw-shadow-colored: 0 0 0 0 transparent !important;
+  --tw-ring-shadow: 0 0 0 0 transparent !important;
+  --tw-ring-offset-shadow: 0 0 0 0 transparent !important;
+  box-shadow: 0 0 0 0 transparent !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  text-shadow: none !important;
+}
+
+/* ── HARDCODED UTILITY SELECTOR OVERRIDE ─────────────────────────────────
+ * Explicitly flatten any element holding an inline shadow utility string. */
+.light [class*="shadow-"] {
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 /* Scrollbar styling */

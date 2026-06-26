@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield, MessageSquare } from "lucide-react";
+import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield, MessageSquare, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import ActiveWidgetsModal from "@/components/ActiveWidgetsModal";
 import QuickActionsConfigModal from "@/components/QuickActionsConfigModal";
@@ -93,6 +94,7 @@ interface Props { isOpen: boolean; onClose: () => void; onOpenBlueprint?: () => 
 
 export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Props) {
   const { user, signOut, updateDisplayName, updatePassword, isConfigured } = useAuth();
+  const { mode, setMode } = useTheme();
 
   const [displayName, setDisplayName] = useState("");
   const [nameLoading, setNameLoading] = useState(false);
@@ -395,6 +397,37 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
                 <span className="ml-auto text-[10px] text-slate-600">
                   {quickActionsConfig.filter(c => c.enabled).length} active
                 </span>
+              </button>
+            </div>
+          </section>
+
+          <div className="h-px bg-white/[0.06]" />
+
+          {/* ── Appearance ───────────────────────────────────────── */}
+          <section>
+            <SectionHeading icon={Sun} label="Appearance" />
+            <div className="flex rounded-xl border border-white/[0.08] bg-white/[0.02] p-1 gap-1">
+              <button
+                onClick={() => setMode("light")}
+                className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${
+                  mode === "light"
+                    ? "bg-white/[0.10] text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5" />
+                Light
+              </button>
+              <button
+                onClick={() => setMode("dark")}
+                className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${
+                  mode === "dark"
+                    ? "bg-white/[0.10] text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5" />
+                Dark
               </button>
             </div>
           </section>

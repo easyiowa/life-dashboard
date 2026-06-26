@@ -7,12 +7,15 @@ import {
   ChevronLeft, ChevronRight,
   CalendarDays, FolderKanban, Timer, NotebookPen, Target,
   Activity, TrendingUp, RefreshCw, Users,
+  Sun, Moon,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import {
   startupTemplate, personalLifeTemplate, financeTemplate, mediaTemplate,
   marketingTemplate, educationTemplate, legalTemplate, realEstateTemplate, gastroTemplate, retailTemplate,
+  creativeTemplate, eventsTemplate, healthTemplate,
 } from "@/config/industry-templates";
 import type { IndustryTemplate } from "@/config/industry-templates";
 import { seedSelectedTemplates } from "@/services/onboardingSeeder";
@@ -1038,11 +1041,13 @@ const INDUSTRIES: { id: string; label: string; emoji: string }[] = [
 ];
 
 // Maps an INDUSTRIES chip label straight to its onboarding sample-data template.
-// Chips with no entry here (Creative/Events/Health) fall through to Clean Slate.
 // Personal & Family Life has no chip — it's seeded separately via the big
 // "My Personal Life" intent card instead (see handleFinish).
 const TEMPLATE_BY_INDUSTRY_LABEL: Record<string, IndustryTemplate> = {
   "Startups":     startupTemplate,
+  "Creative":     creativeTemplate,
+  "Events":       eventsTemplate,
+  "Health":       healthTemplate,
   "Finance":      financeTemplate,
   "Media":        mediaTemplate,
   "Marketing":    marketingTemplate,
@@ -1231,15 +1236,14 @@ function IntentStep({
 
 function MarketplaceStep({
   nickname,
-  onFinish,
+  onNext,
 }: {
   nickname: string;
-  onFinish: (widgets: string[]) => Promise<void>;
+  onNext: (widgets: string[]) => void;
 }) {
   const [userPicked, setUserPicked] = useState<Set<string>>(new Set());
   const [hoveredId,  setHoveredId]  = useState<string | null>(null);
   const [flashedId,  setFlashedId]  = useState<string | null>(null);
-  const [loading,    setLoading]    = useState(false);
 
   // Expand userPicked transitively — daily-focus → projects → progress resolves in one pass.
   const selected: string[] = (() => {
@@ -1281,11 +1285,6 @@ function MarketplaceStep({
 
   function toggleSelectAll() {
     setUserPicked(allSelected ? new Set() : new Set(WIDGETS.map(w => w.id)));
-  }
-
-  async function finish() {
-    setLoading(true);
-    await onFinish(selected);
   }
 
   return (
@@ -1367,6 +1366,146 @@ function MarketplaceStep({
       </button>
 
       <button
+        onClick={() => onNext(selected)}
+        className="w-full h-12 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)]"
+        style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+      >
+        Continue <ArrowRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+// ── Step 3: Appearance ─────────────────────────────────────────────────────────
+
+function AppearanceStep({
+  selectedWidgets,
+  onFinish,
+}: {
+  selectedWidgets: string[];
+  onFinish: (widgets: string[]) => Promise<void>;
+}) {
+  const { mode, setMode } = useTheme();
+  const [loading, setLoading] = useState(false);
+
+  async function finish() {
+    setLoading(true);
+    await onFinish(selectedWidgets);
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="text-center">
+        <div className="text-4xl mb-4">✨</div>
+        <h2 className="text-2xl font-bold text-white tracking-tight">
+          Choose your workspace aesthetic
+        </h2>
+        <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
+          Pick the canvas that suits your style. You can switch anytime from Settings.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {/* ── Dark Classic ── */}
+        <button
+          type="button"
+          onClick={() => setMode("dark")}
+          className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-200 text-left ${
+            mode === "dark"
+              ? "border-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.22)] ring-1 ring-violet-500/25"
+              : "border-white/[0.09] hover:border-white/[0.22]"
+          }`}
+        >
+          {/* Mini dark preview — inline styles so light-mode overrides can't touch it */}
+          <div className="aspect-video relative overflow-hidden" style={{ background: "#0B0F19" }}>
+            <div className="absolute inset-0 p-3 flex flex-col gap-1.5">
+              <div style={{ color: "#94a3b8", fontSize: "7px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>
+                Today&apos;s Focus
+              </div>
+              {["Finish Blueprint UI", "Reply to Paul", "Review PR"].map((t, i) => (
+                <div key={t} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                  <div style={{ width: "10px", height: "10px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.03)", flexShrink: 0 }} />
+                  <span style={{ color: i === 0 ? "#e2e8f0" : "#64748b", fontSize: "8px" }}>{t}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: "4px", height: "1px", background: "rgba(255,255,255,0.06)" }} />
+              <div style={{ display: "flex", gap: "4px", marginTop: "3px" }}>
+                <div style={{ flex: 1, height: "18px", borderRadius: "5px", background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "#a78bfa", fontSize: "7px", fontWeight: 600 }}>Finish</span>
+                </div>
+                <div style={{ flex: 1, height: "18px", borderRadius: "5px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "#64748b", fontSize: "7px" }}>Maybe</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Label row — dark surface so it's always readable */}
+          <div style={{ background: "#0D1120", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ color: "#f8f9fa", fontSize: "13px", fontWeight: 600, margin: 0 }}>Dark Classic</p>
+              <p style={{ color: "#64748b", fontSize: "10px", margin: "2px 0 0" }}>Deep navy, soft glows</p>
+            </div>
+            <div style={{
+              width: "16px", height: "16px", borderRadius: "50%", border: `2px solid ${mode === "dark" ? "#8b5cf6" : "rgba(255,255,255,0.2)"}`,
+              background: mode === "dark" ? "#8b5cf6" : "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s",
+            }}>
+              {mode === "dark" && <Check style={{ width: "9px", height: "9px", color: "#fff" }} />}
+            </div>
+          </div>
+        </button>
+
+        {/* ── Clean Light ── */}
+        <button
+          type="button"
+          onClick={() => setMode("light")}
+          className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-200 text-left ${
+            mode === "light"
+              ? "border-orange-500/60 shadow-[0_0_20px_rgba(243,86,0,0.2)] ring-1 ring-orange-500/20"
+              : "border-white/[0.09] hover:border-white/[0.22]"
+          }`}
+        >
+          {/* Mini light preview — inline styles immune to .light overrides */}
+          <div className="aspect-video relative overflow-hidden" style={{ background: "#f6f5f1" }}>
+            <div className="absolute inset-0 p-3 flex flex-col gap-1.5">
+              <div style={{ color: "#7c776e", fontSize: "7px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>
+                Today&apos;s Focus
+              </div>
+              {["Finish Blueprint UI", "Reply to Paul", "Review PR"].map((t, i) => (
+                <div key={t} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                  <div style={{ width: "10px", height: "10px", borderRadius: "50%", border: "1.5px solid rgba(28,25,23,0.15)", background: "rgba(28,25,23,0.03)", flexShrink: 0 }} />
+                  <span style={{ color: i === 0 ? "#1c1917" : "#a8a29e", fontSize: "8px" }}>{t}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: "4px", height: "1px", background: "rgba(28,25,23,0.08)" }} />
+              <div style={{ display: "flex", gap: "4px", marginTop: "3px" }}>
+                <div style={{ flex: 1, height: "18px", borderRadius: "5px", background: "rgba(243,86,0,0.12)", border: "1px solid rgba(243,86,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "#f35600", fontSize: "7px", fontWeight: 600 }}>Finish</span>
+                </div>
+                <div style={{ flex: 1, height: "18px", borderRadius: "5px", background: "rgba(28,25,23,0.04)", border: "1px solid rgba(28,25,23,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "#7c776e", fontSize: "7px" }}>Maybe</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Label row — always light surface */}
+          <div style={{ background: "#ffffff", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ color: "#1c1917", fontSize: "13px", fontWeight: 600, margin: 0 }}>Clean Light</p>
+              <p style={{ color: "#7c776e", fontSize: "10px", margin: "2px 0 0" }}>Warm paper, crisp ink</p>
+            </div>
+            <div style={{
+              width: "16px", height: "16px", borderRadius: "50%", border: `2px solid ${mode === "light" ? "#f35600" : "rgba(28,25,23,0.2)"}`,
+              background: mode === "light" ? "#f35600" : "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s",
+            }}>
+              {mode === "light" && <Check style={{ width: "9px", height: "9px", color: "#fff" }} />}
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <button
         onClick={() => void finish()}
         disabled={loading}
         className="w-full h-12 rounded-xl font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)]"
@@ -1374,7 +1513,7 @@ function MarketplaceStep({
       >
         {loading
           ? <Loader2 className="w-4 h-4 animate-spin" />
-          : <>Let&apos;s go <ArrowRight className="w-4 h-4" /></>
+          : <>Let&apos;s go! <ArrowRight className="w-4 h-4" /></>
         }
       </button>
     </div>
@@ -1385,11 +1524,12 @@ function MarketplaceStep({
 
 export default function OnboardingFlow() {
   const { user } = useAuth();
-  const [step,           setStep]           = useState<"identity" | "intent" | "marketplace">("identity");
+  const [step,           setStep]           = useState<"identity" | "intent" | "marketplace" | "appearance">("identity");
   const [nickname,       setNickname]       = useState("");
   const [intents,        setIntents]        = useState<Intent[]>([]);
   const [industries,     setIndustries]     = useState<string[]>([]);
   const [customIndustry, setCustomIndustry] = useState("");
+  const [selectedWidgets, setSelectedWidgets] = useState<string[]>([]);
 
   async function handleFinish(selectedWidgets: string[]) {
     if (!supabase || !user) return;
@@ -1449,11 +1589,12 @@ export default function OnboardingFlow() {
     // onAuthStateChange fires → AuthContext updates user → AuthGate stops rendering this flow
   }
 
-  const stepIndex = step === "identity" ? 0 : step === "intent" ? 1 : 2;
+  const stepIndex = step === "identity" ? 0 : step === "intent" ? 1 : step === "marketplace" ? 2 : 3;
 
   function goBack() {
-    if (step === "intent")      setStep("identity");
+    if (step === "intent")           setStep("identity");
     else if (step === "marketplace") setStep("intent");
+    else if (step === "appearance")  setStep("marketplace");
   }
 
   return (
@@ -1463,7 +1604,7 @@ export default function OnboardingFlow() {
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-violet-600/[0.07] blur-[120px]" />
       </div>
 
-      <div className={`relative w-full ${step === "marketplace" ? "max-w-7xl" : "max-w-lg"}`}>
+      <div className={`relative w-full ${step === "marketplace" ? "max-w-7xl" : step === "appearance" ? "max-w-xl" : "max-w-lg"}`}>
 
         {/* Step dots */}
         <div className="relative flex items-center justify-center min-h-[40px] mb-10">
@@ -1477,7 +1618,7 @@ export default function OnboardingFlow() {
             </button>
           )}
           <div className="flex items-center gap-3">
-            {[0, 1, 2].map(i => (
+            {[0, 1, 2, 3].map(i => (
               <div key={i} className={`rounded-full transition-all duration-300 ${
                 i === stepIndex
                   ? "w-6 h-2 bg-violet-500"
@@ -1501,8 +1642,13 @@ export default function OnboardingFlow() {
               setStep("marketplace");
             }}
           />
+        ) : step === "marketplace" ? (
+          <MarketplaceStep
+            nickname={nickname}
+            onNext={widgets => { setSelectedWidgets(widgets); setStep("appearance"); }}
+          />
         ) : (
-          <MarketplaceStep nickname={nickname} onFinish={handleFinish} />
+          <AppearanceStep selectedWidgets={selectedWidgets} onFinish={handleFinish} />
         )}
       </div>
     </div>
