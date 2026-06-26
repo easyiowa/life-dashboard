@@ -18,14 +18,15 @@ const ICONS: Record<string, React.ElementType> = {
   "widget-nav": LayoutGrid,
 };
 
-// One-shot scroll + flash, reusing the onboarding "draw attention" keyframe
-// (see globals.css `animate-card-pulse`) so this feels native to the dashboard.
+// One-shot scroll + micro-bounce — see globals.css `animate-card-nav-jump`.
+// Uses transform + border-color rather than box-shadow so it renders in
+// both dark and light mode (the global shadow reset zeros box-shadow in light).
 function scrollToWidget(widgetId: string) {
   const el = document.getElementById(`widget-${widgetId}`);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
-  el.classList.add("animate-card-pulse");
-  setTimeout(() => el.classList.remove("animate-card-pulse"), 1000);
+  el.classList.add("animate-card-nav-jump");
+  setTimeout(() => el.classList.remove("animate-card-nav-jump"), 1050);
 }
 
 interface LoadedWidget { id: string; label: string }

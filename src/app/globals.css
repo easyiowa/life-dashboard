@@ -63,6 +63,24 @@
   animation: card-pulse 0.9s ease-in-out;
 }
 
+/* Widget jump-navigation highlight — replaces the purple shadow-glow pulse
+ * with a transform-based two-bounce + border-color fade that reads cleanly
+ * in both dark and light mode (shadow/filter are zeroed in light mode by the
+ * global reset, making the old card-pulse invisible there). */
+@keyframes card-nav-jump {
+  0%   { transform: translateY(0);       }
+  15%  { transform: translateY(-7px);    border-color: rgba(243, 86, 0, 0.7);  }
+  32%  { transform: translateY(0);       border-color: rgba(243, 86, 0, 0.45); }
+  50%  { transform: translateY(-3px);    border-color: rgba(243, 86, 0, 0.25); }
+  68%  { transform: translateY(0);       border-color: rgba(243, 86, 0, 0.12); }
+  100% { transform: translateY(0);       border-color: rgba(243, 86, 0, 0);    }
+}
+
+.animate-card-nav-jump {
+  animation: card-nav-jump 1s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
 @keyframes dudu-fade-slide-in {
   from { opacity: 0; transform: translateY(8px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -89,6 +107,39 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading) !important;
+}
+
+/* ── BEA FONT — UPPERCASE + LETTER-SPACING ───────────────────────────────
+ * --font-heading resolves to TAYBea only in .light mode (see line 29).
+ * TAYBea's lowercase letterforms are dense and difficult to read at heading
+ * sizes; enforcing all-caps restores legibility. The matching letter-spacing
+ * (0.05em = Tailwind's tracking-wider) opens up the compressed uppercase
+ * glyph spacing for crisp proportions without feeling stretched.
+ *
+ * Scoped to .light so dark-mode headings (system-ui / craft-heading fallback)
+ * are completely unaffected and keep their natural casing. */
+.light h1,
+.light h2,
+.light h3,
+.light h4,
+.light h5,
+.light h6 {
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* ── PILL / TAG BUTTON — DRAG & SELECTION LOCKDOWN ──────────────────────
+ * Rounded-full pill buttons (sphere filters, tag chips, mood pills, area
+ * colors, etc.) are pure tap targets. Suppress:
+ *   - native HTML5 drag-ghost (-webkit-user-drag)
+ *   - text-highlight on rapid clicks or swipes (user-select)
+ *   - WebKit callout popover on long-press (-webkit-touch-callout)
+ * touch-action is intentionally NOT set here — leaving it at `auto` lets
+ * swipe-to-scroll propagate through pills to the parent scroll container. */
+button.rounded-full {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* ── Light-mode utility interception ─────────────────────────────────────
@@ -1209,6 +1260,43 @@ h1, h2, h3, h4, h5, h6 {
   color: #a8a29e !important;
 }
 
+/* ── ONBOARDING WIDGET CAROUSEL DOTS ─────────────────────────────────────
+ * bg-[#080B14] (carousel area) is remapped to var(--bg-card) in light mode
+ * (line 483), making the white/violet dots invisible against the white bg.
+ * Remap active to charcoal, inactive to soft gray. */
+.light [data-onboarding-dot="active"] {
+  background-color: rgb(30, 41, 59) !important;
+}
+.light [data-onboarding-dot="inactive"] {
+  background-color: rgba(30, 41, 59, 0.28) !important;
+}
+.light [data-onboarding-dot="inactive"]:hover {
+  background-color: rgba(30, 41, 59, 0.55) !important;
+}
+
+/* ── ONBOARDING CARD BODY DIVIDER ────────────────────────────────────────
+ * Adds a visible 1 px hairline between the carousel preview and the card
+ * body text area (both now render as white in light mode). */
+.light .onboarding-body-divider {
+  border-top: 1px solid rgba(28, 25, 23, 0.1) !important;
+}
+
+/* ── PIN TOGGLE TRACK — INACTIVE STATE ───────────────────────────────────
+ * bg-white/[0.1] on a white modal surface is effectively invisible.
+ * Target the exact toggle track dimensions (w-10 h-6) so only this switch
+ * is affected — not every element that happens to carry bg-white/[0.1]. */
+.light .w-10.h-6.bg-white\/\[0\.1\] {
+  background-color: rgb(226, 232, 240) !important;
+}
+
+/* ── TOOLTIP / CONTEXT MENU BORDERS ─────────────────────────────────────
+ * bg-[#0d1426] popover panels (context menu at ProjectsCard:402, tag
+ * overflow tooltip at ProjectsCard:499) already get bg-card (white) from
+ * the hex-bg sweep. Their border-white/[0.12] and border-white/[0.14]
+ * strokes were never mapped and remain invisible on a white surface. */
+.light .border-white\/\[0\.12\] { border-color: rgba(28, 25, 23, 0.1) !important; }
+.light .border-white\/\[0\.14\] { border-color: rgba(28, 25, 23, 0.12) !important; }
+
 /* ── ABSOLUTE SHADOW VARIABLE RESET ──────────────────────────────────────
  * Zero-out all Tailwind shadow/ring/blur CSS variables so the engine cannot
  * compose a glow or drop-shadow layer anywhere in the light theme. */
@@ -1234,6 +1322,33 @@ h1, h2, h3, h4, h5, h6 {
 .light [class*="shadow-"] {
   box-shadow: none !important;
   filter: none !important;
+}
+
+/* ── iOS SAFARI / PWA INPUT AUTO-ZOOM PREVENTION ─────────────────────────
+ * WebKit zooms the viewport on focus whenever the active input has a
+ * computed font-size below 16px. Every text field in this app uses text-sm
+ * (14px) or smaller (tag-name inputs at 11px), so every tap triggers a zoom.
+ *
+ * Fix: force font-size ≥ 16px on all focusable text surfaces for
+ * touch-primary devices ((hover:none) + (pointer:coarse) is the canonical
+ * media-query fingerprint for phones and tablets — covers iOS Safari, PWA
+ * home-screen mode, and Android Chrome without touching desktop at all).
+ *
+ * Targets:
+ *   <input>        — all text / email / password / number / search fields
+ *   <textarea>     — AutoExpandingTextarea (react-textarea-autosize wrapper)
+ *   <select>       — duration selectors in TimeTrackerCard
+ *   [contenteditable] — ChecklistEditor (QuickNotes capture + existing notes)
+ *
+ * Visual impact: 14 px → 16 px is 2 px on a 390px-wide screen — imperceptible
+ * next to the viewport zoom the browser was applying anyway. */
+@media (hover: none) and (pointer: coarse) {
+  input,
+  textarea,
+  select,
+  [contenteditable] {
+    font-size: 16px !important;
+  }
 }
 
 /* Scrollbar styling */

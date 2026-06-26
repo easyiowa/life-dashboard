@@ -1,196 +1,36 @@
 {
   "tasks": [
     {
-      "id": "30aff7a8-727c-41ab-9067-ed1760785cdc",
-      "sphere": "siin",
-      "project": "Website",
-      "title": "Homepage",
-      "priority": "High",
-      "energy": "Flow",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {
-        "2026-06-25": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
-    },
-    {
-      "id": "78555e27-1765-4d0c-a6e7-821de8c3c945",
-      "sphere": "iowa",
-      "project": "HealthD FEWFW EF WE FWEF WEF W",
-      "title": "Ernie just SUCKS",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": true,
-      "deadline": "2026-06-16",
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 1,
-      "dailyTracking": {
-        "2026-06-16": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-17": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
-    },
-    {
-      "id": "ae202f85-c7f5-4133-a7b4-eebba7369450",
-      "sphere": "siin",
-      "project": "Content",
-      "title": "Intro Videos",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {
-        "2026-06-26": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
-    },
-    {
-      "id": "5f3597f4-dd3f-4143-8b36-64e0629f048d",
-      "sphere": "irishot",
-      "project": "Pipedrive Agent",
-      "title": "Set up the infrastructure",
+      "id": "bf08ee3c-833c-41c0-88e2-a4663cd40b39",
+      "sphere": "Startup",
+      "project": "Launch Life Dashboard",
+      "title": "Brainstorm widget checklist layout options",
       "priority": "Med",
       "energy": "Flow",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "b5d79301-29c4-4110-8d83-5dddcbeda25d",
-      "sphere": "dashboard",
-      "project": "Ready 4 Friends",
-      "title": "Polishing",
-      "priority": "High",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": true,
-      "deadline": null,
-      "notes": "dfvdfvfvdfv",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 4,
-      "dailyTracking": {
-        "2026-06-13": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 3
-        },
-        "2026-06-18": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-19": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-24": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
-    },
-    {
-      "id": "3b73446d-1ab3-4bb2-a8bb-81390a5515fa",
-      "sphere": "iowa",
-      "project": "Sport",
-      "title": "Create Workout Plan",
-      "priority": "Low",
-      "energy": "Easy",
       "urgency": "not-urgent",
       "done": true,
       "deadline": null,
-      "notes": "•&nbsp;ihoh\nkjmöm\nopömsndsdad<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">sadsadad</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">sdsad</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">asd</span></div>",
+      "notes": "<div>Keep it super clean:</div><ul><li>☐ Check mobile card spacing</li><li>☐ Test the new uncollapse button logic</li></ul>",
       "manualMinutes": 0,
-      "queuedDate": "2026-06-24",
+      "queuedDate": "2026-06-26",
       "timeSpentMinutes": 0,
       "intent": "finish",
       "dailyTargetMinutes": null,
-      "rolloverCount": 1,
-      "dailyTracking": {
-        "2026-06-22": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-23": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-24": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
     },
     {
-      "id": "5eb4ad57-799d-4e45-975b-b83ddc002de3",
-      "sphere": "irishot",
-      "project": "File Management",
-      "title": "Sort all photoshoots",
+      "id": "6005bfc2-d5d0-4504-853b-a1798dd3ef0d",
+      "sphere": "Startup",
+      "project": "Build MVP, FAST!",
+      "title": "Fix background tab drift tracking loop",
       "priority": "Med",
-      "energy": "Easy",
+      "energy": "Flow",
       "urgency": "not-urgent",
       "done": false,
       "deadline": null,
-      "notes": "",
+      "notes": "<div>Derive everything from absolute timestamps so timers never fall behind.</div>",
       "manualMinutes": 0,
       "queuedDate": null,
       "timeSpentMinutes": 0,
@@ -198,19 +38,59 @@
       "dailyTargetMinutes": null,
       "rolloverCount": 0,
       "dailyTracking": {},
-      "isSample": false
+      "isSample": true
     },
     {
-      "id": "ea1b3615-144d-4462-9f7a-47f3a7ae6233",
-      "sphere": "dashboard",
-      "project": "Reminders",
-      "title": "Vibing Reminders",
-      "priority": "High",
-      "energy": "Easy",
+      "id": "19374aba-e8b4-465a-920a-9b5c555f70c5",
+      "sphere": "Startup",
+      "project": "Friends as Testers",
+      "title": "Reach out to 5 local founders in Tallinn for initial feedback",
+      "priority": "Med",
+      "energy": "Flow",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "<div>Ping them casually on LinkedIn or grab a coffee at Telliskivi.</div>",
+      "manualMinutes": 0,
+      "queuedDate": null,
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
+    },
+    {
+      "id": "b3844a7d-69f6-40e2-8dd8-3b1b2730efd9",
+      "sphere": "Home & Family",
+      "project": "Family Planning",
+      "title": "Coordinate kids school schedules and soccer practices",
+      "priority": "Med",
+      "energy": "Flow",
+      "urgency": "not-urgent",
+      "done": false,
+      "deadline": null,
+      "notes": "Check calendar alignment for the upcoming term.",
+      "manualMinutes": 0,
+      "queuedDate": "2026-06-26",
+      "timeSpentMinutes": 0,
+      "intent": "finish",
+      "dailyTargetMinutes": null,
+      "rolloverCount": 0,
+      "dailyTracking": {},
+      "isSample": true
+    },
+    {
+      "id": "134efc41-535b-4640-8f19-57c127fb4cc5",
+      "sphere": "Home & Family",
+      "project": "Kitchen Organization",
+      "title": "Set up the new modular pantry shelves",
+      "priority": "Med",
+      "energy": "Flow",
       "urgency": "not-urgent",
       "done": true,
       "deadline": null,
-      "notes": "### 🟢 Examples of GOOD Branch Names & Goals:\n\n- `feat/add-habit-tracker` (Goal: Building a brand new module)\n- `fix/world-clock-timezone` (Goal: Fixing a specific bug in an existing widget)\n- `polish/dashboard-mobile-padding` (Goal: Spending an hour cleaning up layouts)",
+      "notes": "Sort dry ingredients into clear jars and label spice racks.",
       "manualMinutes": 0,
       "queuedDate": null,
       "timeSpentMinutes": 0,
@@ -218,1023 +98,211 @@
       "dailyTargetMinutes": null,
       "rolloverCount": 0,
       "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "073c94f5-9864-492a-826c-0726c09b7771",
-      "sphere": "siin",
-      "project": "Website",
-      "title": "Business Landing",
-      "priority": "High",
-      "energy": "Flow",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "e4738ee5-2c38-488b-93b0-aa127958906e",
-      "sphere": "siin",
-      "project": "Website",
-      "title": "Customer Landing",
-      "priority": "High",
-      "energy": "Flow",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "2b96f56a-8ed8-4349-9637-fb045df99b74",
-      "sphere": "siin",
-      "project": "Product",
-      "title": "App Copy (RU/ENG/ET)",
-      "priority": "High",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "360b44fe-da81-4cd3-81f6-6129ce84a7e8",
-      "sphere": "siin",
-      "project": "Põhjala Tehas",
-      "title": "Create Dashboard for Steveli",
-      "priority": "High",
-      "energy": "Flow",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "aeae9b9b-f845-46e6-8eb1-c84b71be1ae5",
-      "sphere": "siin",
-      "project": "Launch Event",
-      "title": "Concept & Planning",
-      "priority": "High",
-      "energy": "Flow",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "5af06918-1c08-4110-84bb-493c2d6bc543",
-      "sphere": "siin",
-      "project": "Product",
-      "title": "Google Maps",
-      "priority": "High",
-      "energy": "Quick",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "check the design instructions from vlad (discord)\n\n",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "32a49518-057b-49a2-947d-c610a78c900e",
-      "sphere": "siin",
-      "project": "Business",
-      "title": "Update TC/PP",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "- new discounts system\n- remove old monetary reward system",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "590d40a9-a442-45b8-92c0-c192e6731f11",
-      "sphere": "siin",
-      "project": "Brand",
-      "title": "Copy Foundation",
-      "priority": "High",
-      "energy": "Flow",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "945c91c0-1dd1-4db0-8d3d-264044f5f464",
-      "sphere": "siin",
-      "project": "Paywall",
-      "title": "Packages + Business Model",
-      "priority": "High",
-      "energy": "Flow",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "62ddc63b-de56-43ec-992c-2be15481ac38",
-      "sphere": "siin",
-      "project": "Sales",
-      "title": "Messages Cafe Owners",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "dfda4a03-2612-4aeb-b43f-2d24912dfda6",
-      "sphere": "siin",
-      "project": "Clients",
-      "title": "Email old users (Reactivate)",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "2c61f0b5-17e2-431c-95d5-e9a1e115d8e8",
-      "sphere": "irishot",
-      "project": "Clients",
-      "title": "Jewellery ",
-      "priority": "High",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": false,
-      "deadline": "2026-06-16",
-      "notes": "- check old images for braclet repairs (order new ones if needed)\n",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {
-        "2026-06-16": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
-    },
-    {
-      "id": "74ec8894-82ab-473d-9008-0eb098efacc1",
-      "sphere": "dashboard",
-      "project": "Database",
-      "title": "Migration",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "- once ready to create proper admins panel, migrate data to supabase\n",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 1,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 1,
-      "dailyTracking": {
-        "2026-06-25": {
-          "intent": "finish",
-          "timeSpentMinutes": 1,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
-    },
-    {
-      "id": "cfb82ede-086a-44de-8842-5504f42f1688",
-      "sphere": "iowa",
-      "project": "HealthD FEWFW EF WE FWEF WEF W",
-      "title": "hui",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": true,
-      "deadline": "2026-06-19",
-      "notes": "åoj\n",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": false
-    },
-    {
-      "id": "5a2fd7b4-105e-4370-a9b9-5ee60db58fbe",
-      "sphere": "iowa",
-      "project": "HealthD FEWFW EF WE FWEF WEF W",
-      "title": "Synlab appointment",
-      "priority": "Low",
-      "energy": "Easy",
-      "urgency": "urgent",
-      "done": true,
-      "deadline": "2026-06-17",
-      "notes": "pwofncewäpafn\nwefvfweja\nfvpjfwea\nfopvj\nfweav",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 8,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 3,
-      "dailyTracking": {
-        "2026-06-13": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-15": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 25
-        },
-        "2026-06-17": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 2
-        },
-        "2026-06-19": {
-          "intent": "time",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": 2
-        },
-        "2026-06-24": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        },
-        "2026-06-25": {
-          "intent": "maybe",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
-    },
-    {
-      "id": "9a36a7a5-67aa-4bef-9e51-210648c5c189",
-      "sphere": "iowa",
-      "project": "Sport",
-      "title": "Tedt taks",
-      "priority": "Med",
-      "energy": "Easy",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 132,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {
-        "2026-06-25": {
-          "intent": "finish",
-          "timeSpentMinutes": 0,
-          "dailyTargetMinutes": null
-        }
-      },
-      "isSample": false
+      "isSample": true
     }
   ],
   "habits": [
     {
-      "id": "488b3611-7c7c-412f-8e7a-45fbba7fe56d",
-      "title": "Vitamins",
-      "type": "start",
-      "routine": "morning",
-      "frequency": "daily",
-      "targetCount": 7,
-      "emoji": "💊",
-      "notes": "",
-      "history": {
-        "2026-06-15": true,
-        "2026-06-22": true,
-        "2026-06-23": true,
-        "2026-06-24": true,
-        "2026-06-25": true
-      }
-    },
-    {
-      "id": "20226781-c69f-4eb2-a707-87425c8b2bf0",
-      "title": "Smoking",
-      "type": "stop",
-      "routine": "day",
-      "frequency": "daily",
-      "targetCount": 7,
-      "emoji": "🚭",
-      "notes": "",
-      "history": {
-        "2026-06-17": true,
-        "2026-06-18": true,
-        "2026-06-19": true,
-        "2026-06-20": true,
-        "2026-06-24": true
-      }
-    },
-    {
-      "id": "1d8dc86b-2655-4bd7-aa5a-1943a52353b5",
-      "title": "Face + Teeth",
+      "id": "7789a8a8-11ed-44ea-9de9-1cb4d704f6fb",
+      "title": "Read bedtime story to the kids",
       "type": "start",
       "routine": "evening",
       "frequency": "daily",
-      "targetCount": 7,
-      "emoji": "😶‍🌫️",
+      "targetCount": 1,
+      "emoji": "⭐",
       "notes": "",
       "history": {
-        "2026-06-15": true
+        "2026-06-22": true,
+        "2026-06-23": true,
+        "2026-06-24": true,
+        "2026-06-25": true,
+        "2026-06-26": true
+      }
+    },
+    {
+      "id": "9fc7bbb5-4256-441e-be82-6ba893c43b90",
+      "title": "Deep Focus in Blocks",
+      "type": "start",
+      "routine": "day",
+      "frequency": "daily",
+      "targetCount": 2,
+      "emoji": "⭐",
+      "notes": "",
+      "history": {
+        "2026-06-22": true,
+        "2026-06-23": true,
+        "2026-06-24": true,
+        "2026-06-25": true,
+        "2026-06-26": true
+      }
+    },
+    {
+      "id": "c696e1b6-a268-4715-82a2-4acf2a6d1293",
+      "title": "Call it a day RECAP",
+      "type": "start",
+      "routine": "evening",
+      "frequency": "daily",
+      "targetCount": 1,
+      "emoji": "⭐",
+      "notes": "",
+      "history": {
+        "2026-06-25": true,
+        "2026-06-26": true
+      }
+    },
+    {
+      "id": "6d54a8dd-0984-4016-9b72-78b4033d7caa",
+      "title": "Plan the day",
+      "type": "start",
+      "routine": "morning",
+      "frequency": "daily",
+      "targetCount": 1,
+      "emoji": "⭐",
+      "notes": "",
+      "history": {
+        "2026-06-26": true
       }
     }
   ],
   "projects": [
     {
-      "id": "2132008c-056c-4734-8209-1570759ad6b9",
-      "sphere": "iowa",
-      "name": "Sport",
-      "emoji": "💪",
-      "tagIds": [],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "a317d114-47ad-4c69-9ce9-4ce72b9c075f",
-      "sphere": "irishot",
-      "name": "Random",
-      "emoji": "🎲",
-      "tagIds": [],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "becbaf91-9b77-4135-979b-9012032552f7",
-      "sphere": "dashboard",
-      "name": "Reminders",
-      "emoji": "💡",
-      "tagIds": [],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "65b16a82-db5d-4a78-822a-1119471e3dfa",
-      "sphere": "siin",
-      "name": "Põhjala Tehas",
-      "emoji": "🌲",
+      "id": "7685486d-fc95-4b7e-b13b-88180724262d",
+      "sphere": "Home & Family",
+      "name": "Family Planning",
+      "emoji": "📅",
       "tagIds": [
-        "395b62b2-0e24-4794-9b88-b47915ae207e"
+        "3a2d947d-5e77-4127-831f-d8099bd61c80",
+        "e59c4748-e60c-4641-9612-2ea45f0df4c9"
       ],
       "status": "on-track",
-      "milestone": "In progress",
+      "milestone": "",
       "sortOrder": 0,
-      "isSample": false
+      "isSample": true
     },
     {
-      "id": "a7af486f-e2dc-4455-be00-aa9a48d82f11",
-      "sphere": "siin",
-      "name": "Launch Event",
+      "id": "73f2c793-f7a0-4391-b094-f5a0c4bbddb4",
+      "sphere": "Home & Family",
+      "name": "Kitchen Organization",
+      "emoji": "🏡",
+      "tagIds": [
+        "d874c4a4-63c2-4d2a-9940-7fdbdb6f694a"
+      ],
+      "status": "on-track",
+      "milestone": "",
+      "sortOrder": 0,
+      "isSample": true
+    },
+    {
+      "id": "4082bf08-28b8-4764-afe1-3fd6c9b61733",
+      "sphere": "Startup",
+      "name": "Launch Life Dashboard",
+      "emoji": "🔮",
+      "tagIds": [
+        "8eb083b8-94e0-4ca7-b79a-f668bcd1dc96",
+        "f47e95e7-b5fc-4a9a-9724-db4220703048"
+      ],
+      "status": "on-track",
+      "milestone": "",
+      "sortOrder": 0,
+      "isSample": true
+    },
+    {
+      "id": "c97fa6b9-ebfe-409d-ac37-7b0241b9ddcc",
+      "sphere": "Startup",
+      "name": "Build MVP, FAST!",
       "emoji": "🚀",
       "tagIds": [
-        "7b0b47fe-792e-4ce4-992b-6eba83585e42",
-        "8a1af152-d802-4196-b831-a9755f170808"
+        "2b0833ab-1f5d-4170-9f9a-a58b353ba562",
+        "6d748963-126f-42e1-bcab-9130d1f5064f"
       ],
       "status": "on-track",
-      "milestone": "In progress",
+      "milestone": "",
       "sortOrder": 0,
-      "isSample": false
+      "isSample": true
     },
     {
-      "id": "9a90c84a-a6ac-4bb0-80c6-b449f42962af",
-      "sphere": "siin",
-      "name": "Website",
-      "emoji": "🌍",
+      "id": "7e9e2731-f96d-41a6-912d-89c602401ae1",
+      "sphere": "Startup",
+      "name": "Friends as Testers",
+      "emoji": "📣",
       "tagIds": [
-        "7b0b47fe-792e-4ce4-992b-6eba83585e42",
-        "8a1af152-d802-4196-b831-a9755f170808"
+        "2e5f52b3-d400-42b7-b29a-dba6301e5157",
+        "a135c499-421b-4056-b886-e20299c8c0d6"
       ],
       "status": "on-track",
-      "milestone": "In progress",
+      "milestone": "",
       "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "5a3b7dda-0958-430e-9edd-c312bc2cb408",
-      "sphere": "siin",
-      "name": "Product",
-      "emoji": "📱",
-      "tagIds": [
-        "f2ecd8ba-4546-4404-be59-5ddecbdbea2f"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "b4d9f704-81e9-4f5b-ae47-8c478f52ebc5",
-      "sphere": "",
-      "name": "Random",
-      "emoji": "👨‍⚖️",
-      "tagIds": [],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "060b71e7-6702-447e-babf-4426112294e2",
-      "sphere": "siin",
-      "name": "Business",
-      "emoji": "💼",
-      "tagIds": [
-        "8a1af152-d802-4196-b831-a9755f170808"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "4c1ae3f9-0bcd-48a3-90a7-83533bcb516c",
-      "sphere": "irishot",
-      "name": "Clients",
-      "emoji": "👥",
-      "tagIds": [
-        "395b62b2-0e24-4794-9b88-b47915ae207e"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "81659210-84d9-4ff5-a38d-f2fa9be3a3f6",
-      "sphere": "irishot",
-      "name": "File Management",
-      "emoji": "📁",
-      "tagIds": [
-        "b9b00268-343e-4f77-935b-59c6c4031ab4"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "e0893860-283e-4740-8635-1a5fc4d89383",
-      "sphere": "irishot",
-      "name": "Pipedrive Agent",
-      "emoji": "📝",
-      "tagIds": [
-        "b9b00268-343e-4f77-935b-59c6c4031ab4"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "ca206143-fb5c-408b-8130-d72019ec9e3a",
-      "sphere": "siin",
-      "name": "Brand",
-      "emoji": "🎨",
-      "tagIds": [
-        "7b0b47fe-792e-4ce4-992b-6eba83585e42",
-        "8a1af152-d802-4196-b831-a9755f170808"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "5f101df0-53d0-494a-9084-a70f14e82b28",
-      "sphere": "siin",
-      "name": "Paywall",
-      "emoji": "💳",
-      "tagIds": [
-        "7b0b47fe-792e-4ce4-992b-6eba83585e42",
-        "8a1af152-d802-4196-b831-a9755f170808",
-        "b9b00268-343e-4f77-935b-59c6c4031ab4"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "a400d1f0-30a8-4a29-9d94-bc3e9b014868",
-      "sphere": "siin",
-      "name": "Sales",
-      "emoji": "🪝",
-      "tagIds": [
-        "395b62b2-0e24-4794-9b88-b47915ae207e"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "ca2476d5-cade-4a2b-9ea7-ec568ea41bc8",
-      "sphere": "siin",
-      "name": "Content",
-      "emoji": "🎥",
-      "tagIds": [
-        "7b0b47fe-792e-4ce4-992b-6eba83585e42",
-        "8a1af152-d802-4196-b831-a9755f170808",
-        "ad0dcfb7-0b4b-4af1-b874-af513f2fdb1c"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "2d1ba7e3-542f-4367-b5ff-15eecb56d4b4",
-      "sphere": "siin",
-      "name": "Clients",
-      "emoji": "👥",
-      "tagIds": [
-        "395b62b2-0e24-4794-9b88-b47915ae207e"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "d5c02396-808f-4d0e-b22b-0b25b004318d",
-      "sphere": "dashboard",
-      "name": "Database",
-      "emoji": "📁",
-      "tagIds": [
-        "7b0b47fe-792e-4ce4-992b-6eba83585e42"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "eaf2b6b2-65ec-46bf-9397-71421d4684e7",
-      "sphere": "iowa",
-      "name": "Random",
-      "emoji": "🎲",
-      "tagIds": [
-        "395b62b2-0e24-4794-9b88-b47915ae207e",
-        "ad0dcfb7-0b4b-4af1-b874-af513f2fdb1c"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "22fe2656-eab1-4254-9e07-911d98c1613e",
-      "sphere": "iowa",
-      "name": "HealthD FEWFW EF WE FWEF WEF W",
-      "emoji": "🥦",
-      "tagIds": [
-        "395b62b2-0e24-4794-9b88-b47915ae207e",
-        "7b0b47fe-792e-4ce4-992b-6eba83585e42",
-        "8a1af152-d802-4196-b831-a9755f170808",
-        "a9b08a8f-2a9b-489b-ae7a-bea8f833bc0b",
-        "ad0dcfb7-0b4b-4af1-b874-af513f2fdb1c",
-        "b9b00268-343e-4f77-935b-59c6c4031ab4"
-      ],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
-    },
-    {
-      "id": "1ac3d7f5-1fa1-4279-acea-0a8e2364f73d",
-      "sphere": "dashboard",
-      "name": "Ready 4 Friends",
-      "emoji": "👊",
-      "tagIds": [],
-      "status": "on-track",
-      "milestone": "In progress",
-      "sortOrder": 0,
-      "isSample": false
+      "isSample": true
     }
   ],
   "spheres": [
     {
-      "id": "0ec10d0d-5a79-487c-86fd-80c097765f0b",
-      "name": "iowa",
-      "labelColor": "emerald",
-      "description": "My private stuff seaoifhweöigfh-wef weOFJEWofjweopJFEWåpofjwåepoJFÅOPWEjfÅPWEjfpweF"
+      "id": "f8c8e8f1-32c3-468a-be4d-cd3a52664d5a",
+      "name": "Home & Family",
+      "labelColor": "amber"
     },
     {
-      "id": "879439b2-4f58-42f8-a1d8-d7814bd62a3d",
-      "name": "siin",
-      "labelColor": "sky",
-      "description": "Launch it, finally!"
-    },
-    {
-      "id": "993549b0-ec8f-4550-98d5-41fb6fd2dd28",
-      "name": "dashboard",
-      "labelColor": "amber",
-      "description": "Prepare to launch"
-    },
-    {
-      "id": "a6b53102-7f02-4926-a952-95f666a49760",
-      "name": "irishot",
-      "labelColor": "indigo",
-      "description": "All eyes on me!"
-    },
-    {
-      "id": "dd6836b4-4a01-4d61-878b-93e43396bc1a",
-      "name": "Testing Long",
-      "labelColor": "rose"
+      "id": "dadb1dd9-32f0-447a-935e-26fa1bc7cde1",
+      "name": "Startup",
+      "labelColor": "sky"
     }
   ],
   "recurringTasks": [
     {
-      "id": "1b9d63f4-2277-4411-83a6-c0d13666e0c3",
-      "title": "Pay invoices",
+      "id": "3fbca79a-92ea-434f-bb35-980a98faa890",
+      "title": "Plan out the weekly family dinner menu and grocery run",
       "notes": "",
-      "intervalDays": 30,
-      "intervalLabel": "Every Month",
-      "startDate": "2026-06-15",
-      "sphere": "",
-      "lastDoneDate": "2026-06-15T00:00:00.000Z",
-      "completionCount": 1,
-      "history": [
-        {
-          "id": "da530997-b8ca-4da3-bd19-75bcde75d508",
-          "completedAt": "June 15, 2026 at 12:31"
-        }
-      ]
-    },
-    {
-      "id": "a61bcfec-27d5-4252-9529-a78620b84042",
-      "title": "scsdcdsc",
-      "notes": "csdcvdscdsc\nsdc\nsd\nc\nsdcsc",
-      "intervalDays": 30,
-      "intervalLabel": "Every Month",
-      "startDate": "2026-06-28",
-      "sphere": "",
+      "intervalDays": 7,
+      "intervalLabel": "Every Sunday",
+      "sphere": "Home & Family",
       "lastDoneDate": null,
       "completionCount": 0,
       "history": []
     },
     {
-      "id": "7def23ea-d6e7-4e49-858c-cbb50263e044",
-      "title": "öoiughpohj",
-      "notes": "-lihäoihj",
+      "id": "5d0fc1f5-c249-48b2-b405-c42e257a2a57",
+      "title": "Review weekly user feedback & growth",
+      "notes": "",
       "intervalDays": 7,
-      "intervalLabel": "Every Week",
-      "startDate": "2026-06-20",
-      "sphere": "iowa",
-      "lastDoneDate": "2026-06-25T00:00:00.000Z",
-      "completionCount": 4,
-      "history": [
-        {
-          "id": "705f4080-421e-4c30-a4e4-fe5dac638c05",
-          "completedAt": "June 23, 2026 at 21:57"
-        },
-        {
-          "id": "9b1d47db-3501-4908-98e8-dce32d8c1ca3",
-          "completedAt": "June 25, 2026 at 15:33"
-        },
-        {
-          "id": "94bb9897-720e-48fe-9be2-4cef3a83f2cd",
-          "completedAt": "June 25, 2026 at 15:33"
-        },
-        {
-          "id": "8360c475-374e-4091-87a4-a10386b88f44",
-          "completedAt": "June 25, 2026 at 15:33"
-        }
-      ]
+      "intervalLabel": "Every Sunday",
+      "sphere": "Startup",
+      "lastDoneDate": null,
+      "completionCount": 0,
+      "history": []
     },
     {
-      "id": "72fef044-a390-40f4-8850-a9f2cc74d808",
-      "title": "Rave pills",
+      "id": "ac618bd4-5aa4-4abf-93e0-233e8f439ead",
+      "title": "Pay Invoices",
       "notes": "",
       "intervalDays": 30,
-      "intervalLabel": "Every Month",
-      "startDate": "2026-05-23",
-      "sphere": "iowa",
-      "lastDoneDate": "2026-06-23T00:00:00.000Z",
-      "completionCount": 1,
-      "history": [
-        {
-          "id": "ca1574bd-76ab-44b6-939e-7b9c5269229d",
-          "completedAt": "June 23, 2026 at 21:57"
-        }
-      ]
+      "intervalLabel": "Monthly, every 3rd",
+      "sphere": "Startup",
+      "lastDoneDate": null,
+      "completionCount": 0,
+      "history": []
     }
   ],
   "quickNotes": [
     {
-      "id": "de2cdecd-b8a3-4fb3-b79a-ff43bce1e76e",
-      "text": "yoyoyo<div><br></div>",
-      "sphere": "dashboard",
-      "createdAt": "2026-06-26 14:27",
+      "id": "6a6f8328-f3b3-4b66-847c-47c722e7b96f",
+      "text": "Remember to book dinner tables in Old Town for the team sync next week",
+      "sphere": "Startup",
+      "createdAt": "2026-06-26 14:20",
       "isImportant": false
     },
     {
-      "id": "713437d6-18f8-4e58-ad1b-6d32af04473e",
-      "text": "asdasd",
-      "sphere": "siin",
-      "createdAt": "2026-06-25 20:14",
-      "isImportant": false
-    },
-    {
-      "id": "1fe21523-a1c8-47c2-bd79-f9b91bbd9781",
-      "text": "asdasd",
-      "sphere": "iowa",
-      "createdAt": "2026-06-25 20:14",
-      "isImportant": false
-    },
-    {
-      "id": "f45e9ccf-486b-4d87-a22e-2ad718a3f4be",
-      "text": "kkwdewd",
-      "sphere": "iowa",
-      "createdAt": "2026-06-25 16:54",
-      "isImportant": false
-    },
-    {
-      "id": "ba9cf02b-12bb-4223-9b35-d108bf66046a",
-      "text": "Ernie da burny&nbsp;",
-      "sphere": "iowa",
-      "createdAt": "2026-06-25 11:24",
-      "isImportant": false
-    },
-    {
-      "id": "8d95a915-09ee-4559-99df-90295f496a91",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">widget order after onboarding</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">sample data</span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\"><br></span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">bug: when choosen no widget in onboarding, it choses all</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">add \"back\" after logged in directly as new user&nbsp;</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">edit projects</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">manage group in network (improve) + align with area edit</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">quick note pills dym´namic based on last entry</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">\"view more\" collpase for todays notes</span></div>",
-      "sphere": "dashboard",
-      "createdAt": "2026-06-24 08:57",
-      "isImportant": false
-    },
-    {
-      "id": "8e03da28-1aed-47a3-84b7-ddeeee8b3bac",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">one spot (settings) to control areas, groups etc</span></div>",
-      "sphere": "dashboard",
-      "createdAt": "2026-06-24 05:36",
-      "isImportant": false
-    },
-    {
-      "id": "4b580d84-28f3-46af-8a8f-f20114e3d4a3",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">vertical dot menu, where needed</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">bug: when choosen no widget in onboarding, it choses all</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">add \"back\" after logged in directly as new user&nbsp;<br></span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">rename widget network</span></div>",
-      "sphere": "dashboard",
-      "createdAt": "2026-06-24 05:36",
-      "isImportant": false
-    },
-    {
-      "id": "7b97e8a0-5317-4ca8-8d4a-391d132ecc60",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">bullet points as dots</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">move the quick action menu on destkop (in settings you can change your position)</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">project, change opacity when click on a project</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">align with the container vertically (projects/tasks)</span></div>",
-      "sphere": "dashboard",
-      "createdAt": "2026-06-24 05:04",
-      "isImportant": false
-    },
-    {
-      "id": "81619036-68cd-4a46-a968-33c4027d3e26",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">all pop up correction (mobile)</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><br></div>",
-      "sphere": "dashboard",
-      "createdAt": "2026-06-24 00:01",
-      "isImportant": false
-    },
-    {
-      "id": "a9350545-70fe-49de-8ca4-165e0bdfb964",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">mobile version quick notes \"favourites\", task, delete\" hover actrions implement</span></div>",
-      "sphere": "siin",
-      "createdAt": "2026-06-23 23:43",
-      "isImportant": false
-    },
-    {
-      "id": "9e171f17-4e33-43e6-9fb0-143fefcd9555",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">make the saved quick notes editable</span></div>",
-      "sphere": "siin",
-      "createdAt": "2026-06-23 23:42",
-      "isImportant": false
-    },
-    {
-      "id": "f58a3d82-dd2b-41c6-a8d8-b87039088d05",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">fade on the right side of the pilss</span></div>",
-      "sphere": "siin",
-      "createdAt": "2026-06-23 23:42",
-      "isImportant": false
-    },
-    {
-      "id": "2188c0a6-9dfe-4e87-a06e-cf0df0c98047",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">still same problem when deleting the checkbox</span></div>",
-      "sphere": "siin",
-      "createdAt": "2026-06-23 23:39",
-      "isImportant": false
-    },
-    {
-      "id": "0011ea30-b16d-4f85-a01a-33bacdeaac2e",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">double save when clicking save in quick widget</span></div>",
-      "sphere": "siin",
-      "createdAt": "2026-06-23 23:39",
-      "isImportant": false
-    },
-    {
-      "id": "fbff3ff5-0e0d-4171-ac4d-3abb1c9eaf9e",
-      "text": "<div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"false\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">edit project in the widget</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">fix \"save\" overlap in half mobile view in notes widget</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">bullet points creation •&nbsp;</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">apply todo/bulletpoint to all text fields</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">project widget: tags when more then one, show only one +3</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\">delete habit in mobile</span></div><div class=\"qn-check-line group flex items-start gap-2 py-0.5\" data-checked=\"true\"><span class=\"qn-check-circle inline-block w-3.5 h-3.5 rounded-full border-2 border-slate-500 mt-0.5 cursor-pointer flex-shrink-0 transition-colors group-data-[checked=true]:bg-emerald-500 group-data-[checked=true]:border-emerald-500\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"true\"></span><span class=\"qn-check-text flex-1 min-w-0 group-data-[checked=true]:line-through group-data-[checked=true]:text-slate-600 group-data-[checked=true]:opacity-70\"><br></span></div>",
-      "sphere": "siin",
-      "createdAt": "2026-06-23 23:38",
-      "isImportant": false
-    },
-    {
-      "id": "a2f11bed-e17d-43fd-b7dc-57d255aacf0f",
-      "text": "не откладывай на завтра то, что можно забыть сегодня",
-      "sphere": "iowa",
-      "createdAt": "2026-06-20 13:18",
-      "isImportant": false
-    },
-    {
-      "id": "874a7ad0-bc8d-4f76-89cf-e1c745fc65c9",
-      "text": "Не бойся, когда ты один. Бойся, когда ты два.",
-      "sphere": "iowa",
-      "createdAt": "2026-06-20 13:16",
-      "isImportant": false
-    },
-    {
-      "id": "4c283848-3775-4a35-8fba-45fdd7b4e1fa",
-      "text": ",iufliugfsbsrtnwrtn",
-      "sphere": "iowa",
-      "createdAt": "2026-06-19 22:09",
-      "isImportant": false
-    },
-    {
-      "id": "5053df29-499f-435f-acb2-18f4a27d96df",
-      "text": "Vhjhhjbb\nJuli\nZu",
-      "sphere": "iowa",
-      "createdAt": "2026-06-19 15:09",
+      "id": "e5544e4f-1e90-42d8-938f-554d74effc54",
+      "text": "Idea: marketplace for custom skins, users can make their dashboard cozy",
+      "sphere": "Startup",
+      "createdAt": "2026-06-26 09:41",
       "isImportant": true
     },
     {
-      "id": "089086fa-9355-4772-908a-04451a0e246a",
-      "text": "oerhgnioer",
-      "sphere": "iowa",
-      "createdAt": "2026-06-17 18:50",
-      "isImportant": false
-    },
-    {
-      "id": "591cce8a-d347-4d4c-9a8f-cc66ee61bcc4",
-      "text": "e\nthe\naheah\nearh",
-      "sphere": "iowa",
-      "createdAt": "2026-06-17 18:50",
-      "isImportant": false
-    },
-    {
-      "id": "1ca3a7a8-f1d4-46f4-abcf-7b3f79e440ba",
-      "text": "eargaergera\ng",
-      "sphere": "iowa",
-      "createdAt": "2026-06-17 18:48",
-      "isImportant": false
-    },
-    {
-      "id": "5a8a4dae-82a6-4eda-b540-683171aa3ec4",
-      "text": "erag\naer\ng",
-      "sphere": "iowa",
-      "createdAt": "2026-06-17 18:48",
-      "isImportant": false
-    },
-    {
-      "id": "77e7812b-1115-492d-9a79-80352493de7e",
-      "text": "efrgfaegqe",
-      "sphere": "iowa",
-      "createdAt": "2026-06-17 17:06",
-      "isImportant": false
-    },
-    {
-      "id": "5c95a730-e556-4c9c-9edc-1aa1be6ca727",
-      "text": "Ivan camera!",
-      "sphere": "iowa",
-      "createdAt": "2026-06-17 10:34",
-      "isImportant": false
-    },
-    {
-      "id": "4649714f-14cc-4c90-b549-6727e589df36",
-      "text": "Karjase program + prints",
-      "sphere": "siin",
-      "createdAt": "2026-06-17 10:24",
-      "isImportant": false
-    },
-    {
-      "id": "d0da2be7-3626-4f55-94c3-77e5f2489c17",
-      "text": "Create an md file for Claude/gemini, important!!!",
-      "sphere": "dashboard",
-      "createdAt": "2026-06-16 09:35",
-      "isImportant": false
-    },
-    {
-      "id": "15db5fcb-0e2a-4f89-9026-f03a2982f396",
-      "text": "Agent who will check the competitors, make technical breakdown, what we can implement while comparing with our platform",
-      "sphere": "dashboard",
-      "createdAt": "2026-06-16 08:32",
-      "isImportant": false
-    },
-    {
-      "id": "f4859920-4fe5-457e-8c2a-c61a4adcd1f1",
-      "text": "rtgergver",
-      "sphere": "siin",
-      "createdAt": "2026-06-15 12:22",
-      "isImportant": false
+      "id": "e47aef2c-4fb6-4bc5-ae98-dd1bcd2cbc05",
+      "text": "Remember to re-order the kids multivitamin gummies",
+      "sphere": "Home & Family",
+      "createdAt": "2026-06-26 09:30",
+      "isImportant": true
     }
   ],
   "currentTrackingDate": "2026-06-26"

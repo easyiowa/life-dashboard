@@ -936,6 +936,7 @@ function WidgetCard({ widget, isSelected, isForced, hasGlow, isFlashing, onToggl
               key={i}
               type="button"
               onClick={(e) => { e.stopPropagation(); setSlideIdx(i); }}
+              data-onboarding-dot={i === slideIdx ? "active" : "inactive"}
               className={`rounded-full transition-all duration-200 ${
                 i === slideIdx ? "w-3.5 h-1.5 bg-violet-400/90" : "w-1.5 h-1.5 bg-white/30 hover:bg-white/55"
               }`}
@@ -945,7 +946,7 @@ function WidgetCard({ widget, isSelected, isForced, hasGlow, isFlashing, onToggl
       </div>
 
       {/* Card body */}
-      <div className="flex flex-col flex-1 bg-[#0D1120] px-4 pt-4 pb-3 gap-3">
+      <div className="flex flex-col flex-1 bg-[#0D1120] px-4 pt-4 pb-3 gap-3 onboarding-body-divider">
         <div>
           <div className="flex items-center gap-2">
             <widget.Icon className="w-4 h-4 shrink-0 text-slate-400" />

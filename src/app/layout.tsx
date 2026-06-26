@@ -42,6 +42,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Call it a Day",
   description: "Unwind your context, dump your tasks, and claim your mental headspace.",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

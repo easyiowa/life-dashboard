@@ -584,21 +584,17 @@ function ArchiveModal({
 function SortablePill({
   sphere, isActive, onClick,
 }: { sphere: Sphere; isActive: boolean; onClick: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: sphere.id });
+  const { setNodeRef, transform, transition } = useSortable({ id: sphere.id });
   const pill = areaColor(sphere.labelColor);
   return (
     <button
       ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.45 : 1,
-      }}
-      {...attributes}
-      {...listeners}
+      type="button"
+      style={{ transform: CSS.Transform.toString(transform), transition }}
       onClick={onClick}
-      className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 cursor-grab active:cursor-grabbing select-none touch-none ${
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
+      className={`flex-shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer select-none ${
         isActive ? pill.pillActive : pill.pillInactive
       }`}
     >
@@ -888,11 +884,11 @@ export default function QuickNotesCard() {
                 </button>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center gap-2">
               <select
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="hidden md:flex flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-400 outline-none focus:border-purple-500/40 transition-colors appearance-none cursor-pointer"
+                className="hidden md:flex flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-400 outline-none focus:border-purple-500/40 transition-colors appearance-none cursor-pointer"
               >
                 <option value="" className="bg-[#0F1629]">No project</option>
                 {sphereProjects.map((p) => (

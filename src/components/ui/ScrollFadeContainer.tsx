@@ -10,7 +10,7 @@ interface ScrollFadeContainerProps {
   children: ReactNode;
 }
 
-const FADE_PCT = 15; // % of the viewport width the fade ramps across at each edge
+const FADE_PCT = 18; // % of the viewport width the fade ramps across at each edge
 const EDGE_PX  = 4;  // scrollLeft tolerance for "resting at the start/end"
 
 /**
