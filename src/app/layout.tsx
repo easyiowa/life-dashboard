@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import AuthGate from "@/components/AuthGate";
@@ -22,6 +23,12 @@ const THEME_FOUC_SCRIPT = `
 })();
 `;
 
+const tayBeaFont = localFont({
+  src: "./font/TAYBea.woff2",
+  variable: "--font-taybea",
+  display: "swap",
+});
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -33,8 +40,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Life Dashboard",
-  description: "Personal life command centre",
+  title: "Call it a Day",
+  description: "Unwind your context, dump your tasks, and claim your mental headspace.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Call it a Day",
+  },
 };
 
 export default function RootLayout({
@@ -43,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${tayBeaFont.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_FOUC_SCRIPT }} />
       </head>

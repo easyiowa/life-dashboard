@@ -14,9 +14,8 @@ export default function ManageAdminsTab() {
   const [items,   setItems]   = useState<AdminRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
-  const [adding,   setAdding]   = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [email,    setEmail]    = useState("");
+  const [adding, setAdding] = useState(false);
+  const [email,  setEmail]  = useState("");
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -38,12 +37,15 @@ export default function ManageAdminsTab() {
 
   async function deleteAdmin(adminEmail: string) {
     if (!supabase) return;
-    setDeleting(adminEmail);
+    // Optimistically remove the row immediately
+    setItems(prev => prev.filter(r => r.email !== adminEmail));
     setError(null);
     const { error: err } = await supabase.from("admins").delete().eq("email", adminEmail);
-    setDeleting(null);
-    if (err) { setError(err.message); return; }
-    setItems(prev => prev.filter(r => r.email !== adminEmail));
+    if (err) {
+      // Rollback: restore the row in alphabetical order
+      setItems(prev => [...prev, { email: adminEmail }].sort((a, b) => a.email.localeCompare(b.email)));
+      setError(err.message);
+    }
   }
 
   async function addAdmin() {
@@ -82,14 +84,10 @@ export default function ManageAdminsTab() {
                   </span>
                   <button
                     onClick={() => void deleteAdmin(row.email)}
-                    disabled={deleting === row.email}
                     title="Remove admin"
-                    className="p-1 text-slate-600 hover:text-red-400 disabled:opacity-40 transition-colors cursor-pointer"
+                    className="p-1 text-slate-600 hover:text-red-400 transition-colors cursor-pointer"
                   >
-                    {deleting === row.email
-                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      : <Trash2 className="w-3.5 h-3.5" />
-                    }
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </>
               )}

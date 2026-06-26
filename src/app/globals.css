@@ -26,6 +26,7 @@
   --accent-primary: #f35600;
   --accent-hover: #d64b00;
   --border-main: rgba(0, 0, 0, 0.06);
+  --font-heading: var(--font-taybea), sans-serif;
 }
 
 @keyframes shake {

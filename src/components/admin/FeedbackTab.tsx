@@ -23,7 +23,6 @@ export default function FeedbackTab() {
   const [items,    setItems]    = useState<WorkbenchFeedback[]>([]);
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -43,40 +42,40 @@ export default function FeedbackTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  // Option A: resolve = delete row + delete screenshot from storage
   async function resolveAndDelete(item: WorkbenchFeedback) {
     if (!supabase) return;
     if (!window.confirm("Resolve & permanently delete this feedback entry?")) return;
 
-    setDeleting(item.id);
+    // Optimistically remove from UI immediately
+    setItems((prev) => prev.filter((f) => f.id !== item.id));
 
-    // 1. Delete the DB row
+    // Delete the DB row asynchronously
     const { error: dbErr } = await supabase
       .from("workbench_feedback")
       .delete()
       .eq("id", item.id);
 
     if (dbErr) {
+      // Rollback: restore item in sorted position
+      setItems((prev) =>
+        [...prev, item].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      );
       setError(`Failed to delete: ${dbErr.message}`);
-      setDeleting(null);
       return;
     }
 
-    // 2. Delete the screenshot from storage (best-effort — non-fatal)
+    // Best-effort screenshot cleanup — non-fatal, row already gone from UI
     if (item.screenshot_url) {
       const path = extractStoragePath(item.screenshot_url);
       if (path) {
         const { error: storageErr } = await supabase.storage
           .from(SCREENSHOT_BUCKET)
           .remove([path]);
-        if (storageErr) {
-          console.warn("[FeedbackTab] Storage cleanup failed:", storageErr.message);
-        }
+        if (storageErr) console.warn("[FeedbackTab] Storage cleanup failed:", storageErr.message);
       }
     }
-
-    setItems((prev) => prev.filter((f) => f.id !== item.id));
-    setDeleting(null);
   }
 
   if (loading) return (
@@ -118,45 +117,36 @@ export default function FeedbackTab() {
             </div>
             <button
               onClick={() => void resolveAndDelete(item)}
-              disabled={deleting === item.id}
-              className="shrink-0 mt-0.5 text-slate-700 hover:text-emerald-400 transition-colors disabled:opacity-40"
+              className="shrink-0 mt-0.5 text-slate-700 hover:text-emerald-400 transition-colors"
               title="Resolve & delete"
             >
-              {deleting === item.id
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <CheckCircle2 className="w-4 h-4" />
-              }
+              <CheckCircle2 className="w-4 h-4" />
             </button>
           </div>
 
           <p className="text-xs text-slate-300 leading-relaxed">{item.message}</p>
 
-          {/* Screenshot thumbnail */}
           {item.screenshot_url && (
-            <a
-              href={item.screenshot_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-0.5 group relative w-fit"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.screenshot_url}
-                alt="Attached screenshot"
-                className="h-20 w-auto max-w-[160px] rounded-lg object-cover border border-white/[0.10] group-hover:border-purple-500/40 transition-colors"
-              />
-              <span className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                <span className="opacity-0 group-hover:opacity-100 text-[10px] text-white font-medium transition-opacity">Open ↗</span>
-              </span>
-            </a>
+            <div className="mt-1 overflow-hidden rounded-lg border border-slate-800 max-w-xs bg-black/20">
+              <a href={item.screenshot_url} target="_blank" rel="noopener noreferrer" className="group block relative cursor-pointer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.screenshot_url}
+                  alt="User feedback attachment"
+                  className="w-full h-auto object-contain max-h-48 group-hover:opacity-80 transition-opacity"
+                />
+                <div className="absolute bottom-1 right-1 text-[10px] bg-slate-900/80 px-1.5 py-0.5 rounded text-slate-400">
+                  Click to view full size
+                </div>
+              </a>
+            </div>
           )}
 
           {/* Destructive resolve action */}
           <div className="flex items-center gap-1 pt-0.5">
             <button
               onClick={() => void resolveAndDelete(item)}
-              disabled={deleting === item.id}
-              className="flex items-center gap-1 text-[10px] text-slate-700 hover:text-rose-400 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1 text-[10px] text-slate-700 hover:text-rose-400 transition-colors"
             >
               <Trash2 className="w-2.5 h-2.5" />
               Resolve &amp; Delete

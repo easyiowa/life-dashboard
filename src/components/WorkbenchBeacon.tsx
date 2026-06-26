@@ -187,20 +187,24 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
         screenshotUrl = supabase.storage
           .from(SCREENSHOT_BUCKET)
           .getPublicUrl(path).data.publicUrl;
+      } else {
+        console.warn("[WorkbenchBeacon] Screenshot upload failed:", uploadErr.message);
       }
-      // Upload failure is non-fatal — feedback still submits without the image
     }
+
+    console.log("=== FEEDBACK DEBUG ===", {
+      hasFile: !!screenshot,
+      screenshotUrlRaw: screenshotUrl,
+      typeOfUrl: typeof screenshotUrl,
+    });
 
     if (isSupabaseConfigured && supabase) {
       const nickname =
         (user?.user_metadata?.display_name as string | undefined) ?? user?.email ?? null;
-      // screenshot_url column not yet in schema — append URL to message body as fallback
-      const messageBody = screenshotUrl
-        ? `${note.trim()}\n\n[screenshot] ${screenshotUrl}`
-        : note.trim();
       const { error: insertErr } = await supabase.from("workbench_feedback").insert({
-        user_nickname: nickname,
-        message:       messageBody,
+        user_nickname:  nickname,
+        message:        note.trim(),
+        screenshot_url: screenshotUrl,
       });
       if (insertErr) {
         console.error("[WorkbenchBeacon] Insert failed:", insertErr.message);

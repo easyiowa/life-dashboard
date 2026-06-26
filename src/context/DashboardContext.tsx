@@ -1369,10 +1369,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           if (db && task) {
             const alreadyQueued = (task.queuedDate ?? null) === dateString;
             if (alreadyQueued) {
-              db.from("tasks").update({ queued_date: null }).eq("id", id).then(() => {});
+              db.from("tasks").update({ queued_date: null }).eq("id", id).then(({ error }) => {
+                if (error) dispatch({ type: "TOGGLE_TASK_FOR_TODAY", id, dateString, intent: intent ?? "finish", targetMinutes });
+              });
             } else {
               const newTracking = { ...(task.dailyTracking ?? {}), [dateString]: { timeSpentMinutes: 0, intent: "finish", dailyTargetMinutes: null } };
-              db.from("tasks").update({ queued_date: dateString, daily_tracking: newTracking }).eq("id", id).then(() => {});
+              db.from("tasks").update({ queued_date: dateString, daily_tracking: newTracking }).eq("id", id).then(({ error }) => {
+                if (error) dispatch({ type: "TOGGLE_TASK_FOR_TODAY", id, dateString, intent: intent ?? "finish", targetMinutes });
+              });
             }
           }
         },
@@ -1657,7 +1661,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           if (!t) return;
           const newDone = !t.done;
           dispatch({ type: "UPDATE_TASK", id, fields: { done: newDone } });
-          if (db) db.from("tasks").update({ done: newDone }).eq("id", id).then(() => {});
+          if (db) db.from("tasks").update({ done: newDone }).eq("id", id).then(({ error }) => {
+            if (error) dispatch({ type: "UPDATE_TASK", id, fields: { done: !newDone } });
+          });
         },
         deleteTask: (id) => {
           if (stateRef.current.tasks.find(t => t.id === id)?.isSample) {
@@ -1740,7 +1746,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
               sphere_id: getSphereId(sphere),
               project_id: projectId ? getProjectId(projectId, sphere) : null,
               is_important: false,
-            }).then(() => {});
+            }).then(({ error }) => {
+              if (error) dispatch({ type: "DELETE_QUICK_NOTE", id: _id });
+            });
           }
         },
         deleteQuickNote: (id) => {

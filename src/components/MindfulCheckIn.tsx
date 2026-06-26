@@ -170,8 +170,8 @@ export default function MindfulCheckIn() {
 
       {/* Row 1 — Label + trends link + mood pills */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="order-1 md:order-1 text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0 mr-1">
-          How&apos;s your headspace?
+        <span className="order-1 md:order-1 text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0 mr-1" style={{ fontFamily: "var(--font-heading)" }}>
+          HOW ARE YOU TODAY?
         </span>
         <ScrollFadeContainer className="order-3 md:order-2 basis-full md:basis-auto">
           {MOODS.map((m) => (
