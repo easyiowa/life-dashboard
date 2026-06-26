@@ -1,67 +1,7 @@
 {
   "tasks": [
     {
-      "id": "bf08ee3c-833c-41c0-88e2-a4663cd40b39",
-      "sphere": "Startup",
-      "project": "Launch Life Dashboard",
-      "title": "Brainstorm widget checklist layout options",
-      "priority": "Med",
-      "energy": "Flow",
-      "urgency": "not-urgent",
-      "done": true,
-      "deadline": null,
-      "notes": "<div>Keep it super clean:</div><ul><li>☐ Check mobile card spacing</li><li>☐ Test the new uncollapse button logic</li></ul>",
-      "manualMinutes": 0,
-      "queuedDate": "2026-06-26",
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": true
-    },
-    {
-      "id": "6005bfc2-d5d0-4504-853b-a1798dd3ef0d",
-      "sphere": "Startup",
-      "project": "Build MVP, FAST!",
-      "title": "Fix background tab drift tracking loop",
-      "priority": "Med",
-      "energy": "Flow",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "<div>Derive everything from absolute timestamps so timers never fall behind.</div>",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": true
-    },
-    {
-      "id": "19374aba-e8b4-465a-920a-9b5c555f70c5",
-      "sphere": "Startup",
-      "project": "Friends as Testers",
-      "title": "Reach out to 5 local founders in Tallinn for initial feedback",
-      "priority": "Med",
-      "energy": "Flow",
-      "urgency": "not-urgent",
-      "done": false,
-      "deadline": null,
-      "notes": "<div>Ping them casually on LinkedIn or grab a coffee at Telliskivi.</div>",
-      "manualMinutes": 0,
-      "queuedDate": null,
-      "timeSpentMinutes": 0,
-      "intent": "finish",
-      "dailyTargetMinutes": null,
-      "rolloverCount": 0,
-      "dailyTracking": {},
-      "isSample": true
-    },
-    {
-      "id": "b3844a7d-69f6-40e2-8dd8-3b1b2730efd9",
+      "id": "38f2bc3c-8463-4588-ba30-a7da911546e4",
       "sphere": "Home & Family",
       "project": "Family Planning",
       "title": "Coordinate kids school schedules and soccer practices",
@@ -72,7 +12,7 @@
       "deadline": null,
       "notes": "Check calendar alignment for the upcoming term.",
       "manualMinutes": 0,
-      "queuedDate": "2026-06-26",
+      "queuedDate": "2026-06-27",
       "timeSpentMinutes": 0,
       "intent": "finish",
       "dailyTargetMinutes": null,
@@ -81,7 +21,7 @@
       "isSample": true
     },
     {
-      "id": "134efc41-535b-4640-8f19-57c127fb4cc5",
+      "id": "77b8d8b9-cc91-4069-8c74-3ea6aed5b1ec",
       "sphere": "Home & Family",
       "project": "Kitchen Organization",
       "title": "Set up the new modular pantry shelves",
@@ -103,7 +43,7 @@
   ],
   "habits": [
     {
-      "id": "7789a8a8-11ed-44ea-9de9-1cb4d704f6fb",
+      "id": "3e64737e-2700-4a32-9636-f0fda1c16f60",
       "title": "Read bedtime story to the kids",
       "type": "start",
       "routine": "evening",
@@ -116,63 +56,20 @@
         "2026-06-23": true,
         "2026-06-24": true,
         "2026-06-25": true,
-        "2026-06-26": true
-      }
-    },
-    {
-      "id": "9fc7bbb5-4256-441e-be82-6ba893c43b90",
-      "title": "Deep Focus in Blocks",
-      "type": "start",
-      "routine": "day",
-      "frequency": "daily",
-      "targetCount": 2,
-      "emoji": "⭐",
-      "notes": "",
-      "history": {
-        "2026-06-22": true,
-        "2026-06-23": true,
-        "2026-06-24": true,
-        "2026-06-25": true,
-        "2026-06-26": true
-      }
-    },
-    {
-      "id": "c696e1b6-a268-4715-82a2-4acf2a6d1293",
-      "title": "Call it a day RECAP",
-      "type": "start",
-      "routine": "evening",
-      "frequency": "daily",
-      "targetCount": 1,
-      "emoji": "⭐",
-      "notes": "",
-      "history": {
-        "2026-06-25": true,
-        "2026-06-26": true
-      }
-    },
-    {
-      "id": "6d54a8dd-0984-4016-9b72-78b4033d7caa",
-      "title": "Plan the day",
-      "type": "start",
-      "routine": "morning",
-      "frequency": "daily",
-      "targetCount": 1,
-      "emoji": "⭐",
-      "notes": "",
-      "history": {
-        "2026-06-26": true
+        "2026-06-26": true,
+        "2026-06-27": true
       }
     }
   ],
   "projects": [
     {
-      "id": "7685486d-fc95-4b7e-b13b-88180724262d",
+      "id": "2188aae8-9994-4fac-96d2-b73f0b843750",
       "sphere": "Home & Family",
       "name": "Family Planning",
       "emoji": "📅",
       "tagIds": [
-        "3a2d947d-5e77-4127-831f-d8099bd61c80",
-        "e59c4748-e60c-4641-9612-2ea45f0df4c9"
+        "375076ab-a427-4186-a7d4-d2834df70f85",
+        "ee0c9504-8959-4d8f-9d92-b79dcf50a750"
       ],
       "status": "on-track",
       "milestone": "",
@@ -180,54 +77,12 @@
       "isSample": true
     },
     {
-      "id": "73f2c793-f7a0-4391-b094-f5a0c4bbddb4",
+      "id": "8888e86a-1371-405b-8c24-0b09e6eea1d8",
       "sphere": "Home & Family",
       "name": "Kitchen Organization",
       "emoji": "🏡",
       "tagIds": [
-        "d874c4a4-63c2-4d2a-9940-7fdbdb6f694a"
-      ],
-      "status": "on-track",
-      "milestone": "",
-      "sortOrder": 0,
-      "isSample": true
-    },
-    {
-      "id": "4082bf08-28b8-4764-afe1-3fd6c9b61733",
-      "sphere": "Startup",
-      "name": "Launch Life Dashboard",
-      "emoji": "🔮",
-      "tagIds": [
-        "8eb083b8-94e0-4ca7-b79a-f668bcd1dc96",
-        "f47e95e7-b5fc-4a9a-9724-db4220703048"
-      ],
-      "status": "on-track",
-      "milestone": "",
-      "sortOrder": 0,
-      "isSample": true
-    },
-    {
-      "id": "c97fa6b9-ebfe-409d-ac37-7b0241b9ddcc",
-      "sphere": "Startup",
-      "name": "Build MVP, FAST!",
-      "emoji": "🚀",
-      "tagIds": [
-        "2b0833ab-1f5d-4170-9f9a-a58b353ba562",
-        "6d748963-126f-42e1-bcab-9130d1f5064f"
-      ],
-      "status": "on-track",
-      "milestone": "",
-      "sortOrder": 0,
-      "isSample": true
-    },
-    {
-      "id": "7e9e2731-f96d-41a6-912d-89c602401ae1",
-      "sphere": "Startup",
-      "name": "Friends as Testers",
-      "emoji": "📣",
-      "tagIds": [
-        "2e5f52b3-d400-42b7-b29a-dba6301e5157",
-        "a135c499-421b-4056-b886-e20299c8c0d6"
+        "ab4c71a8-6633-4ec4-a9ea-de818cc80752"
       ],
       "status": "on-track",
       "milestone": "",
@@ -237,73 +92,25 @@
   ],
   "spheres": [
     {
-      "id": "f8c8e8f1-32c3-468a-be4d-cd3a52664d5a",
+      "id": "88c83fe8-c0f8-4fa6-86ef-99e25416e75e",
       "name": "Home & Family",
       "labelColor": "amber"
-    },
-    {
-      "id": "dadb1dd9-32f0-447a-935e-26fa1bc7cde1",
-      "name": "Startup",
-      "labelColor": "sky"
     }
   ],
   "recurringTasks": [
     {
-      "id": "3fbca79a-92ea-434f-bb35-980a98faa890",
+      "id": "970e37fb-94f8-4bb6-beea-3e6401425436",
       "title": "Plan out the weekly family dinner menu and grocery run",
       "notes": "",
       "intervalDays": 7,
       "intervalLabel": "Every Sunday",
+      "startDate": "2026-06-26",
       "sphere": "Home & Family",
-      "lastDoneDate": null,
-      "completionCount": 0,
-      "history": []
-    },
-    {
-      "id": "5d0fc1f5-c249-48b2-b405-c42e257a2a57",
-      "title": "Review weekly user feedback & growth",
-      "notes": "",
-      "intervalDays": 7,
-      "intervalLabel": "Every Sunday",
-      "sphere": "Startup",
-      "lastDoneDate": null,
-      "completionCount": 0,
-      "history": []
-    },
-    {
-      "id": "ac618bd4-5aa4-4abf-93e0-233e8f439ead",
-      "title": "Pay Invoices",
-      "notes": "",
-      "intervalDays": 30,
-      "intervalLabel": "Monthly, every 3rd",
-      "sphere": "Startup",
       "lastDoneDate": null,
       "completionCount": 0,
       "history": []
     }
   ],
-  "quickNotes": [
-    {
-      "id": "6a6f8328-f3b3-4b66-847c-47c722e7b96f",
-      "text": "Remember to book dinner tables in Old Town for the team sync next week",
-      "sphere": "Startup",
-      "createdAt": "2026-06-26 14:20",
-      "isImportant": false
-    },
-    {
-      "id": "e5544e4f-1e90-42d8-938f-554d74effc54",
-      "text": "Idea: marketplace for custom skins, users can make their dashboard cozy",
-      "sphere": "Startup",
-      "createdAt": "2026-06-26 09:41",
-      "isImportant": true
-    },
-    {
-      "id": "e47aef2c-4fb6-4bc5-ae98-dd1bcd2cbc05",
-      "text": "Remember to re-order the kids multivitamin gummies",
-      "sphere": "Home & Family",
-      "createdAt": "2026-06-26 09:30",
-      "isImportant": true
-    }
-  ],
+  "quickNotes": [],
   "currentTrackingDate": "2026-06-26"
 }

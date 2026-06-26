@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { useDashboard, type Habit } from "@/context/DashboardContext";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 interface Props {
   open: boolean;
@@ -91,6 +92,7 @@ const ROUTINE_OPTIONS: { value: NonNullable<Habit["routine"]>; label: string }[]
 
 export default function HabitModal({ open, onClose }: Props) {
   const { addHabit } = useDashboard();
+  useModalOverlay(open);
 
   const [title,       setTitle]       = useState("");
   const [type,        setType]        = useState<Habit["type"]>("start");

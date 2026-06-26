@@ -496,8 +496,8 @@ export default function ProjectsCard() {
                           +{project.allTagObjs.length - 1}
                         </span>
                         {/* Hover tooltip listing the hidden tags */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/overflow:flex flex-col gap-1 bg-[#0d1426] border border-white/[0.14] rounded-xl px-3 py-2.5 shadow-2xl z-[60] min-w-max pointer-events-none">
-                          <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-widest mb-0.5">More tags</p>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/overflow:flex flex-col gap-1 bg-white dark:bg-[#0d1426] border border-black/[0.10] dark:border-white/[0.14] rounded-xl px-3 py-2.5 shadow-2xl z-[60] min-w-max pointer-events-none">
+                          <p className="text-[9px] font-semibold text-slate-600 dark:text-slate-500 uppercase tracking-widest mb-0.5">More tags</p>
                           {project.allTagObjs.slice(1).map((tag) => (
                             <span
                               key={tag.id}
@@ -538,12 +538,12 @@ export default function ProjectsCard() {
                         <span>{project.taskDone}/{project.taskTotal} tasks</span>
                       </div>
                       {project.projectSessionCount > 0 && (
-                        <>
+                        <span className="hidden md:contents">
                           <span className="text-slate-700 text-[10px]">·</span>
                           <span className="text-[10px] text-slate-500 font-mono tabular-nums">
                             {project.projectSessionCount} session{project.projectSessionCount !== 1 ? "s" : ""} · {fmtDuration(project.projectLoggedSecs)}
                           </span>
-                        </>
+                        </span>
                       )}
                       {openTasks > 0 && (
                         <span className="hidden md:contents">

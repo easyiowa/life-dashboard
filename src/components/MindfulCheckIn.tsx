@@ -6,6 +6,7 @@ import { useDashboard, type DailyCheckIn } from "@/context/DashboardContext";
 import MindsetTrendsModal from "@/components/MindsetTrendsModal";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 import ScrollFadeContainer from "@/components/ui/ScrollFadeContainer";
+import { useTheme } from "@/context/ThemeContext";
 
 // ── Mood definitions ──────────────────────────────────────────────────────────
 
@@ -46,7 +47,6 @@ const MOODS = [
 
 type MoodKey = typeof MOODS[number]["key"];
 
-const TAG_PILL_ACTIVE   = "bg-white/[0.10] border-white/[0.25] text-white";
 const TAG_PILL_INACTIVE = "bg-white/[0.03] border-white/[0.08] text-slate-400 hover:bg-white/[0.07] hover:text-slate-200";
 
 function getPlaceholder(moodKey: MoodKey | null, activeTags: string[]): string {
@@ -71,6 +71,10 @@ function buildSummary(mood: string, tags: string[], note: string): string {
 
 export default function MindfulCheckIn() {
   const { currentTrackingDate, dailyCheckIn, saveDailyCheckIn } = useDashboard();
+  const { mode } = useTheme();
+  const TAG_PILL_ACTIVE = mode === "light"
+    ? "bg-orange-500/[0.10] border-orange-400/40 text-orange-900"
+    : "bg-white/[0.10] border-white/[0.25] text-white";
 
   // If a saved check-in exists for today, start in summary mode
   const existingToday = dailyCheckIn?.date === currentTrackingDate ? dailyCheckIn : null;
@@ -80,6 +84,7 @@ export default function MindfulCheckIn() {
   const [note,        setNote]        = useState(existingToday?.note ?? "");
   const [saved,       setSaved]       = useState(!!existingToday);
   const [showTrends,  setShowTrends]  = useState(false);
+  const [noteFocused, setNoteFocused] = useState(false);
 
   // Keep form in sync if context changes (e.g. after day lock or async DB load)
   useEffect(() => {
@@ -224,20 +229,24 @@ export default function MindfulCheckIn() {
         <AutoExpandingTextarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
+          onFocus={() => setNoteFocused(true)}
+          onBlur={() => setNoteFocused(false)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSave(); } }}
           placeholder={placeholder}
           minRows={1}
           maxHeightVariant="widget"
           className="w-full md:w-auto md:flex-1 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50 transition-colors"
         />
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!activeMood}
-          className="w-full md:w-auto px-4 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-white font-medium transition-all md:flex-shrink-0"
-        >
-          Save Check-In
-        </button>
+        {(noteFocused || note.trim().length > 0 || activeMood !== null || activeTags.length > 0) && (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!activeMood}
+            className="w-full md:w-auto px-4 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-white font-medium transition-all md:flex-shrink-0"
+          >
+            Save Check-In
+          </button>
+        )}
       </div>
 
     </div>

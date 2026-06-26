@@ -7,6 +7,7 @@ import AuthGate from "@/components/AuthGate";
 import PasscodeLock from "@/components/PasscodeLock";
 import { DashboardProvider } from "@/context/DashboardContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { PWAInstallerProvider } from "@/context/PWAInstallerContext";
 
 const THEME_FOUC_SCRIPT = `
 (function() {
@@ -76,7 +77,9 @@ export default function RootLayout({
           <AuthProvider>
             <AuthGate>
               <PasscodeLock>
-                <DashboardProvider>{children}</DashboardProvider>
+                <DashboardProvider>
+                    <PWAInstallerProvider>{children}</PWAInstallerProvider>
+                  </DashboardProvider>
               </PasscodeLock>
             </AuthGate>
           </AuthProvider>

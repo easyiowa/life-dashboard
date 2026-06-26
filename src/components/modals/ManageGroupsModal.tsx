@@ -17,6 +17,7 @@ import {
   type GroupColor,
 } from "@/context/DashboardContext";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 // ── Color helpers ─────────────────────────────────────────────────────────────
 
@@ -127,9 +128,9 @@ function SortableGroupRow({
         </div>
 
         {/* Color + actions */}
-        <div className="flex items-center justify-between pl-12">
+        <div className="flex flex-wrap items-center justify-between gap-2 pl-7">
           <ColorSwatches value={editColor} onChange={setEditColor} />
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0 ml-auto">
             <button
               type="button"
               onClick={onCancelEdit}
@@ -209,6 +210,7 @@ interface Props {
 }
 
 export default function ManageGroupsModal({ isOpen, onClose }: Props) {
+  useModalOverlay(isOpen);
   const {
     relationshipGroups,
     addRelationshipGroup,

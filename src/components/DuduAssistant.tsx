@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useDashboard } from "@/context/DashboardContext";
+import { usePWAInstaller } from "@/hooks/usePWAInstaller";
 import { supabase } from "@/lib/supabase";
 
 // ── Dudu the otter — ambient onboarding assistant ───────────────────────────
@@ -38,6 +39,7 @@ const BUBBLE_CLOSE_MS = 200; // matches dudu-fade-slide-out's duration in global
 export default function DuduAssistant({ onOpenBlueprint }: Props) {
   const { user } = useAuth();
   const { sampleDeleteCount, deleteAllSampleData, hasDraggedOnce } = useDashboard();
+  const { pwaPromptReady, clearPwaPrompt, dismissPwaPrompt, openInstallModal } = usePWAInstaller();
 
   const userId = user?.id;
   const displayName = (user?.user_metadata?.display_name as string | undefined)?.trim() || "there";
@@ -140,7 +142,7 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
     const handler = () => {
       showMessage({
         triggerKey: "welcome_msg",
-        text: `Hey ${displayName}, nice to see u here! I'm Dudu, your otter assistant! From time to time I'll help you out with things. Look around!`,
+        text: `Hi ${displayName}, I'm Dudu, your otter friend! I’ll pop up with helpful tips from time to time. Look around!`,
         buttons: [
           { label: "Nice to meet you!", onClick: () => resolveTrigger("welcome_msg", "dismissed_welcome") },
         ],
@@ -160,7 +162,7 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
     rearrangeTipShownRef.current = true;
     showMessage({
       triggerKey: "rearrange_tip",
-      text: "Dudu here! Here's my first tip, you can reposition the widgets as you like.",
+      text: "Here's my first tip! You can reposition widgets any way you like.",
       buttons: [
         {
           label: "Rearrange Widgets",
@@ -199,7 +201,7 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
     sampleTriggerFiredRef.current = true;
     showMessage({
       triggerKey: "sample_cleanup",
-      text: "I see you started to delete our samples, i can help you delete all of them in one click!",
+      text: "I noticed you’re clearing things out. Want me to delete all samples in one click?",
       buttons: [
         {
           label: "Delete all samples",
@@ -214,6 +216,35 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
     });
   }, [sampleDeleteCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Trigger 4: PWA install nudge — fires when the interaction milestone is reached ──
+  // Dismissed via localStorage only (not Supabase) — no persistDismissal call.
+  useEffect(() => {
+    if (!pwaPromptReady || bubbleOpen) return;
+    showMessage({
+      triggerKey: "pwa_install",
+      text: "Btw, you don't have to keep using your browser. Here is a faster way.",
+      buttons: [
+        {
+          label: "Add to Home Screen",
+          onClick: () => {
+            logMetric("pwa_install", "clicked_install");
+            clearPwaPrompt();
+            closeBubble();
+            openInstallModal();
+          },
+        },
+        {
+          label: "Maybe later",
+          onClick: () => {
+            logMetric("pwa_install", "dismissed_pwa");
+            dismissPwaPrompt();
+            closeBubble();
+          },
+        },
+      ],
+    });
+  }, [pwaPromptReady]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Collapse the entire component (avatar + bubble) once every one-shot
   // trigger has been dismissed and no bubble is currently active.
   // welcome_msg / rearrange_tip both call persistDismissal so they enter
@@ -223,7 +254,8 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
     bubbleOpen ||
     !dismissedLoaded ||
     !dismissed.has("welcome_msg") ||
-    !dismissed.has("rearrange_tip");
+    !dismissed.has("rearrange_tip") ||
+    pwaPromptReady;
 
   if (!hasAnythingToShow) return null;
 

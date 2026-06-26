@@ -12,6 +12,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useDashboard, type Sphere } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 // ── Color palette ─────────────────────────────────────────────────────────────
 // Swatch-picker dot colors only — the row's own background tint comes from areaColor()
@@ -99,7 +100,7 @@ function SortableAreaRow({ sphere, canDelete }: { sphere: Sphere; canDelete: boo
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="flex-1 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors"
+            className="flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 transition-colors"
           />
           {/* Save */}
           {isDirty && (
@@ -149,6 +150,7 @@ interface Props {
 }
 
 export default function ManageAreasModal({ isOpen, onClose }: Props) {
+  useModalOverlay(isOpen);
   const { spheres, addSphere, reorderSpheres } = useDashboard();
 
   const [newName,  setNewName]  = useState("");
@@ -194,7 +196,7 @@ export default function ManageAreasModal({ isOpen, onClose }: Props) {
           </button>
         </div>
 
-        <div className="p-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto overflow-x-hidden">
 
           {/* Sortable area list */}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { useDashboard, type CalendarJump, type RecurringTask } from "@/context/DashboardContext";
 import { areaColor, type AreaColorSet } from "@/lib/areaColors";
 import { computeCountdown } from "@/components/widgets/RecurringCard";
+import RecurringResponsibilityModal from "@/components/RecurringResponsibilityModal";
 
 interface Event {
   time: string;
@@ -75,6 +76,7 @@ export default function CalendarCard() {
   const [monthOffset,  setMonthOffset]  = useState(0);
   const [calendarView, setCalendarView] = useState<"week" | "month">("week");
   const { tasks, networkContacts, spheres, relationshipGroups, recurringTasks, setCalendarJump } = useDashboard();
+  const [selectedRecurring, setSelectedRecurring] = useState<RecurringTask | null>(null);
 
   // ── Mobile-only state ─────────────────────────────────────────────────────────
   const [mobileActiveDate, setMobileActiveDate] = useState(() => {
@@ -83,13 +85,13 @@ export default function CalendarCard() {
     return d;
   });
   const [mobileDayCount,   setMobileDayCount]   = useState<1 | 2 | 3>(() => {
-    if (typeof window === "undefined") return 1;
+    if (typeof window === "undefined") return 3;
     try {
       const saved = localStorage.getItem("dashboard_calendar_view_index");
       const idx = saved !== null ? Number(saved) : NaN;
       if (idx >= 0 && idx <= 2) return (idx + 1) as 1 | 2 | 3;
     } catch { /* */ }
-    return 1;
+    return 3;
   });
   const [monthPickerOpen,  setMonthPickerOpen]  = useState(false);
   const [pickerMonthDate,  setPickerMonthDate]  = useState(() => new Date());
@@ -280,6 +282,7 @@ export default function CalendarCard() {
         {recurringItems.map((rt) => (
           <button
             key={`rt-${rt.id}`}
+            onClick={() => setSelectedRecurring(rt)}
             className={`rounded px-1.5 py-1 text-[9px] font-medium leading-tight text-left w-full cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${weekChip(getSphereAc(rt.sphere))}`}
             title={rt.title}
           >
@@ -311,6 +314,7 @@ export default function CalendarCard() {
   }
 
   return (
+    <>
     <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col gap-4">
 
       {/* Header */}
@@ -463,7 +467,7 @@ export default function CalendarCard() {
             <span
               key={i}
               className={`h-1.5 rounded-full transition-all duration-200 ${
-                mobileCarouselIndex === i ? "w-4 bg-violet-400" : "w-1.5 bg-white/20"
+                mobileCarouselIndex === i ? "w-4 bg-[#f35600] dark:bg-violet-400" : "w-1.5 bg-slate-300 dark:bg-white/20"
               }`}
             />
           ))}
@@ -508,7 +512,7 @@ export default function CalendarCard() {
               const contactEvts    = contactEventMap.get(dayKey) ?? [];
               const recurringItems = recurringDateMap.get(dayKey) ?? [];
 
-              type EventBadge = { key: string; label: string; cls: string; jump: CalendarJump | null };
+              type EventBadge = { key: string; label: string; cls: string; jump: CalendarJump | null; rt?: RecurringTask };
               const badges: EventBadge[] = [
                 ...birthdays.map(({ name, contactId }) => ({
                   key: `bday-${contactId}`,
@@ -527,6 +531,7 @@ export default function CalendarCard() {
                   label: `♻️ ${rt.title}`,
                   cls: monthChip(getSphereAc(rt.sphere)),
                   jump: null,
+                  rt,
                 })),
                 ...deadlines.map((t) => ({
                   key: `dl-${t.id}`,
@@ -556,7 +561,10 @@ export default function CalendarCard() {
                   {visibleBadges.map((b) => (
                     <button
                       key={b.key}
-                      onClick={() => b.jump && setCalendarJump(b.jump)}
+                      onClick={() => {
+                        if (b.rt) setSelectedRecurring(b.rt);
+                        else if (b.jump) setCalendarJump(b.jump);
+                      }}
                       className={`w-full text-[10px] truncate px-1.5 py-0.5 mb-0.5 rounded font-medium text-left border cursor-pointer hover:brightness-125 hover:scale-[1.01] transition-all ${b.cls}`}
                     >
                       {b.label}
@@ -575,5 +583,13 @@ export default function CalendarCard() {
       </div>
 
     </div>
+
+    {selectedRecurring && (
+      <RecurringResponsibilityModal
+        task={selectedRecurring}
+        onClose={() => setSelectedRecurring(null)}
+      />
+    )}
+    </>
   );
 }

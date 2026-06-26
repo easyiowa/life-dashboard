@@ -516,7 +516,7 @@ function ContactRow({
       </button>
 
       {/* Name */}
-      <span className="flex-1 text-sm font-medium text-slate-200 leading-none truncate min-w-0">
+      <span className="flex-1 text-sm font-medium text-slate-200 leading-snug pb-0.5 truncate min-w-0">
         {contact.name}
       </span>
 
@@ -564,7 +564,7 @@ function ContactRow({
           </button>
 
           {hasNotes && (
-            <div className="absolute right-0 bottom-full mb-2 w-60 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
+            <div className="absolute right-0 bottom-full mb-2 w-60 z-[100] pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
               <div className="bg-[#0c1120] border border-white/[0.10] rounded-xl shadow-2xl p-3 flex flex-col gap-2.5">
                 {contact.notes && (
                   <div className="flex flex-col gap-1">

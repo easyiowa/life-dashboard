@@ -234,7 +234,7 @@ export default function TimeTrackerCard() {
         {running ? (
           <button
             onClick={pauseSession}
-            className="flex items-center gap-2 px-5 h-10 rounded-full bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-all duration-150 shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+            className="flex items-center gap-2 px-5 h-10 rounded-full bg-[#f35600] hover:bg-orange-600 dark:bg-violet-600 dark:hover:bg-violet-500 text-[#ffffff] text-sm font-medium transition-all duration-150 shadow-[0_0_20px_rgba(243,86,0,0.4)] dark:shadow-[0_0_20px_rgba(124,58,237,0.4)]"
           >
             <Pause className="w-4 h-4" />
             Pause

@@ -5,6 +5,7 @@ import { X, Trash2 } from "lucide-react";
 import { useDashboard, type Habit } from "@/context/DashboardContext";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 interface Props {
   habit: Habit | null;
@@ -64,6 +65,7 @@ const FREQ_OPTIONS: { value: Habit["frequency"]; label: string }[] = [
 
 export default function HabitEditModal({ habit, onClose }: Props) {
   const { updateHabit, deleteHabit } = useDashboard();
+  useModalOverlay(!!habit);
 
   const [title,       setTitle]       = useState("");
   const [type,        setType]        = useState<Habit["type"]>("start");

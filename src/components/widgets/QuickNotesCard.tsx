@@ -610,7 +610,6 @@ export default function QuickNotesCard() {
     spheres, projects, quickNotes,
     addQuickNote, deleteQuickNote, toggleQuickNoteImportant, updateQuickNoteText,
   } = useDashboard();
-
   // Persisted sphere ordering — saved to localStorage so custom order survives refresh
   const [sphereOrder, setSphereOrder] = useState<string[]>(() => {
     try {
@@ -644,7 +643,8 @@ export default function QuickNotesCard() {
   const [showAllNotesModal, setShowAllNotesModal] = useState(false);
   const [showManageAreas,   setShowManageAreas]   = useState(false);
   const [isExpandedToday,   setIsExpandedToday]   = useState(false);
-  const editorRef = useRef<ChecklistEditorHandle>(null);
+  const editorRef     = useRef<ChecklistEditorHandle>(null);
+  const [editorFocused, setEditorFocused] = useState(false);
 
   // Set while editing an existing note loaded back into the composer above — submitNote()
   // updates this record instead of creating a new one while it's non-null.
@@ -784,7 +784,7 @@ export default function QuickNotesCard() {
         onClose={() => setShowManageAreas(false)}
       />
 
-      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col h-full md:min-h-[340px]">
+      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-5 flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between flex-shrink-0">
@@ -849,24 +849,29 @@ export default function QuickNotesCard() {
           <p className="mt-4 text-[11px] text-slate-600 flex-shrink-0">Select an area above to add a note.</p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4 flex-shrink-0">
-            <ChecklistEditor
-              // Remounts (and re-seeds defaultValue) whenever the edit target changes — the
-              // form/editor often stays mounted across that transition (e.g. editing a note
-              // that's already in the active sphere), so a key is the only reliable way to
-              // load fresh content into what may already be a live, focused instance.
-              key={editingNoteId ?? "composer"}
-              ref={editorRef}
-              defaultValue={text}
-              // Edit-click sets editingNoteId, which both forces this remount (above) and
-              // flips autoFocus on — ChecklistEditor's own mount effect then focuses and locks
-              // the caret to the end of the freshly-seeded note text in one step.
-              autoFocus={!!editingNoteId}
-              onChange={setText}
-              onSubmitShortcut={submitNote}
-              placeholder="Capture an idea before it slips away…"
-              maxHeightVariant="widget"
-              className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] transition-colors"
-            />
+            <div
+              onFocus={() => setEditorFocused(true)}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setEditorFocused(false); }}
+            >
+              <ChecklistEditor
+                // Remounts (and re-seeds defaultValue) whenever the edit target changes — the
+                // form/editor often stays mounted across that transition (e.g. editing a note
+                // that's already in the active sphere), so a key is the only reliable way to
+                // load fresh content into what may already be a live, focused instance.
+                key={editingNoteId ?? "composer"}
+                ref={editorRef}
+                defaultValue={text}
+                // Edit-click sets editingNoteId, which both forces this remount (above) and
+                // flips autoFocus on — ChecklistEditor's own mount effect then focuses and locks
+                // the caret to the end of the freshly-seeded note text in one step.
+                autoFocus={!!editingNoteId}
+                onChange={setText}
+                onSubmitShortcut={submitNote}
+                placeholder="Capture an idea before it slips away…"
+                maxHeightVariant="widget"
+                className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] transition-colors"
+              />
+            </div>
             {editingNoteId && (
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-medium text-violet-400/80">Editing note…</span>
@@ -884,42 +889,42 @@ export default function QuickNotesCard() {
                 </button>
               </div>
             )}
-            <div className="flex w-full items-center gap-2">
-              <select
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className="hidden md:flex flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-400 outline-none focus:border-purple-500/40 transition-colors appearance-none cursor-pointer"
-              >
-                <option value="" className="bg-[#0F1629]">No project</option>
-                {sphereProjects.map((p) => (
-                  <option key={p.id} value={p.name} className="bg-[#0F1629]">{p.name}</option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                disabled={!stripHtml(text).trim()}
-                // Without this, mousedown blurs the still-focused editor, its toolbar
-                // unmounts mid-click, the layout shifts up underneath the pointer, and the
-                // browser's click lands somewhere other than this button — requiring a
-                // second, now-accurate click. Keeping focus in the editor avoids the shift.
-                onMouseDown={(e) => e.preventDefault()}
-                className="w-full md:w-auto px-4 h-8 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-medium transition-all flex-shrink-0"
-              >
-                {editingNoteId ? "Update" : "Save"}
-              </button>
-            </div>
-            <p className="hidden md:block text-[10px] text-slate-700">⌘ + Enter to save quickly</p>
+            {(editorFocused || !!stripHtml(text).trim() || !!editingNoteId) && (
+              <>
+                <div className="flex w-full items-center gap-2">
+                  <select
+                    value={projectId}
+                    onChange={(e) => setProjectId(e.target.value)}
+                    className="hidden md:flex flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-400 outline-none focus:border-purple-500/40 transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-[#0F1629]">No project</option>
+                    {sphereProjects.map((p) => (
+                      <option key={p.id} value={p.name} className="bg-[#0F1629]">{p.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={!stripHtml(text).trim()}
+                    // Without this, mousedown blurs the still-focused editor, its toolbar
+                    // unmounts mid-click, the layout shifts up underneath the pointer, and the
+                    // browser's click lands somewhere other than this button — requiring a
+                    // second, now-accurate click. Keeping focus in the editor avoids the shift.
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="w-full md:w-auto px-4 h-8 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-medium transition-all flex-shrink-0"
+                  >
+                    {editingNoteId ? "Update" : "Save"}
+                  </button>
+                </div>
+                <p className="hidden md:block text-[10px] text-slate-700">⌘ + Enter to save quickly</p>
+              </>
+            )}
           </form>
         )}
 
         {/* Notes feed — collapsed to just the most recent note once today's list grows past
             one, so a high-activity day doesn't push the whole widget into a long scroll. */}
-        <div className="md:flex-1 overflow-y-auto mt-3 flex flex-col gap-1.5 pr-1 min-h-0">
-          {todayNotes.length === 0 ? (
-            <p className="hidden md:block text-xs text-slate-700 text-center py-4">
-              {isAll ? "No notes today across any area." : `No notes today for ${activeSphere}.`}
-            </p>
-          ) : (
+        {todayNotes.length > 0 && (
+        <div className="overflow-y-auto mt-3 flex flex-col gap-1.5 pr-1">
             <>
               {visibleTodayNotes.map((note) => (
                 <NoteRow
@@ -944,8 +949,8 @@ export default function QuickNotesCard() {
                 </button>
               )}
             </>
-          )}
         </div>
+        )}
 
       </div>
     </>

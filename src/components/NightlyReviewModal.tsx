@@ -5,6 +5,7 @@ import { X, Check, CheckCircle2, Flame, Clock, AlertTriangle, Rocket, TrendingUp
 import { useDashboard, type Task, type TaskArchiveMeta, type MindStateClosure, type NetworkContact, type RecurringTask } from "@/context/DashboardContext";
 import { computeCountdown } from "@/components/widgets/RecurringCard";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 // ── Velocity helpers ──────────────────────────────────────────────────────────
 
@@ -253,6 +254,7 @@ export default function NightlyReviewModal() {
     currentTrackingDate, showNightlyReview,
     dismissNightlyReview, lockDay, dailyCheckIn,
   } = useDashboard();
+  useModalOverlay(showNightlyReview); // hook before any conditional return
 
   const [endDelta,      setEndDelta]      = useState<"better" | "same" | "worse" | null>(null);
   const [closureNote,   setClosureNote]   = useState("");
@@ -396,8 +398,8 @@ export default function NightlyReviewModal() {
           {/* Retroactive recovery notice */}
           {isRetroactive && (
             <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/20">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
-              <p className="text-[11px] text-amber-300/80 leading-relaxed">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-amber-900 dark:text-amber-300/80 leading-relaxed">
                 Hey, yesterday&apos;s day wasn&apos;t wrapped up properly, so here is your chance to wrap it up as usual and record your evening state!
               </p>
             </div>

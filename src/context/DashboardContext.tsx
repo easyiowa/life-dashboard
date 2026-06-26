@@ -1210,6 +1210,12 @@ interface DashboardContextType {
   taskModalOpen: boolean;
   openTaskModal: () => void;
   closeTaskModal: () => void;
+  settingsOpen: boolean;
+  openSettings: () => void;
+  closeSettings: () => void;
+  anyOverlayOpen: boolean;
+  pushOverlay: () => void;
+  popOverlay: () => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | null>(null);
@@ -1219,7 +1225,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured);
   const [calendarJump, setCalendarJump] = useState<CalendarJump | null>(null);
-  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [taskModalOpen,  setTaskModalOpen]  = useState(false);
+  const [settingsOpen,   setSettingsOpen]   = useState(false);
+  const overlayCountRef = useRef(0);
+  const [anyOverlayOpen, setAnyOverlayOpen] = useState(false);
   // Counts deletions of sample (onboarding-seeded) tasks/projects this session — DuduAssistant
   // watches this to offer a one-click "delete all samples" once the user starts cleaning up.
   const [sampleDeleteCount, setSampleDeleteCount] = useState(0);
@@ -1965,6 +1974,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         taskModalOpen,
         openTaskModal:  () => setTaskModalOpen(true),
         closeTaskModal: () => setTaskModalOpen(false),
+        settingsOpen,
+        openSettings:  () => setSettingsOpen(true),
+        closeSettings: () => setSettingsOpen(false),
+        anyOverlayOpen,
+        pushOverlay: () => {
+          overlayCountRef.current += 1;
+          setAnyOverlayOpen(true);
+        },
+        popOverlay: () => {
+          overlayCountRef.current = Math.max(0, overlayCountRef.current - 1);
+          if (overlayCountRef.current === 0) setAnyOverlayOpen(false);
+        },
       }}
     >
       {children}

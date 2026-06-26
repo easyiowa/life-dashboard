@@ -619,7 +619,7 @@ export default function ProgressCard() {
               <span
                 key={i}
                 className={`h-1.5 rounded-full transition-all duration-200 ${
-                  mobileActiveIndex === i ? "w-4 bg-violet-400" : "w-1.5 bg-white/20"
+                  mobileActiveIndex === i ? "w-4 bg-[#f35600] dark:bg-violet-400" : "w-1.5 bg-slate-300 dark:bg-white/20"
                 }`}
               />
             ))}

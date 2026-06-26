@@ -5,6 +5,7 @@ import { X, RefreshCw } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 import DatePickerInput from "@/components/ui/DatePickerInput";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 interface Props {
   isOpen: boolean;
@@ -26,6 +27,7 @@ function todayISO(): string {
 
 export default function AddRecurringTaskModal({ isOpen, onClose }: Props) {
   const { addRecurringTask, spheres } = useDashboard();
+  useModalOverlay(isOpen);
 
   const [title,         setTitle]         = useState("");
   const [notes,         setNotes]         = useState("");

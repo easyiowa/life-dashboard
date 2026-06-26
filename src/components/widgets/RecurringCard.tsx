@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { RefreshCw, CheckCircle2, Trash2, Plus, AlertTriangle, MoreVertical } from "lucide-react";
 import { useDashboard, type RecurringTask } from "@/context/DashboardContext";
 import RecurringResponsibilityModal from "@/components/RecurringResponsibilityModal";
@@ -296,11 +296,25 @@ function RecurringRow({
 export default function RecurringCard() {
   const { recurringTasks, deleteRecurringTask, spheres } = useDashboard();
 
+  const hasUserChosen     = useRef(false);
   const [activeSphereId,  setActiveSphereId]  = useState<string>(() => spheres[0]?.id ?? "");
   const [isAddModalOpen,  setIsAddModalOpen]  = useState(false);
   const [inspectTask,     setInspectTask]     = useState<RecurringTask | null>(null);
   const [deleteTarget,    setDeleteTarget]    = useState<RecurringTask | null>(null);
   const [showManageAreas, setShowManageAreas] = useState(false);
+
+  // Auto-select "Now" on mount/data-arrival when there are overdue tasks.
+  // The hasUserChosen guard prevents this effect from overriding a tab the user
+  // has explicitly picked after the initial auto-selection fires.
+  useEffect(() => {
+    if (hasUserChosen.current) return;
+    const hasOverdue = recurringTasks.some((r) => computeCountdown(r).urgency === "overdue");
+    if (hasOverdue) {
+      setActiveSphereId(NOW_FILTER);
+    } else if (!activeSphereId && spheres.length > 0) {
+      setActiveSphereId(spheres[0].id);
+    }
+  }, [recurringTasks, spheres]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isNowFilter     = activeSphereId === NOW_FILTER;
   const activeSphereObj = isNowFilter ? undefined : (spheres.find((s) => s.id === activeSphereId) ?? spheres[0]);
@@ -391,7 +405,7 @@ export default function RecurringCard() {
           {/* Global overdue/due-now quick filter */}
           {nowCount > 0 && (
             <button
-              onClick={() => setActiveSphereId(NOW_FILTER)}
+              onClick={() => { hasUserChosen.current = true; setActiveSphereId(NOW_FILTER); }}
               className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
                 isNowFilter
                   ? "bg-red-500/20 border-red-500/50 text-red-300 md:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
@@ -409,7 +423,7 @@ export default function RecurringCard() {
             return (
               <button
                 key={sphere.id}
-                onClick={() => setActiveSphereId(sphere.id)}
+                onClick={() => { hasUserChosen.current = true; setActiveSphereId(sphere.id); }}
                 className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-all duration-150 ${
                   activeSphereObj?.id === sphere.id ? pill.pillActive : pill.pillInactive
                 }`}

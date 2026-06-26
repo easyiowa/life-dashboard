@@ -15,6 +15,7 @@ import {
   type Urgency,
 } from "@/context/DashboardContext";
 import { INTENT_OPTIONS, INTENT_ACTIVE } from "@/components/widgets/DailyFocusQueueCard";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 interface Props {
   task: Task | null;
@@ -72,6 +73,7 @@ function formatMinutes(m: number): string {
 
 export default function TaskInspectModal({ task, onClose }: Props) {
   const { spheres, projects, sessions, updateTask, currentTrackingDate, updateTaskDaily, tasks } = useDashboard();
+  useModalOverlay(!!task);
   const [form, setForm]               = useState<Task | null>(null);
   const [rawManualMins, setRawManualMins] = useState<string>("0");
   const [showSettings, setShowSettings]   = useState(false);

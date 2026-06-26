@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Settings, Lightbulb } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useDashboard } from "@/context/DashboardContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import SettingsModal from "@/components/SettingsModal";
 import WorkbenchBeacon from "@/components/WorkbenchBeacon";
@@ -28,7 +29,7 @@ function formatDate() {
 }
 
 export default function DashboardHeader({ onOpenBlueprint }: Props) {
-  const [settingsOpen,    setSettingsOpen]    = useState(false);
+  const { settingsOpen, openSettings, closeSettings } = useDashboard();
   const [beaconOpen,      setBeaconOpen]      = useState(false);
   const [beaconUnread,    setBeaconUnread]    = useState(false);
   const [latestTimestamp, setLatestTimestamp] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export default function DashboardHeader({ onOpenBlueprint }: Props) {
             {/* Settings trigger — only shown when auth is active */}
             {isConfigured && (
               <button
-                onClick={() => setSettingsOpen(true)}
+                onClick={() => openSettings()}
                 title="Account Settings"
                 className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] transition-all"
               >
@@ -108,7 +109,7 @@ export default function DashboardHeader({ onOpenBlueprint }: Props) {
         />
       </div>
 
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onOpenBlueprint={onOpenBlueprint} />
+      <SettingsModal isOpen={settingsOpen} onClose={closeSettings} onOpenBlueprint={onOpenBlueprint} />
       <WorkbenchBeacon isOpen={beaconOpen} onClose={() => setBeaconOpen(false)} />
     </>
   );

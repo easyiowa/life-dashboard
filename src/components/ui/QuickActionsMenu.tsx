@@ -40,7 +40,7 @@ function getLoadedWidgets(): LoadedWidget[] {
 }
 
 export default function QuickActionsMenu() {
-  const { openTaskModal } = useDashboard();
+  const { openTaskModal, anyOverlayOpen } = useDashboard();
   const { user } = useAuth();
 
   const [config, setConfig] = useState<QuickActionConfigItem[]>([]);
@@ -87,7 +87,7 @@ export default function QuickActionsMenu() {
     if (id === "widget-nav") { openWidgetNav(); return; }
   }
 
-  if (activeActions.length === 0) return null;
+  if (activeActions.length === 0 || anyOverlayOpen) return null;
 
   const barClass = "bg-white/[0.03] backdrop-blur-xl border border-white/[0.07]";
 

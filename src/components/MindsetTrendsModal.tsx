@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { X, Brain, ChevronDown, ChevronUp } from "lucide-react";
 import { useDashboard, type HistoricalLog } from "@/context/DashboardContext";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 // ── Types & helpers ───────────────────────────────────────────────────────────
 
@@ -384,6 +385,7 @@ function YearsGrid({ logs }: { logs: HistoricalLog[] }) {
 
 export default function MindsetTrendsModal({ onClose }: { onClose: () => void }) {
   const { historicalLogs } = useDashboard();
+  useModalOverlay(); // always mounted by parent only when open
   const [tab, setTab] = useState<Tab>("weeks");
 
   const tabs: { key: Tab; label: string }[] = [

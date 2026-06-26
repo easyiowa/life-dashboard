@@ -13,6 +13,8 @@ import {
 } from "@/context/DashboardContext";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
 import { areaColor } from "@/lib/areaColors";
+import { useTheme } from "@/context/ThemeContext";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 // ── Project tag colour palette ─────────────────────────────────────────────────
 
@@ -30,7 +32,7 @@ const TAG_DOT: Record<string, string> = {
   amber: "bg-amber-500", indigo: "bg-indigo-500", blue: "bg-blue-500",
   pink: "bg-pink-500", teal: "bg-teal-500", sky: "bg-sky-500", orange: "bg-orange-500",
 };
-const TAG_PILL: Record<string, string> = {
+const TAG_PILL_DARK: Record<string, string> = {
   violet:  "bg-violet-500/25  border-violet-400/60  text-violet-200",
   emerald: "bg-emerald-500/25 border-emerald-400/60 text-emerald-200",
   rose:    "bg-rose-500/25    border-rose-400/60    text-rose-200",
@@ -41,6 +43,18 @@ const TAG_PILL: Record<string, string> = {
   teal:    "bg-teal-500/25    border-teal-400/60    text-teal-200",
   sky:     "bg-sky-500/25     border-sky-400/60     text-sky-200",
   orange:  "bg-orange-500/25  border-orange-400/60  text-orange-200",
+};
+const TAG_PILL_LIGHT: Record<string, string> = {
+  violet:  "bg-violet-500/15  border-violet-500/50  text-violet-900",
+  emerald: "bg-emerald-500/15 border-emerald-500/50 text-emerald-900",
+  rose:    "bg-rose-500/15    border-rose-500/50    text-rose-900",
+  amber:   "bg-amber-500/15   border-amber-500/50   text-amber-900",
+  indigo:  "bg-indigo-500/15  border-indigo-500/50  text-indigo-900",
+  blue:    "bg-blue-500/15    border-blue-500/50    text-blue-900",
+  pink:    "bg-pink-500/15    border-pink-500/50    text-pink-900",
+  teal:    "bg-teal-500/15    border-teal-500/50    text-teal-900",
+  sky:     "bg-sky-500/15     border-sky-500/50     text-sky-900",
+  orange:  "bg-orange-500/15  border-orange-500/50  text-orange-900",
 };
 
 // ── Form helpers ───────────────────────────────────────────────────────────────
@@ -88,6 +102,9 @@ function ToggleGroup<T extends string>({
 
 export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, defaultNotes }: Props) {
   const { spheres, projects, tags, tasks, addTask, addProject, addTag, updateTag, deleteTag } = useDashboard();
+  const { mode } = useTheme();
+  useModalOverlay(open);
+  const TAG_PILL = mode === "light" ? TAG_PILL_LIGHT : TAG_PILL_DARK;
 
   const fallbackSphere  = spheres[0]?.name ?? "";
   const fallbackProject = projects.find((p) => p.sphere === fallbackSphere)?.name ?? "";
@@ -552,9 +569,17 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Manual Time (min)</label>
-              <input type="number" min={0} value={form.manualMinutes}
-                onChange={(e) => setForm((f) => ({ ...f, manualMinutes: Math.max(0, Number(e.target.value)) }))}
-                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="0"
+                value={form.manualMinutes === 0 ? "" : String(form.manualMinutes)}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  setForm((f) => ({ ...f, manualMinutes: raw === "" ? 0 : Math.max(0, Number(raw)) }));
+                }}
+                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
               />
             </div>
           </div>

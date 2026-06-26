@@ -7,6 +7,7 @@ import {
   type RecurringTask,
 } from "@/context/DashboardContext";
 import DatePickerInput from "@/components/ui/DatePickerInput";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 
 interface Props {
@@ -34,6 +35,7 @@ interface FormState {
 
 export default function RecurringResponsibilityModal({ task, onClose }: Props) {
   const { spheres, updateRecurringTask } = useDashboard();
+  useModalOverlay(!!task);
   const [form, setForm] = useState<FormState | null>(null);
   const [titleError, setTitleError] = useState(false);
 

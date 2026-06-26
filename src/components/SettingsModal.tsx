@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield, MessageSquare, Sun, Moon } from "lucide-react";
+import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield, MessageSquare, Sun, Moon, Smartphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import ActiveWidgetsModal from "@/components/ActiveWidgetsModal";
+import { usePWAInstaller } from "@/hooks/usePWAInstaller";
 import QuickActionsConfigModal from "@/components/QuickActionsConfigModal";
 import FounderDashboard from "@/components/admin/FounderDashboard";
 import { syncWidgetActivation } from "@/lib/widgetActivation";
@@ -14,6 +15,7 @@ import {
   persistQuickActionsConfig,
   type QuickActionConfigItem,
 } from "@/lib/quickActions";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
@@ -95,6 +97,8 @@ interface Props { isOpen: boolean; onClose: () => void; onOpenBlueprint?: () => 
 export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Props) {
   const { user, signOut, updateDisplayName, updatePassword, isConfigured } = useAuth();
   const { mode, setMode } = useTheme();
+  const { openInstallModal } = usePWAInstaller();
+  useModalOverlay(isOpen);
 
   const [displayName, setDisplayName] = useState("");
   const [nameLoading, setNameLoading] = useState(false);
@@ -377,7 +381,7 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
                 className="w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2.5 px-4"
               >
                 <LayoutGrid className="w-4 h-4 text-violet-400 shrink-0" />
-                <span>Manage Active Widgets</span>
+                <span>Manage Widgets</span>
                 <span className="ml-auto text-[10px] text-slate-600">{pendingWidgets.length} active</span>
               </button>
               <button
@@ -385,7 +389,7 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
                 className="w-full h-10 rounded-xl border border-violet-500/25 bg-violet-500/[0.06] hover:bg-violet-500/[0.12] text-sm font-medium text-violet-300 hover:text-violet-200 transition-all flex items-center gap-2.5 px-4"
               >
                 <span className="text-base leading-none shrink-0">🧩</span>
-                <span>Rearrange Grid Layout</span>
+                <span>Rearrange Widgets</span>
                 <span className="ml-auto text-[10px] text-violet-600">Blueprint Mode</span>
               </button>
               <button
@@ -393,7 +397,7 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
                 className="w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2.5 px-4"
               >
                 <LayoutGrid className="w-4 h-4 text-violet-400 shrink-0" />
-                <span>Edit Quick Actions</span>
+                <span>Edit Menu</span>
                 <span className="ml-auto text-[10px] text-slate-600">
                   {quickActionsConfig.filter(c => c.enabled).length} active
                 </span>
@@ -406,13 +410,13 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
           {/* ── Appearance ───────────────────────────────────────── */}
           <section>
             <SectionHeading icon={Sun} label="Appearance" />
-            <div className="flex rounded-xl border border-white/[0.08] bg-white/[0.02] p-1 gap-1">
+            <div className="flex rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-black/[0.04] dark:bg-white/[0.02] p-1 gap-1">
               <button
                 onClick={() => setMode("light")}
                 className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${
                   mode === "light"
-                    ? "bg-white/[0.10] text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-300"
+                    ? "bg-white shadow-sm text-slate-800 dark:bg-white/[0.12] dark:text-white"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
                 }`}
               >
                 <Sun className="w-3.5 h-3.5" />
@@ -422,8 +426,8 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
                 onClick={() => setMode("dark")}
                 className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${
                   mode === "dark"
-                    ? "bg-white/[0.10] text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-300"
+                    ? "bg-white shadow-sm text-slate-800 dark:bg-white/[0.12] dark:text-white"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" />
@@ -431,6 +435,22 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
               </button>
             </div>
           </section>
+
+          {/* ── App Setup — mobile only (PWA install is irrelevant on desktop) ── */}
+          <div className="md:hidden flex flex-col gap-6">
+            <div className="h-px bg-white/[0.06]" />
+            <section>
+              <SectionHeading icon={Smartphone} label="App Setup" />
+              <button
+                onClick={() => { openInstallModal(); onClose(); }}
+                className="w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2.5 px-4"
+              >
+                <span className="text-base leading-none" aria-hidden="true">📱</span>
+                <span className="flex-1 text-left">Install App</span>
+                <span className="text-[11px] text-slate-600">Dudu helps</span>
+              </button>
+            </section>
+          </div>
 
           {/* ── 3. Admin (founder only — bundled divider) ─────────── */}
           {isFounder && (

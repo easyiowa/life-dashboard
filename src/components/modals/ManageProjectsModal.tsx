@@ -13,6 +13,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useDashboard, type Project } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 // ── Style maps — mirrored from ProjectEditModal so tag pills read identically ──
 
@@ -30,16 +31,16 @@ const COLOR_PALETTE: { value: string; dot: string }[] = [
 ];
 
 const TAG_ACTIVE: Record<string, string> = {
-  emerald: "bg-emerald-500/25 text-emerald-200 border border-emerald-400/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]",
-  violet:  "bg-violet-500/25 text-violet-200 border border-violet-400/60 shadow-[0_0_10px_rgba(139,92,246,0.3)]",
-  sky:     "bg-sky-500/25 text-sky-200 border border-sky-400/60 shadow-[0_0_10px_rgba(14,165,233,0.3)]",
-  amber:   "bg-amber-500/25 text-amber-200 border border-amber-400/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]",
-  pink:    "bg-pink-500/25 text-pink-200 border border-pink-400/60 shadow-[0_0_10px_rgba(236,72,153,0.3)]",
-  teal:    "bg-teal-500/25 text-teal-200 border border-teal-400/60 shadow-[0_0_10px_rgba(20,184,166,0.3)]",
-  blue:    "bg-blue-500/25 text-blue-200 border border-blue-400/60 shadow-[0_0_10px_rgba(59,130,246,0.3)]",
-  rose:    "bg-rose-500/25 text-rose-200 border border-rose-400/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]",
-  orange:  "bg-orange-500/25 text-orange-200 border border-orange-400/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]",
-  indigo:  "bg-indigo-500/25 text-indigo-200 border border-indigo-400/60 shadow-[0_0_10px_rgba(99,102,241,0.3)]",
+  emerald: "bg-emerald-500/25 text-emerald-900 dark:text-emerald-200 border border-emerald-400/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]",
+  violet:  "bg-violet-500/25 text-violet-900 dark:text-violet-200 border border-violet-400/60 shadow-[0_0_10px_rgba(139,92,246,0.3)]",
+  sky:     "bg-sky-500/25 text-sky-900 dark:text-sky-200 border border-sky-400/60 shadow-[0_0_10px_rgba(14,165,233,0.3)]",
+  amber:   "bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-400/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]",
+  pink:    "bg-pink-500/25 text-pink-900 dark:text-pink-200 border border-pink-400/60 shadow-[0_0_10px_rgba(236,72,153,0.3)]",
+  teal:    "bg-teal-500/25 text-teal-900 dark:text-teal-200 border border-teal-400/60 shadow-[0_0_10px_rgba(20,184,166,0.3)]",
+  blue:    "bg-blue-500/25 text-blue-900 dark:text-blue-200 border border-blue-400/60 shadow-[0_0_10px_rgba(59,130,246,0.3)]",
+  rose:    "bg-rose-500/25 text-rose-900 dark:text-rose-200 border border-rose-400/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]",
+  orange:  "bg-orange-500/25 text-orange-900 dark:text-orange-200 border border-orange-400/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]",
+  indigo:  "bg-indigo-500/25 text-indigo-900 dark:text-indigo-200 border border-indigo-400/60 shadow-[0_0_10px_rgba(99,102,241,0.3)]",
 };
 
 const PTAG_COLORS: Array<{ name: string; dot: string; ring: string }> = [
@@ -203,9 +204,8 @@ function TagSelector({ tagIds, onChange }: { tagIds: string[]; onChange: (next: 
               if (e.key === "Enter") { e.preventDefault(); commitNewTag(); }
               if (e.key === "Escape") { setNewTagName(""); setNewTagColor("violet"); setAddingPTag(false); }
             }}
-            onBlur={commitNewTag}
             placeholder="Tag name…"
-            className="flex-1 min-w-[100px] h-7 px-2.5 rounded-lg bg-white/[0.06] border border-white/[0.10] text-[11px] text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50"
+            className="flex-1 min-w-[80px] h-7 px-2.5 rounded-lg bg-white/[0.06] border border-white/[0.10] text-[11px] text-white placeholder:text-slate-600 outline-none focus:border-violet-500/50"
           />
           <div className="flex items-center gap-1.5">
             {PTAG_COLORS.map((co) => (
@@ -219,9 +219,17 @@ function TagSelector({ tagIds, onChange }: { tagIds: string[]; onChange: (next: 
               />
             ))}
           </div>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); commitNewTag(); }}
+            className="w-6 h-6 rounded-lg flex items-center justify-center bg-violet-600/80 hover:bg-violet-500 text-white transition-all flex-shrink-0"
+            title="Save tag"
+          >
+            <Check className="w-3 h-3" />
+          </button>
           <button type="button"
             onMouseDown={(e) => { e.preventDefault(); setNewTagName(""); setNewTagColor("violet"); setAddingPTag(false); }}
-            className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-slate-400 transition-colors">
+            className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-slate-400 transition-colors flex-shrink-0">
             <X className="w-3 h-3" />
           </button>
         </div>
@@ -370,6 +378,7 @@ interface Props {
 }
 
 export default function ManageProjectsModal({ isOpen, onClose }: Props) {
+  useModalOverlay(isOpen);
   const { spheres, projects, addProject, reorderProjects } = useDashboard();
 
   const [filterSphereId, setFilterSphereId] = useState<string>("");
