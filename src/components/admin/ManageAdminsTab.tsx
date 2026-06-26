@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 // Display-only label — the owner row is never removable. Actual access
@@ -14,8 +14,9 @@ export default function ManageAdminsTab() {
   const [items,   setItems]   = useState<AdminRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
-  const [adding,  setAdding]  = useState(false);
-  const [email,   setEmail]   = useState("");
+  const [adding,   setAdding]   = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [email,    setEmail]    = useState("");
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -34,6 +35,16 @@ export default function ManageAdminsTab() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  async function deleteAdmin(adminEmail: string) {
+    if (!supabase) return;
+    setDeleting(adminEmail);
+    setError(null);
+    const { error: err } = await supabase.from("admins").delete().eq("email", adminEmail);
+    setDeleting(null);
+    if (err) { setError(err.message); return; }
+    setItems(prev => prev.filter(r => r.email !== adminEmail));
+  }
 
   async function addAdmin() {
     const v = email.trim().toLowerCase();
@@ -59,15 +70,30 @@ export default function ManageAdminsTab() {
         {items.map(row => (
           <div key={row.email} className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5">
             <span className="text-xs text-slate-300 truncate">{row.email}</span>
-            {row.email === OWNER_EMAIL ? (
-              <span className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 shrink-0">
-                Owner
-              </span>
-            ) : (
-              <span className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 shrink-0">
-                Admin
-              </span>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {row.email === OWNER_EMAIL ? (
+                <span className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
+                  Owner
+                </span>
+              ) : (
+                <>
+                  <span className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                    Admin
+                  </span>
+                  <button
+                    onClick={() => void deleteAdmin(row.email)}
+                    disabled={deleting === row.email}
+                    title="Remove admin"
+                    className="p-1 text-slate-600 hover:text-red-400 disabled:opacity-40 transition-colors cursor-pointer"
+                  >
+                    {deleting === row.email
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <Trash2 className="w-3.5 h-3.5" />
+                    }
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ))}
         {items.length === 0 && !error && (

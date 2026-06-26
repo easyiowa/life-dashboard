@@ -124,11 +124,7 @@ function NoteRow({
             <button
               onClick={onToggleImportant}
               title={note.isImportant ? "Unmark important" : "Mark as important"}
-              className={`p-1 rounded-md transition-all text-[11px] leading-none ${
-                note.isImportant
-                  ? "opacity-100 hover:bg-amber-500/10"
-                  : "opacity-0 group-hover:opacity-100 hover:bg-amber-500/10"
-              }`}
+              className="p-1 rounded-md transition-all text-[11px] leading-none opacity-0 group-hover:opacity-100 hover:bg-amber-500/10"
             >
               🔥
             </button>

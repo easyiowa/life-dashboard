@@ -1186,6 +1186,28 @@ h1, h2, h3, h4, h5, h6 {
   border-width: 1.5px !important;
 }
 
+/* ── QUICK NOTES WIDGET — CAPTURE INPUT PLACEHOLDER ─────────────────────
+ * ChecklistEditor renders its placeholder via empty:before:text-slate-600
+ * on a contenteditable div. Override to a softer tone in light mode. */
+.light [contenteditable][data-placeholder]::before {
+  color: rgba(28, 25, 23, 0.35) !important;
+}
+
+/* ── NOTES ARCHIVE SEARCH — CONTAINER BORDER (light mode) ───────────────
+ * The wrapper div uses border-white/[0.07] which is invisible on a white
+ * background. Note: the JSX placeholder uses the Unicode ellipsis (…),
+ * not three ASCII dots — the :has() selector must match exactly. */
+.light div:has(> input[placeholder="Search notes…"]) {
+  border-color: rgba(28, 25, 23, 0.15) !important;
+  background-color: transparent !important;
+}
+.light input[placeholder="Search notes…"] {
+  color: #1c1917 !important;
+}
+.light input[placeholder="Search notes…"]::placeholder {
+  color: #a8a29e !important;
+}
+
 /* ── ABSOLUTE SHADOW VARIABLE RESET ──────────────────────────────────────
  * Zero-out all Tailwind shadow/ring/blur CSS variables so the engine cannot
  * compose a glow or drop-shadow layer anywhere in the light theme. */

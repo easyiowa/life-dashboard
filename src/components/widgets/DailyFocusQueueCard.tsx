@@ -910,10 +910,19 @@ export default function DailyFocusQueueCard() {
         <>
           {/* Commitment tasks */}
           {commitments.length === 0 && maybes.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-4 text-center">
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
               <Target className="w-6 h-6 text-slate-700" />
               <p className="text-xs text-slate-600">No tasks queued for today.</p>
-              <p className="text-[10px] text-slate-700">Add tasks from your backlog to start planning.</p>
+              {showPicker
+                ? <TaskPicker onClose={() => setShowPicker(false)} />
+                : (
+                  <button
+                    onClick={() => setShowPicker(true)}
+                    className="flex items-center gap-1.5 justify-center h-7 px-4 rounded-xl border border-dashed border-white/[0.10] text-[11px] text-slate-600 hover:text-slate-300 hover:border-white/[0.20] transition-all duration-150"
+                  >
+                    + Plan a task for today
+                  </button>
+                )}
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
@@ -942,18 +951,6 @@ export default function DailyFocusQueueCard() {
           {!suggestionsDismissed && (
             <TodaySuggestions onDismiss={() => setSuggestionsDismissed(true)} />
           )}
-
-          {/* Picker + Add button */}
-          {showPicker
-            ? <TaskPicker onClose={() => setShowPicker(false)} />
-            : (
-              <button
-                onClick={() => setShowPicker(true)}
-                className="flex items-center gap-1.5 justify-center h-7 rounded-xl border border-dashed border-white/[0.10] text-[11px] text-slate-600 hover:text-slate-300 hover:border-white/[0.20] transition-all duration-150"
-              >
-                + Plan a task for today
-              </button>
-            )}
 
           {/* Performance Archive */}
           {historicalLogs.length > 0 && (

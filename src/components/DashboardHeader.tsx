@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, Lightbulb } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import SettingsModal from "@/components/SettingsModal";
 import WorkbenchBeacon from "@/components/WorkbenchBeacon";
 
@@ -27,10 +28,28 @@ function formatDate() {
 }
 
 export default function DashboardHeader({ onOpenBlueprint }: Props) {
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [beaconOpen,   setBeaconOpen]   = useState(false);
-  const [beaconUnread, setBeaconUnread] = useState(true);
+  const [settingsOpen,    setSettingsOpen]    = useState(false);
+  const [beaconOpen,      setBeaconOpen]      = useState(false);
+  const [beaconUnread,    setBeaconUnread]    = useState(false);
+  const [latestTimestamp, setLatestTimestamp] = useState<string | null>(null);
   const { user, isConfigured } = useAuth();
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+    void supabase
+      .from("workbench_updates")
+      .select("created_at")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        const ts = (data?.[0] as { created_at?: string } | undefined)?.created_at ?? null;
+        if (!ts) return;
+        setLatestTimestamp(ts);
+        const lastRead = localStorage.getItem("workbench_last_read");
+        setBeaconUnread(!lastRead || ts > lastRead);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const greeting    = getGreeting();
   const date        = formatDate();
@@ -53,7 +72,11 @@ export default function DashboardHeader({ onOpenBlueprint }: Props) {
           <div className="flex items-center gap-3 mt-2">
             {/* Workbench Lightbulb — always visible */}
             <button
-              onClick={() => { setBeaconOpen(true); setBeaconUnread(false); }}
+              onClick={() => {
+                setBeaconOpen(true);
+                if (latestTimestamp) localStorage.setItem("workbench_last_read", latestTimestamp);
+                setBeaconUnread(false);
+              }}
               title="Olaf's Workbench"
               className="w-8 h-8 rounded-xl flex items-center justify-center border border-transparent hover:bg-white/[0.06] hover:border-white/[0.08] transition-all"
             >

@@ -79,9 +79,10 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
   const { user } = useAuth();
   const isFounder = user?.email === FOUNDER_EMAIL;
 
-  const [note,    setNote]    = useState("");
-  const [sent,    setSent]    = useState(false);
-  const [sending, setSending] = useState(false);
+  const [note,      setNote]      = useState("");
+  const [sent,      setSent]      = useState(false);
+  const [sending,   setSending]   = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   // Screenshot attachment state
   const [screenshot,     setScreenshot]     = useState<File | null>(null);
@@ -193,11 +194,21 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
     if (isSupabaseConfigured && supabase) {
       const nickname =
         (user?.user_metadata?.display_name as string | undefined) ?? user?.email ?? null;
-      await supabase.from("workbench_feedback").insert({
-        user_nickname:  nickname,
-        message:        note.trim(),
-        screenshot_url: screenshotUrl,
+      // screenshot_url column not yet in schema — append URL to message body as fallback
+      const messageBody = screenshotUrl
+        ? `${note.trim()}\n\n[screenshot] ${screenshotUrl}`
+        : note.trim();
+      const { error: insertErr } = await supabase.from("workbench_feedback").insert({
+        user_nickname: nickname,
+        message:       messageBody,
       });
+      if (insertErr) {
+        console.error("[WorkbenchBeacon] Insert failed:", insertErr.message);
+        setSending(false);
+        setSendError("Couldn't send — please try again.");
+        setTimeout(() => setSendError(null), 5000);
+        return;
+      }
     }
 
     console.log("[WorkbenchBeacon] Feedback submitted:", note.trim(), { screenshotUrl });
@@ -381,6 +392,9 @@ export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
                     }
                   </button>
                 </div>
+                {sendError && (
+                  <p className="text-[11px] text-rose-400 text-center mt-1">{sendError}</p>
+                )}
               </div>
             )}
           </section>

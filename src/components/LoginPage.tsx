@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff, LayoutDashboard, Loader2, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 // ── Google G logo ──────────────────────────────────────────────────────────────
@@ -176,11 +176,9 @@ export default function LoginPage() {
 
             {/* Brand mark */}
             <div className="flex flex-col items-center gap-3 mb-8">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{ background: "#f35600" }}
-              >
-                <LayoutDashboard className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/ciad.jpg" alt="Call it a day! Logo" className="w-full h-full object-contain rounded-2xl" />
               </div>
               <div className="text-center">
                 <h1 className="text-xl font-semibold text-white tracking-tight">Call it a Day</h1>
