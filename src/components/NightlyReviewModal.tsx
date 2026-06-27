@@ -253,15 +253,20 @@ export default function NightlyReviewModal() {
     tasks, recurringTasks, networkContacts,
     currentTrackingDate, showNightlyReview,
     dismissNightlyReview, lockDay, dailyCheckIn,
+    activeWidgetIds,
   } = useDashboard();
-  useModalOverlay(showNightlyReview); // hook before any conditional return
+  const hasDailyFocus = activeWidgetIds.includes("daily-focus");
+  // Suppress the modal entirely when Today's Focus isn't in the user's widget set —
+  // there's nothing to review and the midnight auto-trigger should be a no-op.
+  const shouldShow = showNightlyReview && hasDailyFocus;
+  useModalOverlay(shouldShow); // hook before any conditional return
 
   const [endDelta,      setEndDelta]      = useState<"better" | "same" | "worse" | null>(null);
   const [closureNote,   setClosureNote]   = useState("");
   const [birthdayDone,  setBirthdayDone]  = useState<Set<string>>(new Set());
   const [recurringDone, setRecurringDone] = useState<Set<string>>(new Set());
 
-  if (!showNightlyReview) return null;
+  if (!shouldShow) return null;
 
   const reviewDate    = currentTrackingDate;
   const today         = new Date().toLocaleDateString("en-CA");

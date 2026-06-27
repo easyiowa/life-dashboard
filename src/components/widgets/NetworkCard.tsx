@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Users, Plus, X, Trash2, Pencil, FileText, Settings, MoreVertical, Check, ChevronDown, CheckCircle2 } from "lucide-react";
 import AutoExpandingTextarea from "@/components/ui/AutoExpandingTextarea";
 import DatePickerInput from "@/components/ui/DatePickerInput";
@@ -494,7 +495,9 @@ function ContactRow({
   const bdayFmt = fmtDate(contact.birthday);
   const pct     = prog ? Math.round(prog.progress * 100) : 0;
 
-  const hasNotes = !!(contact.notes || contact.events.length > 0);
+  const hasNotes     = !!(contact.notes || contact.events.length > 0);
+  const noteIconRef  = useRef<HTMLButtonElement>(null);
+  const [notePos, setNotePos] = useState<{ top: number; left: number } | null>(null);
 
   return (
     <SwipeToDeleteRow onDelete={onDelete} onClick={onEdit}>
@@ -553,52 +556,55 @@ function ContactRow({
         )}
       </div>
 
-      {/* Note icon with hover tooltip — desktop only, hover-dependent */}
-      <div className="hidden md:block relative flex-shrink-0">
-        <div className="group/tip">
-          <button
-            className={`p-1 rounded-md transition-all ${hasNotes ? "text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]" : "text-slate-800 cursor-default"}`}
-            title={hasNotes ? "View notes" : "No notes"}
-          >
-            <FileText className="w-3.5 h-3.5" />
-          </button>
-
-          {hasNotes && (
-            <div className="absolute right-0 bottom-full mb-2 w-60 z-[100] pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
-              <div className="bg-[#0c1120] border border-white/[0.10] rounded-xl shadow-2xl p-3 flex flex-col gap-2.5">
-                {contact.notes && (
-                  <div className="flex flex-col gap-1">
-                    <p className="text-[9px] font-semibold text-slate-600 uppercase tracking-widest">Notes</p>
-                    <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">{contact.notes}</p>
-                  </div>
-                )}
-                {contact.events.length > 0 && (
-                  <div className="flex flex-col gap-2 pt-2 border-t border-white/[0.06]">
-                    <p className="text-[9px] font-semibold text-slate-600 uppercase tracking-widest">Events</p>
-                    {contact.events.map((evt) => (
-                      <div key={evt.id} className={evt.completed ? "opacity-40" : ""}>
-                        <p className="text-[11px] text-violet-300 font-medium leading-snug">
-                          🎯 {evt.title || <span className="italic text-slate-500">Untitled</span>}
-                          {evt.completed && <span className="ml-1 text-[9px] text-emerald-500">✓</span>}
-                        </p>
-                        {evt.date && <p className="text-[10px] text-slate-500">{fmtDate(evt.date)}</p>}
-                        {evt.notes && <p className="text-[11px] text-slate-400 leading-relaxed">{evt.notes}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {bdayFmt && (
-                  <div className="pt-1 border-t border-white/[0.06]">
-                    <p className="text-[10px] text-pink-300">🎂 Birthday: {bdayFmt}</p>
-                  </div>
-                )}
-              </div>
-              {/* Arrow */}
-              <div className="absolute right-2.5 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white/[0.10]" />
+      {/* Note icon — desktop only. Tooltip uses a portal to escape SwipeToDeleteRow's overflow:hidden. */}
+      <div className="hidden md:block flex-shrink-0">
+        <button
+          ref={noteIconRef}
+          className={`p-1 rounded-md transition-all ${hasNotes ? "text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]" : "text-slate-800 cursor-default"}`}
+          title={hasNotes ? "View notes" : "No notes"}
+          onMouseEnter={() => {
+            const r = noteIconRef.current?.getBoundingClientRect();
+            if (r) setNotePos({ top: r.top, left: r.left + r.width / 2 });
+          }}
+          onMouseLeave={() => setNotePos(null)}
+        >
+          <FileText className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      {notePos && hasNotes && createPortal(
+        <div
+          style={{ position: "fixed", top: notePos.top, left: notePos.left, transform: "translate(-50%, calc(-100% - 8px))", zIndex: 9999 }}
+          className="w-60 bg-[#0c1120] border border-white/[0.10] rounded-xl shadow-2xl p-3 flex flex-col gap-2.5 pointer-events-none"
+        >
+          {contact.notes && (
+            <div className="flex flex-col gap-1">
+              <p className="text-[9px] font-semibold text-slate-600 uppercase tracking-widest">Notes</p>
+              <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">{contact.notes}</p>
             </div>
           )}
-        </div>
-      </div>
+          {contact.events.length > 0 && (
+            <div className="flex flex-col gap-2 pt-2 border-t border-white/[0.06]">
+              <p className="text-[9px] font-semibold text-slate-600 uppercase tracking-widest">Events</p>
+              {contact.events.map((evt) => (
+                <div key={evt.id} className={evt.completed ? "opacity-40" : ""}>
+                  <p className="text-[11px] text-violet-300 font-medium leading-snug">
+                    🎯 {evt.title || <span className="italic text-slate-500">Untitled</span>}
+                    {evt.completed && <span className="ml-1 text-[9px] text-emerald-500">✓</span>}
+                  </p>
+                  {evt.date && <p className="text-[10px] text-slate-500">{fmtDate(evt.date)}</p>}
+                  {evt.notes && <p className="text-[11px] text-slate-400 leading-relaxed">{evt.notes}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+          {bdayFmt && (
+            <div className="pt-1 border-t border-white/[0.06]">
+              <p className="text-[10px] text-pink-300">🎂 Birthday: {bdayFmt}</p>
+            </div>
+          )}
+        </div>,
+        document.body
+      )}
 
       {/* Delete (hover-revealed) — desktop only, hover-dependent */}
       <div className="hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">

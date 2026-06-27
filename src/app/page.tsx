@@ -5,6 +5,7 @@ import MindfulCheckIn        from "@/components/MindfulCheckIn";
 import DuduBlueprintBridge   from "@/components/DuduBlueprintBridge";
 import DashboardGrid         from "@/components/DashboardGrid";
 import WorldClockCard        from "@/components/widgets/WorldClockCard";
+import DashboardFooter       from "@/components/DashboardFooter";
 import NightlyReviewModal    from "@/components/NightlyReviewModal";
 import QuickActionsMenu      from "@/components/ui/QuickActionsMenu";
 import GlobalTaskModalMount  from "@/components/GlobalTaskModalMount";
@@ -23,6 +24,7 @@ export default function DashboardPage() {
         <div className="mt-4">
           <WorldClockCard />
         </div>
+        <DashboardFooter />
       </div>
       <NightlyReviewModal />
       <QuickActionsMenu />

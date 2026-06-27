@@ -21,12 +21,17 @@ function applyMode(mode: ThemeMode) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>("dark");
+  const [mode, setModeState] = useState<ThemeMode>("light");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
     if (stored === "light" || stored === "dark") {
       setModeState(stored);
+      applyMode(stored);
+    } else {
+      // No stored preference — persist and apply light as the default.
+      window.localStorage.setItem(STORAGE_KEY, "light");
+      applyMode("light");
     }
   }, []);
 

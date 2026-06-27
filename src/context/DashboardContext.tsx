@@ -15,6 +15,19 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { seedOnboardingTemplate } from "@/services/onboardingSeeder";
 import { cleanSlateTemplate } from "@/config/industry-templates";
 
+// ── Widget layout constants ───────────────────────────────────────────────────
+
+const WIDGET_LAYOUT_KEY = "ld_widget_layout";
+
+// Mirrors DEFAULT_ORDER in DashboardGrid — used as the fallback when no saved
+// layout exists yet so every widget is treated as active out of the box.
+const DEFAULT_WIDGET_IDS = [
+  "quick-notes", "daily-focus",
+  "time-tracker", "projects",
+  "activity-log", "progress",
+  "calendar", "habits", "recurring", "network",
+];
+
 // ── Public types ─────────────────────────────────────────────────────────────
 
 export type SphereId  = string;
@@ -1216,6 +1229,7 @@ interface DashboardContextType {
   anyOverlayOpen: boolean;
   pushOverlay: () => void;
   popOverlay: () => void;
+  activeWidgetIds: string[];
 }
 
 const DashboardContext = createContext<DashboardContextType | null>(null);
@@ -1232,6 +1246,38 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // Counts deletions of sample (onboarding-seeded) tasks/projects this session — DuduAssistant
   // watches this to offer a one-click "delete all samples" once the user starts cleaning up.
   const [sampleDeleteCount, setSampleDeleteCount] = useState(0);
+
+  // ── Active widget IDs — mirrors DashboardGrid's widgetIds ────────────────────
+  // Initialized to all widgets (DEFAULT_WIDGET_IDS) so nothing is hidden on
+  // first render. Two effects sync it to the real selection: one reads from
+  // user metadata when the session loads, the other listens for live updates
+  // dispatched by the SettingsModal via the ld:widget-layout custom event.
+  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(DEFAULT_WIDGET_IDS);
+
+  useEffect(() => {
+    const fromMeta = user?.user_metadata?.widget_layout as string[] | undefined;
+    if (Array.isArray(fromMeta) && fromMeta.length > 0) {
+      setActiveWidgetIds(fromMeta);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(WIDGET_LAYOUT_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as string[];
+        if (Array.isArray(parsed) && parsed.length > 0) { setActiveWidgetIds(parsed); return; }
+      }
+    } catch { /* */ }
+  }, [user?.user_metadata?.widget_layout]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    function onLayoutChanged(e: Event) {
+      const ids = (e as CustomEvent<string[]>).detail;
+      if (Array.isArray(ids) && ids.length > 0) setActiveWidgetIds(ids);
+    }
+    window.addEventListener("ld:widget-layout", onLayoutChanged);
+    return () => window.removeEventListener("ld:widget-layout", onLayoutChanged);
+  }, []);
+
   // Flips true the instant the user starts their first widget drag — DuduAssistant
   // watches this to fire the rearrange tip immediately rather than waiting on a timer.
   const [hasDraggedOnce, setHasDraggedOnce] = useState(false);
@@ -1986,6 +2032,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           overlayCountRef.current = Math.max(0, overlayCountRef.current - 1);
           if (overlayCountRef.current === 0) setAnyOverlayOpen(false);
         },
+        activeWidgetIds,
       }}
     >
       {children}

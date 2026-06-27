@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { ComponentType } from "react";
 import {
   ArrowRight, Check, Loader2, Flame,
@@ -886,6 +886,7 @@ interface WidgetCardProps {
 
 function WidgetCard({ widget, isSelected, isForced, hasGlow, isFlashing, onToggle, onHover }: WidgetCardProps) {
   const [slideIdx, setSlideIdx] = useState(0);
+  const touchStartXRef = useRef<number | null>(null);
   const Slide = widget.slides[slideIdx];
 
   return (
@@ -902,7 +903,19 @@ function WidgetCard({ widget, isSelected, isForced, hasGlow, isFlashing, onToggl
       }`}
     >
       {/* 16:9 live preview carousel */}
-      <div className="relative aspect-video overflow-hidden bg-[#080B14] group">
+      <div
+        className="relative aspect-video overflow-hidden bg-[#080B14] group"
+        style={{ touchAction: "pan-y" }}
+        onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          if (touchStartXRef.current === null || widget.slides.length <= 1) return;
+          const delta = e.changedTouches[0].clientX - touchStartXRef.current;
+          touchStartXRef.current = null;
+          if (Math.abs(delta) < 30) return;
+          if (delta < 0) setSlideIdx(i => (i + 1) % widget.slides.length);
+          else setSlideIdx(i => (i - 1 + widget.slides.length) % widget.slides.length);
+        }}
+      >
         <div className="absolute inset-0 p-4 flex items-center justify-center overflow-hidden">
           <div className="w-full"><Slide /></div>
         </div>
@@ -1407,56 +1420,7 @@ function AppearanceStep({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* ── Dark Classic ── */}
-        <button
-          type="button"
-          onClick={() => setMode("dark")}
-          className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-200 text-left ${
-            mode === "dark"
-              ? "border-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.22)] ring-1 ring-violet-500/25"
-              : "border-white/[0.09] hover:border-white/[0.22]"
-          }`}
-        >
-          {/* Mini dark preview — inline styles so light-mode overrides can't touch it */}
-          <div className="aspect-video relative overflow-hidden" style={{ background: "#0B0F19" }}>
-            <div className="absolute inset-0 p-3 flex flex-col gap-1.5">
-              <div style={{ color: "#94a3b8", fontSize: "7px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>
-                Today&apos;s Focus
-              </div>
-              {["Finish Blueprint UI", "Reply to Paul", "Review PR"].map((t, i) => (
-                <div key={t} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <div style={{ width: "10px", height: "10px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.03)", flexShrink: 0 }} />
-                  <span style={{ color: i === 0 ? "#e2e8f0" : "#64748b", fontSize: "8px" }}>{t}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: "4px", height: "1px", background: "rgba(255,255,255,0.06)" }} />
-              <div style={{ display: "flex", gap: "4px", marginTop: "3px" }}>
-                <div style={{ flex: 1, height: "18px", borderRadius: "5px", background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ color: "#a78bfa", fontSize: "7px", fontWeight: 600 }}>Finish</span>
-                </div>
-                <div style={{ flex: 1, height: "18px", borderRadius: "5px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ color: "#64748b", fontSize: "7px" }}>Maybe</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Label row — dark surface so it's always readable */}
-          <div style={{ background: "#0D1120", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <p style={{ color: "#f8f9fa", fontSize: "13px", fontWeight: 600, margin: 0 }}>Dark Classic</p>
-              <p style={{ color: "#64748b", fontSize: "10px", margin: "2px 0 0" }}>Deep navy, soft glows</p>
-            </div>
-            <div style={{
-              width: "16px", height: "16px", borderRadius: "50%", border: `2px solid ${mode === "dark" ? "#8b5cf6" : "rgba(255,255,255,0.2)"}`,
-              background: mode === "dark" ? "#8b5cf6" : "transparent",
-              display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s",
-            }}>
-              {mode === "dark" && <Check style={{ width: "9px", height: "9px", color: "#fff" }} />}
-            </div>
-          </div>
-        </button>
-
-        {/* ── Clean Light ── */}
+        {/* ── Clean Light (left — default) ── */}
         <button
           type="button"
           onClick={() => setMode("light")}
@@ -1501,6 +1465,55 @@ function AppearanceStep({
               display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s",
             }}>
               {mode === "light" && <Check style={{ width: "9px", height: "9px", color: "#fff" }} />}
+            </div>
+          </div>
+        </button>
+
+        {/* ── Dark Classic (right) ── */}
+        <button
+          type="button"
+          onClick={() => setMode("dark")}
+          className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-200 text-left ${
+            mode === "dark"
+              ? "border-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.22)] ring-1 ring-violet-500/25"
+              : "border-white/[0.09] hover:border-white/[0.22]"
+          }`}
+        >
+          {/* Mini dark preview — inline styles so light-mode overrides can't touch it */}
+          <div className="aspect-video relative overflow-hidden" style={{ background: "#0B0F19" }}>
+            <div className="absolute inset-0 p-3 flex flex-col gap-1.5">
+              <div style={{ color: "#94a3b8", fontSize: "7px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>
+                Today&apos;s Focus
+              </div>
+              {["Finish Blueprint UI", "Reply to Paul", "Review PR"].map((t, i) => (
+                <div key={t} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                  <div style={{ width: "10px", height: "10px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.03)", flexShrink: 0 }} />
+                  <span style={{ color: i === 0 ? "#e2e8f0" : "#64748b", fontSize: "8px" }}>{t}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: "4px", height: "1px", background: "rgba(255,255,255,0.06)" }} />
+              <div style={{ display: "flex", gap: "4px", marginTop: "3px" }}>
+                <div style={{ flex: 1, height: "18px", borderRadius: "5px", background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "#a78bfa", fontSize: "7px", fontWeight: 600 }}>Finish</span>
+                </div>
+                <div style={{ flex: 1, height: "18px", borderRadius: "5px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "#64748b", fontSize: "7px" }}>Maybe</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Label row — dark surface so it's always readable */}
+          <div style={{ background: "#0D1120", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ color: "#f8f9fa", fontSize: "13px", fontWeight: 600, margin: 0 }}>Dark Classic</p>
+              <p style={{ color: "#64748b", fontSize: "10px", margin: "2px 0 0" }}>Deep navy, soft glows</p>
+            </div>
+            <div style={{
+              width: "16px", height: "16px", borderRadius: "50%", border: `2px solid ${mode === "dark" ? "#8b5cf6" : "rgba(255,255,255,0.2)"}`,
+              background: mode === "dark" ? "#8b5cf6" : "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s",
+            }}>
+              {mode === "dark" && <Check style={{ width: "9px", height: "9px", color: "#fff" }} />}
             </div>
           </div>
         </button>

@@ -252,6 +252,7 @@ export default function DuduAssistant({ onOpenBlueprint }: Props) {
   // true while it's on screen, so the guard is never evaluated mid-display.
   const hasAnythingToShow =
     bubbleOpen ||
+    bubbleClosing ||
     !dismissedLoaded ||
     !dismissed.has("welcome_msg") ||
     !dismissed.has("rearrange_tip") ||

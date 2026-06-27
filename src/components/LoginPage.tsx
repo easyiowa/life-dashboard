@@ -97,13 +97,13 @@ function FoundersNote() {
           Well, additionally, my girlfriend (now fianc&eacute;e), with her terrifying ability to know me better than I know myself, looked at the chaos one day and said: <span className="italic text-zinc-400">&ldquo;You have ADHD!&rdquo;</span> She was, as always, completely right.
         </p>
         <p>
-          What you see here, the &ldquo;Call it a day!&rdquo; Dashboard, Life Manager or whatever you want to call for now. It&rsquo;s a single, clean space designed to put everything into one fast overview and free up massive headspace. I don&rsquo;t know what to call it yet&hellip; maybe you can help me?
+          What you see here, is the very first version of &ldquo;Call it a day!&rdquo; Dashboard, Life Manager or whatever you want to call it for now. It&rsquo;s a single, clean space designed to put everything into one fast overview and free up massive headspace.
         </p>
         <p>
-          You are the early adopters. Take it for a spin, build your layout, and tell me: what would you love to see here to help with your own life? The plan is to give this dashboard a &ldquo;brain&rdquo; next to help us organize effortlessly, track what matters, and keep closer tabs on our friendships.
+          You are the early adopters. Take it for a spin, build your layout, and tell me: what would you like or not, what would be cool to add as new widget etc.
         </p>
         <p>
-          At the end of the day, I just want to forget and plan less, have a clean head, and enjoy life in the physical world more. Easy.
+          Make it your own with custom widgets and skins, while a smart "brain" handles all the organizing for you and we all spend time enjoying life even more! ^^
         </p>
         <p className="text-zinc-600 text-xs border-t border-white/[0.05] pt-3.5">
           — Olaf

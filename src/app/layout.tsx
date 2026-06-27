@@ -15,7 +15,7 @@ const THEME_FOUC_SCRIPT = `
     var stored = localStorage.getItem('ld_theme_mode');
     var mode = stored === 'light' || stored === 'dark'
       ? stored
-      : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      : 'light';
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(mode);
   } catch (e) {

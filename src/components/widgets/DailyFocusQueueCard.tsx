@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Target, Moon, Play, Pause, Check, X, Clock, ChevronDown, ChevronUp, Zap, Plus, Trash2 } from "lucide-react";
-import { useDashboard, type Task, type HistoricalLog, type DailyTrackingEntry } from "@/context/DashboardContext";
+import { useDashboard, type Task, type HistoricalLog, type DailyTrackingEntry, type RecurringTask } from "@/context/DashboardContext";
 import { areaColor } from "@/lib/areaColors";
 import TaskInspectModal from "@/components/TaskInspectModal";
 import { computeCountdown } from "@/components/widgets/RecurringCard";
@@ -732,9 +732,54 @@ function BirthdayRows() {
   );
 }
 
+// ── Recurring tasks added directly to today's queue ───────────────────────────
+
+function AddedRecurringRows({ items, onRemove }: { items: RecurringTask[]; onRemove: (id: string) => void }) {
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  if (items.length === 0) return null;
+
+  function toggle(id: string) {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <>
+      {items.map((rt) => {
+        const done = checkedIds.has(rt.id);
+        return (
+          <div key={rt.id} className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all duration-200 ${done ? "border-emerald-500/25 bg-emerald-500/[0.03]" : "border-white/[0.05] bg-white/[0.02]"}`}>
+            <button
+              type="button"
+              onClick={() => toggle(rt.id)}
+              className={`flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-150 ${done ? "bg-emerald-500/25 border-emerald-400/60 shadow-[0_0_8px_rgba(52,211,153,0.35)]" : "border-slate-600 hover:border-violet-400"}`}
+            >
+              {done && <Check className="w-2.5 h-2.5 text-emerald-300" />}
+            </button>
+            <span className={`flex-1 text-sm leading-none truncate ${done ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
+              ♻️ {rt.title}
+            </span>
+            <button
+              type="button"
+              onClick={() => onRemove(rt.id)}
+              title="Remove from focus"
+              className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 // ── Today's aggregation suggestions ──────────────────────────────────────────
 
-function TodaySuggestions({ onDismiss }: { onDismiss: () => void }) {
+function TodaySuggestions({ onDismiss, onAddRecurring }: { onDismiss: () => void; onAddRecurring: (rt: RecurringTask) => void }) {
   const { tasks, recurringTasks, currentTrackingDate, toggleTaskForToday, spheres } = useDashboard();
   const [dismissed, dismiss] = useDayDismissed(currentTrackingDate);
 
@@ -774,19 +819,33 @@ function TodaySuggestions({ onDismiss }: { onDismiss: () => void }) {
         {recurringSuggestions.map((rt) => {
           const ac = areaColor(spheres.find((s) => s.name === rt.sphere)?.labelColor);
           return (
-            <div key={rt.id} className="flex items-center gap-2 px-2 py-2 rounded-lg bg-white/[0.02]">
+            <div
+              key={rt.id}
+              onClick={() => { onAddRecurring(rt); dismiss(`rt-${rt.id}`); }}
+              className="flex items-center gap-2 px-2 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.05] cursor-pointer transition-colors"
+            >
               <span className={`flex-1 min-w-0 text-xs leading-normal truncate ${ac.text}`}>
                 ♻️ {rt.title}
               </span>
               <span className="text-[9px] text-slate-600 flex-shrink-0 tabular-nums">{rt.intervalLabel}</span>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); dismiss(`rt-${rt.id}`); }}
-                title="Dismiss"
-                className="p-1.5 rounded-lg bg-white/[0.04] text-slate-500 border border-white/[0.06] hover:bg-white/[0.1] transition-all duration-200 cursor-pointer flex-shrink-0"
-              >
-                <X className="w-3 h-3" />
-              </button>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onAddRecurring(rt); dismiss(`rt-${rt.id}`); }}
+                  title="Add to today's focus"
+                  className="p-1.5 rounded-lg border transition-all cursor-pointer bg-orange-500/10 text-orange-600 border-orange-500/20 hover:bg-orange-500 hover:text-white dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/30 dark:hover:bg-violet-500"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); dismiss(`rt-${rt.id}`); }}
+                  title="Dismiss"
+                  className="p-1.5 rounded-lg bg-white/[0.04] text-slate-500 border border-white/[0.06] hover:bg-red-500 hover:text-white hover:border-red-600 transition-all duration-200 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           );
         })}
@@ -805,7 +864,7 @@ function TodaySuggestions({ onDismiss }: { onDismiss: () => void }) {
                   type="button"
                   onClick={(e) => { e.stopPropagation(); toggleTaskForToday(t.id, today, "finish", null); dismiss(`task-${t.id}`); }}
                   title="Add to today's focus"
-                  className="p-1.5 rounded-lg bg-violet-500/20 text-violet-400 border border-violet-500/30 hover:bg-violet-500 hover:text-white transition-all cursor-pointer"
+                  className="p-1.5 rounded-lg border transition-all cursor-pointer bg-orange-500/10 text-orange-600 border-orange-500/20 hover:bg-orange-500 hover:text-white dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/30 dark:hover:bg-violet-500"
                 >
                   <Plus className="w-3 h-3" />
                 </button>
@@ -830,10 +889,16 @@ function TodaySuggestions({ onDismiss }: { onDismiss: () => void }) {
 
 export default function DailyFocusQueueCard() {
   const { tasks, currentTrackingDate, requestNightlyReview, historicalLogs } = useDashboard();
-  const [showPicker,         setShowPicker]         = useState(false);
+  const [showPicker,           setShowPicker]           = useState(false);
   const [rolloverDismissed,    setRolloverDismissed]    = useState(false);
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
   const [inspectTask,          setInspectTask]          = useState<Task | null>(null);
+  const [addedRecurring,       setAddedRecurring]       = useState<RecurringTask[]>([]);
+
+  const addRecurringToFocus = (rt: RecurringTask) =>
+    setAddedRecurring((prev) => prev.some((r) => r.id === rt.id) ? prev : [...prev, rt]);
+  const removeAddedRecurring = (id: string) =>
+    setAddedRecurring((prev) => prev.filter((r) => r.id !== id));
 
   const yesterdayLog = historicalLogs[0] ?? null;
 
@@ -939,6 +1004,9 @@ export default function DailyFocusQueueCard() {
           {/* Birthday auto-inject rows */}
           <BirthdayRows />
 
+          {/* Recurring tasks promoted into today's focus */}
+          <AddedRecurringRows items={addedRecurring} onRemove={removeAddedRecurring} />
+
           {/* Rollover suggestion */}
           {!rolloverDismissed && yesterdayLog && yesterdayLog.rolledOverTasks.length > 0 && (
             <RolloverWidget
@@ -949,7 +1017,7 @@ export default function DailyFocusQueueCard() {
 
           {/* Today's aggregation suggestions */}
           {!suggestionsDismissed && (
-            <TodaySuggestions onDismiss={() => setSuggestionsDismissed(true)} />
+            <TodaySuggestions onDismiss={() => setSuggestionsDismissed(true)} onAddRecurring={addRecurringToFocus} />
           )}
 
           {/* Performance Archive */}

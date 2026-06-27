@@ -164,6 +164,7 @@ export function PWAInstallerProvider({ children }: { children: ReactNode }) {
   // user hasn't dismissed the prompt, surface Dudu's bubble immediately.
   useEffect(() => {
     if (isStandaloneMode()) return;
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
     const raw = localStorage.getItem(STORAGE_KEY);
     const curr = raw ? parseInt(raw, 10) : 0;

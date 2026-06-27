@@ -117,7 +117,8 @@ function TaskRow({
   onInspect: (t: Task) => void;
   loggedSeconds?: number;
 }) {
-  const { updateTask, deleteTask, activeTaskId, timerIsRunning, startGlobalTimer, pauseGlobalTimer, toggleTaskForToday, currentTrackingDate } = useDashboard();
+  const { updateTask, deleteTask, activeTaskId, timerIsRunning, startGlobalTimer, pauseGlobalTimer, toggleTaskForToday, currentTrackingDate, activeWidgetIds } = useDashboard();
+  const hasDailyFocus = activeWidgetIds.includes("daily-focus");
   const isThisTaskActive = activeTaskId === task.id && timerIsRunning;
   const isQueued         = (task.queuedDate ?? null) === currentTrackingDate;
   const timeLabel        = fmtDuration(loggedSeconds);
@@ -153,7 +154,7 @@ function TaskRow({
           </button>
 
           <div className="flex flex-col gap-1 min-w-0">
-            <p className={`text-sm leading-none truncate ${task.done ? "line-through text-slate-500" : isQueued ? "text-slate-400" : "text-white"}`}>
+            <p className={`text-sm leading-normal pb-1 truncate ${task.done ? "line-through text-slate-500" : isQueued ? "text-slate-400" : "text-white"}`}>
               {task.title}
             </p>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -199,14 +200,14 @@ function TaskRow({
           {notePos && hasNote && createPortal(
             <div
               style={{ position: "fixed", top: notePos.top, left: notePos.left, transform: "translateX(-50%)", zIndex: 9999 }}
-              className="w-max max-w-xs bg-slate-900/95 border border-white/[0.08] text-slate-200 text-xs rounded-lg px-3 py-2.5 shadow-2xl backdrop-blur-md whitespace-pre-wrap break-words leading-relaxed pointer-events-none"
+              className="w-max max-w-xs bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-2.5 shadow-xl backdrop-blur-md whitespace-pre-wrap break-words leading-relaxed pointer-events-none"
               dangerouslySetInnerHTML={{ __html: task.notes }}
             />,
             document.body
           )}
 
-          {/* Queue toggle — always visible when queued, hover-reveal when not */}
-          {!task.done && (
+          {/* Queue toggle — only rendered when the Today's Focus widget is active */}
+          {!task.done && hasDailyFocus && (
             <button
               onClick={(e) => { e.stopPropagation(); toggleTaskForToday(task.id, currentTrackingDate, task.intent ?? "finish", task.dailyTargetMinutes ?? null); }}
               title={isQueued ? "Remove from today's queue" : "Queue for today"}
@@ -476,9 +477,9 @@ export default function ProjectsCard() {
                         below. Real `opacity` (not text-white/40's color-alpha) so the emoji
                         actually dims too — color-emoji glyphs ignore the CSS `color` property,
                         but not paint-level opacity. */}
-                    <span className={`text-sm font-medium text-white flex-1 leading-none flex items-center gap-1.5 min-w-0 transition-opacity duration-200 ${isOpen ? "opacity-40" : ""}`}>
+                    <span className={`text-sm font-medium text-white flex-1 leading-normal flex items-center gap-1.5 min-w-0 transition-opacity duration-200 ${isOpen ? "opacity-40" : ""}`}>
                       {project.emoji && <span className="text-base leading-none flex-shrink-0">{project.emoji}</span>}
-                      <span className="truncate whitespace-nowrap overflow-hidden">{project.name}</span>
+                      <span className="truncate whitespace-nowrap overflow-hidden pb-0.5">{project.name}</span>
                     </span>
                     {/* Visible tag — just the first, then overflow tooltip. Keeps the title
                         string the lion's share of the row instead of competing with a row of pills. */}

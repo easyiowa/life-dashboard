@@ -391,7 +391,8 @@ function MetricsList({ metrics }: { metrics: Metric[] }) {
 // ── Main Card ─────────────────────────────────────────────────────────────────
 
 export default function ProgressCard() {
-  const { tasks, projects, sessions, historicalLogs } = useDashboard();
+  const { tasks, projects, sessions, historicalLogs, activeWidgetIds } = useDashboard();
+  const hasFocusTimer = activeWidgetIds.includes("time-tracker");
 
   // 0 = current week, -1 = last week, -2 = two weeks ago
   const [viewOffset, setViewOffset] = useState(0);
@@ -456,14 +457,14 @@ export default function ProgressCard() {
       change:   `${totalTasks - doneTasks} still open`,
       positive: doneTasks / Math.max(totalTasks, 1) >= 0.5,
     },
-    {
+    ...(hasFocusTimer ? [{
       label:    "Focus Time",
       current:  weekFocusHours,
       target:   focusTarget,
       unit:     "h",
       change:   `${weekSessions.length} session${weekSessions.length !== 1 ? "s" : ""} this week`,
       positive: weekFocusHours >= 5,
-    },
+    }] : []),
     {
       label:    "Project Progress",
       current:  avgProjectProgress,
@@ -491,14 +492,14 @@ export default function ProgressCard() {
       change:   hvQueued > 0 ? `${hvQueued - hvDone} rolled over` : "No log data",
       positive: hvQueued > 0 && hvDone / hvQueued >= 0.5,
     },
-    {
+    ...(hasFocusTimer ? [{
       label:    "Focus Time",
       current:  hvFocusHours,
       target:   focusTarget,
       unit:     "h",
       change:   `${hvSessions.length} session${hvSessions.length !== 1 ? "s" : ""} that week`,
       positive: hvFocusHours >= 5,
-    },
+    }] : []),
     {
       label:    "Project Progress",
       current:  avgProjectProgress,

@@ -106,7 +106,6 @@ function BlueprintCard({ id, colSpan }: { id: string; colSpan: 1 | 2 | 3 }) {
     attributes,
     listeners,
     setNodeRef,
-    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -115,24 +114,16 @@ function BlueprintCard({ id, colSpan }: { id: string; colSpan: 1 | 2 | 3 }) {
   return (
     <div
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`${SPAN_CLS[colSpan]} flex items-center gap-2.5 px-3 py-3 rounded-xl border select-none transition-all duration-150 ${
+      className={`${SPAN_CLS[colSpan]} flex items-center gap-2.5 px-3 py-3 rounded-xl border select-none transition-all duration-150 cursor-grab active:cursor-grabbing ${
         isDragging
           ? "opacity-25 border-white/[0.05] bg-transparent"
           : "bg-[#0F1629] border-white/[0.09] hover:border-violet-500/40 hover:bg-[#131929]"
       }`}
     >
-      {/* Drag handle — only activates drag; rest of card stays click-safe */}
-      <div
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        className="shrink-0 text-slate-700 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none transition-colors"
-      >
-        <GripVertical className="w-3 h-3" />
-      </div>
-
-      {/* System icon (no emoji) */}
+      {/* System icon */}
       {Icon && <Icon className="w-3.5 h-3.5 shrink-0 text-slate-500" />}
 
       {/* Label */}
@@ -144,6 +135,11 @@ function BlueprintCard({ id, colSpan }: { id: string; colSpan: 1 | 2 | 3 }) {
       <span className="shrink-0 text-[9px] text-slate-700 font-mono leading-none">
         {colSpan}×
       </span>
+
+      {/* Drag handle — visual only, moved to the right */}
+      <div className="shrink-0 text-slate-600">
+        <GripVertical className="w-3 h-3" />
+      </div>
     </div>
   );
 }
@@ -176,9 +172,9 @@ function OverlayCard({ id }: { id: string }) {
   const Icon = meta?.Icon;
   return (
     <div className="flex items-center gap-2.5 px-3 py-3 rounded-xl border border-violet-500/55 bg-[#0F1629]/95 backdrop-blur-xl shadow-2xl ring-1 ring-violet-500/25 pointer-events-none">
-      <GripVertical className="w-3 h-3 text-slate-600 shrink-0" />
       {Icon && <Icon className="w-3.5 h-3.5 text-violet-400 shrink-0" />}
-      <span className="text-xs font-medium text-violet-300">{meta?.label ?? id}</span>
+      <span className="text-xs font-medium text-violet-300 flex-1">{meta?.label ?? id}</span>
+      <GripVertical className="w-3 h-3 text-slate-600 shrink-0" />
     </div>
   );
 }

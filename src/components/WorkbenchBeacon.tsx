@@ -6,6 +6,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { WorkbenchUpdate } from "@/types/workbench";
+import { useModalOverlay } from "@/hooks/useModalOverlay";
 
 const FOUNDER_EMAIL = "iowa.olaf@googlemail.com";
 const SCREENSHOT_BUCKET = "feedback-screenshots";
@@ -78,6 +79,7 @@ interface Props {
 export default function WorkbenchBeacon({ isOpen, onClose }: Props) {
   const { user } = useAuth();
   const isFounder = user?.email === FOUNDER_EMAIL;
+  useModalOverlay(isOpen);
 
   const [note,      setNote]      = useState("");
   const [sent,      setSent]      = useState(false);
