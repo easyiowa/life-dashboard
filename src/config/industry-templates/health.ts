@@ -11,6 +11,7 @@ export const healthTemplate: IndustryTemplate = {
 
   areas: [
     { areaKey: "clients",  name: "Client Coaching",  color: "emerald" },
+    { areaKey: "content",  name: "Content & Growth",  color: "sky" },
   ],
 
   projects: [

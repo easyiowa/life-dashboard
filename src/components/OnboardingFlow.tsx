@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import type { ComponentType } from "react";
 import {
-  ArrowRight, Check, Loader2, Flame,
+  ArrowRight, Check, Flame,
   ChevronLeft, ChevronRight,
   CalendarDays, FolderKanban, Timer, NotebookPen, Target,
   Activity, TrendingUp, RefreshCw, Users,
@@ -19,6 +19,7 @@ import {
 } from "@/config/industry-templates";
 import type { IndustryTemplate } from "@/config/industry-templates";
 import { seedSelectedTemplates } from "@/services/onboardingSeeder";
+import { type LoaderConfig } from "@/components/OnboardingLoader";
 
 // ── Calendar slides ────────────────────────────────────────────────────────────
 
@@ -1397,14 +1398,12 @@ function AppearanceStep({
   onFinish,
 }: {
   selectedWidgets: string[];
-  onFinish: (widgets: string[]) => Promise<void>;
+  onFinish: (widgets: string[]) => void;
 }) {
   const { mode, setMode } = useTheme();
-  const [loading, setLoading] = useState(false);
 
-  async function finish() {
-    setLoading(true);
-    await onFinish(selectedWidgets);
+  function finish() {
+    onFinish(selectedWidgets);
   }
 
   return (
@@ -1412,7 +1411,7 @@ function AppearanceStep({
       <div className="text-center">
         <div className="text-4xl mb-4">✨</div>
         <h2 className="text-2xl font-bold text-white tracking-tight">
-          Choose your workspace aesthetic
+          Choose your aesthetic
         </h2>
         <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
           Pick the canvas that suits your style. You can switch anytime from Settings.
@@ -1520,15 +1519,11 @@ function AppearanceStep({
       </div>
 
       <button
-        onClick={() => void finish()}
-        disabled={loading}
-        className="w-full h-12 rounded-xl font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)]"
+        onClick={finish}
+        className="w-full h-12 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)]"
         style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
       >
-        {loading
-          ? <Loader2 className="w-4 h-4 animate-spin" />
-          : <>Let&apos;s go! <ArrowRight className="w-4 h-4" /></>
-        }
+        Let&apos;s go! <ArrowRight className="w-4 h-4" />
       </button>
     </div>
   );
@@ -1536,32 +1531,25 @@ function AppearanceStep({
 
 // ── Main flow ──────────────────────────────────────────────────────────────────
 
-export default function OnboardingFlow() {
+export default function OnboardingFlow({ onStartLoader }: { onStartLoader: (config: LoaderConfig) => void }) {
   const { user } = useAuth();
-  const [step,           setStep]           = useState<"identity" | "intent" | "marketplace" | "appearance">("identity");
-  const [nickname,       setNickname]       = useState("");
-  const [intents,        setIntents]        = useState<Intent[]>([]);
-  const [industries,     setIndustries]     = useState<string[]>([]);
-  const [customIndustry, setCustomIndustry] = useState("");
+  const { mode } = useTheme();
+  const [step,            setStep]           = useState<"identity" | "intent" | "marketplace" | "appearance">("identity");
+  const [nickname,        setNickname]       = useState("");
+  const [intents,         setIntents]        = useState<Intent[]>([]);
+  const [industries,      setIndustries]     = useState<string[]>([]);
+  const [customIndustry,  setCustomIndustry] = useState("");
   const [selectedWidgets, setSelectedWidgets] = useState<string[]>([]);
 
-  async function handleFinish(selectedWidgets: string[]) {
+  // Seeds areas/tasks and writes user_insights — does NOT flip is_onboarded yet.
+  // Stack every selected track into one dashboard: the big "My Personal Life" intent
+  // card seeds personalLifeTemplate, and every selected industry chip with a matching
+  // entry seeds its own template alongside it. Chips with no template mapping
+  // (Creative/Events/Health) are simply absent here — the merge-vs-fallback policy
+  // lives in seedSelectedTemplates (src/services/onboardingSeeder.ts), not here.
+  async function doSeed(widgets: string[]) {
     if (!supabase || !user) return;
 
-    // Seed FIRST, before anything that can flip auth state. auth.updateUser below sets
-    // is_onboarded: true, which AuthGate reacts to immediately via onAuthStateChange —
-    // if that fired before seeding finished, the user could land on a freshly-switched
-    // dashboard with no areas yet (the duplicate-area / blank-screen race this fixes).
-    // Best-effort: a failed seed still lets onboarding complete rather than stranding
-    // the user on this screen, but it can no longer run concurrently with the redirect.
-    //
-    // Stack every selected track into one dashboard: the big "My Personal Life" intent
-    // card seeds personalLifeTemplate, and every selected industry chip with a matching
-    // entry seeds its own template alongside it — so e.g. Personal Life + Lawyer gives
-    // you both areas at once instead of forcing a single either/or choice. Chips with no
-    // template mapping (Creative/Events/Health) are simply absent here, never swapped
-    // for cleanSlateTemplate — the merge-vs-fallback policy itself lives in
-    // seedSelectedTemplates (src/services/onboardingSeeder.ts), not here.
     const templatesToSeed: IndustryTemplate[] = [];
     if (intents.includes("personal")) templatesToSeed.push(personalLifeTemplate);
     for (const label of industries) {
@@ -1569,24 +1557,9 @@ export default function OnboardingFlow() {
       if (template) templatesToSeed.push(template);
     }
 
-    // MarketplaceStep's finish() already awaits this whole function before clearing its
-    // spinner, so the loader stays up for the full duration of every template seeded here.
     await seedSelectedTemplates(templatesToSeed, user.id);
 
-    await supabase.auth.updateUser({
-      data: {
-        is_onboarded:  true,
-        display_name:  nickname,
-        intents,
-        industries,
-        custom_industry: customIndustry || null,
-        widget_layout: selectedWidgets,
-      },
-    });
-
     // Best-effort — onboarding still completes even if this insert fails.
-    // All widgets chosen during onboarding activate "now", which coincides with
-    // created_at — so none of them show up as a newly-added widget later.
     const nowIso = new Date().toISOString();
     const { error } = await supabase
       .from("user_insights")
@@ -1596,11 +1569,35 @@ export default function OnboardingFlow() {
         intents,
         industries,
         custom_industry:     customIndustry || null,
-        selected_widgets:    selectedWidgets,
-        widget_activated_at: Object.fromEntries(selectedWidgets.map(id => [id, nowIso])),
+        selected_widgets:    widgets,
+        widget_activated_at: Object.fromEntries(widgets.map(id => [id, nowIso])),
       });
     if (error) console.warn("[OnboardingFlow] user_insights upsert failed:", error.message);
-    // onAuthStateChange fires → AuthContext updates user → AuthGate stops rendering this flow
+  }
+
+  // Called after the loading animation completes. Sets is_onboarded: true →
+  // onAuthStateChange fires → AuthContext updates user → AuthGate unmounts this flow.
+  async function doComplete(widgets: string[]) {
+    if (!supabase || !user) return;
+    await supabase.auth.updateUser({
+      data: {
+        is_onboarded:    true,
+        display_name:    nickname,
+        intents,
+        industries,
+        custom_industry: customIndustry || null,
+        widget_layout:   widgets,
+      },
+    });
+  }
+
+  function handleFinish(widgets: string[]) {
+    onStartLoader({
+      selectedWidgets: widgets,
+      theme:           mode,
+      seedFn:          () => doSeed(widgets),
+      completeFn:      () => doComplete(widgets),
+    });
   }
 
   const stepIndex = step === "identity" ? 0 : step === "intent" ? 1 : step === "marketplace" ? 2 : 3;

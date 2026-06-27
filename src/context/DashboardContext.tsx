@@ -1735,6 +1735,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           const leafFirstTables = [
             "tasks", "focus_sessions", "quick_notes", "network_contacts",
             "recurring_tasks", "habits", "projects", "spheres",
+            "relationship_groups",
           ];
           for (const table of leafFirstTables) {
             await db.from(table).delete().eq("user_id", uid).eq("is_sample", true);

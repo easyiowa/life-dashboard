@@ -269,9 +269,20 @@ export async function seedOnboardingTemplate(template: IndustryTemplate, userId:
 
     const labelsToCreate = uniqueLabels.filter((label) => !groupMap[label.toLowerCase()]);
     if (labelsToCreate.length > 0) {
-      const newGroupRows = labelsToCreate.map((label) => ({ id: crypto.randomUUID(), user_id: userId, label }));
+      const newGroupRows = labelsToCreate.map((label) => ({ id: crypto.randomUUID(), user_id: userId, label, is_sample: true }));
       const { error: groupError } = await db.from("relationship_groups").insert(newGroupRows);
-      if (groupError) throw new Error(`Failed to create relationship groups: ${groupError.message}`);
+      if (groupError) {
+        if (groupError.code !== "42703") {
+          throw new Error(`Failed to create relationship groups: ${groupError.message}`);
+        }
+        // Migration 20260627100000_relationship_groups_is_sample.sql not yet applied —
+        // fall back to inserting without the flag so seeding can proceed. Groups created
+        // this way won't be auto-removed by "Remove Sample Data" until the migration runs.
+        const rowsWithoutFlag = newGroupRows.map(({ is_sample: _f, ...rest }) => rest);
+        const { error: fallbackError } = await db.from("relationship_groups").insert(rowsWithoutFlag);
+        if (fallbackError) throw new Error(`Failed to create relationship groups: ${fallbackError.message}`);
+        console.error("[onboardingSeeder] relationship_groups.is_sample column missing — please run: supabase db push");
+      }
       for (const row of newGroupRows) groupMap[row.label.toLowerCase()] = row.id;
     }
 
@@ -338,7 +349,7 @@ export async function seedSelectedTemplates(templates: IndustryTemplate[], userI
     try {
       await seedOnboardingTemplate(template, userId);
     } catch (err) {
-      console.warn(`[onboardingSeeder] seeding "${template.id}" failed:`, err);
+      console.error(`[onboardingSeeder] seeding "${template.id}" failed:`, err);
     }
   }
 }
