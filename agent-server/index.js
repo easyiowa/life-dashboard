@@ -1,27 +1,28 @@
 require('dotenv').config();
-const fs          = require('fs');
-const path        = require('path');
-const TelegramBot = require('node-telegram-bot-api');
-const { Anthropic } = require('@anthropic-ai/sdk');
+const fs               = require('fs');
+const path             = require('path');
+const TelegramBot      = require('node-telegram-bot-api');
+const { Anthropic }    = require('@anthropic-ai/sdk');
+const { createClient } = require('@supabase/supabase-js');
 
-// ── Credentials ───────────────────────────────────────────────────────────────
-const token         = process.env.TELEGRAM_BOT_TOKEN;
-const allowedUserId = parseInt(process.env.ALLOWED_TELEGRAM_USER_ID, 10);
-const anthropicKey  = process.env.ANTHROPIC_API_KEY;
+// Credentials
+const token           = process.env.TELEGRAM_BOT_TOKEN;
+const allowedUserId   = parseInt(process.env.ALLOWED_TELEGRAM_USER_ID, 10);
+const anthropicKey    = process.env.ANTHROPIC_API_KEY;
+const supabaseUrl     = process.env.SUPABASE_URL;
+const supabaseKey     = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const dashboardUserId = process.env.SUPABASE_USER_ID;
 
-if (!token || !allowedUserId || !anthropicKey) {
+if (!token || !allowedUserId || !anthropicKey || !supabaseUrl || !supabaseKey || !dashboardUserId) {
   console.error("Critical Halt: Credentials missing in .env");
   process.exit(1);
 }
 
 const bot       = new TelegramBot(token, { polling: true });
 const anthropic = new Anthropic({ apiKey: anthropicKey });
+const supabase  = createClient(supabaseUrl, supabaseKey);
 
-const PENDING_PATH  = path.join(__dirname, 'agent-pending.json');
-const SNAPSHOT_PATH = path.join(__dirname, 'dashboard-snapshot.json');
-const MD_PATH       = path.join(__dirname, 'BENICIO.md');
-
-// ── Rolling session history (10 turns max) ────────────────────────────────────
+const MD_PATH = path.join(__dirname, 'BENICIO.md');
 const sessions = {};
 const MAX_MSGS  = 20;
 
@@ -32,518 +33,253 @@ function pushMsg(uid, msg) {
   while (h.length > MAX_MSGS) h.shift();
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function mkTimestamp() {
   const n = new Date();
   return `${n.toLocaleDateString('en-CA')} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
 }
 
-function readSnapshot() {
-  if (!fs.existsSync(SNAPSHOT_PATH)) return null;
-  try { return JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8')); } catch { return null; }
-}
-
-function queueAction(type, payload) {
-  let q = [];
-  if (fs.existsSync(PENDING_PATH)) { try { q = JSON.parse(fs.readFileSync(PENDING_PATH, 'utf8')); } catch { q = []; } }
-  q.push({ type, payload, queuedAt: mkTimestamp() });
-  fs.writeFileSync(PENDING_PATH, JSON.stringify(q, null, 2), 'utf8');
+// Queue actions straight to the database table (Mirrors DashboardContext poll loop)
+async function queueAction(type, payload) {
+  const { error } = await supabase.from('agent_actions_queue').insert({
+    user_id:   dashboardUserId,
+    type,
+    payload,
+    is_sample: false,
+    queued_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(`Queue write failed [${type}]: ${error.message}`);
   console.log(`Queued ${type}:`, JSON.stringify(payload));
 }
 
-function parseInterval(str) {
-  if (!str) return { days: 30, label: 'Every Month' };
-  const n = parseInt(str) || 1;
-  const s = str.toLowerCase();
-  if (/year/i.test(s))  return { days: 365,    label: 'Every Year'     };
-  if (/month/i.test(s)) return { days: n * 30,  label: n === 1 ? 'Every Month'  : `Every ${n} Months` };
-  if (/week/i.test(s))  return { days: n * 7,   label: n === 1 ? 'Every Week'   : `Every ${n} Weeks`  };
-  if (/day/i.test(s))   return { days: n,        label: `Every ${n} Days` };
-  return { days: 30, label: str };
-}
+// Global data snapshot fetcher — reads the same scope as the frontend widget layer.
+// The service role key bypasses RLS; row-level isolation for writes is handled
+// via dashboardUserId in queueAction, not by filtering reads here.
+async function fetchDashboardData() {
+  const today = new Date().toLocaleDateString('en-CA');
 
-const HABIT_EMOJI = [
-  [/water|hydrat/i,'💧'],[/gym|workout|run|exercise/i,'💪'],[/read|book|study/i,'📚'],
-  [/meditat|mindful/i,'🧘'],[/sleep|rest/i,'😴'],[/walk|step|hike/i,'🚶'],
-  [/journal|write/i,'📝'],[/screen|phone|social/i,'📵'],[/coffee/i,'☕'],
-  [/alcohol|wine|beer/i,'🍷'],[/code|dev|program/i,'💻'],[/junk|sugar|fast.?food/i,'🍔'],
-];
-function guessEmoji(t) { for (const [re, e] of HABIT_EMOJI) if (re.test(t)) return e; return '⭐'; }
+  const [
+    spheresRes, projectsRes, tasksRes, habitsRes, quickNotesRes,
+    recurringRes, logsRes, checkInsRes, networkRes
+  ] = await Promise.all([
+    supabase.from("spheres").select("*").order("sort_order"),
+    supabase.from("projects").select("*"),
+    supabase.from("tasks").select("*"),
+    supabase.from("habits").select("*, habit_completions(completed_on)"),
+    supabase.from("quick_notes").select("*").order("created_at", { ascending: false }),
+    supabase.from("recurring_tasks").select("*"),
+    supabase.from("historical_logs").select("*").order("date", { ascending: false }),
+    supabase.from("daily_check_ins").select("*").order("date", { ascending: false }),
+    supabase.from("network_contacts").select("*, contact_events(*)")
+  ]);
+
+  const sphereRows  = spheresRes.data  || [];
+  const projectRows = projectsRes.data || [];
+  const taskRows    = tasksRes.data    || [];
+
+  const sphereNameById  = new Map(sphereRows.map(s => [s.id, s.name]));
+  const projectNameById = new Map(projectRows.map(p => [p.id, p.name]));
+
+  // Only include projects whose sphere_id resolves to a known sphere.
+  // Rows with a null or dangling foreign key are excluded so they don't
+  // inflate sphere counts or bleed into unrelated areas.
+  const validProjects = projectRows.filter(p => p.sphere_id && sphereNameById.has(p.sphere_id));
+
+  return {
+    currentTrackingDate: today,
+    spheres: sphereRows.map(s => ({ id: s.id, name: s.name })),
+    projects: validProjects.map(p => ({
+      id:       p.id,
+      name:     p.name,
+      sphereId: p.sphere_id,                    // UUID — used for strict UUID filtering in executeItem
+      sphere:   sphereNameById.get(p.sphere_id), // resolved name — used for display in the prompt
+    })),
+    tasks: taskRows.map(t => ({
+      id:         t.id,
+      title:      t.title,
+      sphere:     sphereNameById.get(t.sphere_id) || "No Sphere",
+      project:    projectNameById.get(t.project_id) || "No Project",
+      done:       t.done || false
+    })),
+    habits: (habitsRes.data || []).map(h => ({
+      id: h.id,
+      title: h.title,
+      type: h.type
+    })),
+    quickNotes: (quickNotesRes.data || []).map(n => ({
+      id:        n.id,
+      text:      n.text,
+      sphere:    sphereNameById.get(n.sphere_id) || "iowa"
+    })),
+    recurringTasks: (recurringRes.data || []).map(r => ({
+      id: r.id, title: r.title, intervalLabel: r.interval_label, lastDoneDate: r.last_done_date
+    })),
+    networkContacts: (networkRes.data || []).map(c => ({
+      id: c.id, name: c.name, notes: c.notes || ""
+    })),
+    calendarLogs: (logsRes.data || []).slice(0, 5).map(l => `${l.date}: ${l.recap || 'Logged'}`)
+  };
+}
 
 function findByTitle(arr, title) {
   return (arr || []).find(x => x.title?.toLowerCase() === title?.toLowerCase());
 }
 
-// Rewrite every stale title reference in dashboard-snapshot.json immediately,
-// so Benicio's next read and the Next.js sync route both see correct data
-// before the browser's own UPDATE_TASK action even lands.
-function patchSnapshotForRename(taskId, oldTitle, newTitle) {
-  const snap = readSnapshot();
-  if (!snap) return;
-  let dirty = false;
-
-  // Tasks array — overwrite the canonical title by ID
-  if (Array.isArray(snap.tasks)) {
-    snap.tasks = snap.tasks.map(t => {
-      if (t.id !== taskId) return t;
-      dirty = true;
-      return { ...t, title: newTitle };
-    });
-  }
-
-  // Active timer block — either stored as snap.activeTask or snap.timer
-  for (const key of ['activeTask', 'timer']) {
-    if (snap[key]?.title === oldTitle) {
-      snap[key] = { ...snap[key], title: newTitle };
-      dirty = true;
-    }
-  }
-
-  // Log / history arrays — any entry that carries taskName or title matching the old string
-  for (const key of ['sessions', 'timerLog', 'focusSessions', 'history']) {
-    if (!Array.isArray(snap[key])) continue;
-    snap[key] = snap[key].map(entry => {
-      const needsPatch =
-        entry.taskName === oldTitle ||
-        entry.title    === oldTitle;
-      if (!needsPatch) return entry;
-      dirty = true;
-      return {
-        ...entry,
-        ...(entry.taskName === oldTitle && { taskName: newTitle }),
-        ...(entry.title    === oldTitle && { title:    newTitle }),
-      };
-    });
-  }
-
-  if (dirty) {
-    fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(snap, null, 2), 'utf8');
-    console.log(`Snapshot patched: "${oldTitle}" → "${newTitle}"`);
-  }
-}
-
-// ── Tool definitions ──────────────────────────────────────────────────────────
+// Comprehensive schemas mapping all active container targets
 const TOOLS = [
   {
     name: "manage_dashboard_item",
-    description: "Handles creation, updates, deletion, and status changes for tasks, habits, notes, recurring responsibilities, and timer control. Call only on Olaf's explicit command.",
+    description: "Handles creation, completion, and removal of dashboard widgets (tasks, notes, habits, recurring items).",
     input_schema: {
       type: "object",
       properties: {
-        itemType:  { type: "string", enum: ["task", "habit", "note", "recurring", "timer"] },
-        action:    { type: "string", enum: ["create", "update", "delete", "complete", "start_timer", "pause_timer", "complete_recurring", "log_status", "lock_day"] },
-        title:     { type: "string", description: "Item title (task, habit, or recurring name)." },
-        sphere:    { type: "string", enum: ["iowa", "siin", "vibing", "education"] },
-        project:   { type: "string", description: "Exact project name for tasks." },
-        priority:  { type: "string", enum: ["High", "Med", "Low"] },
-        urgency:   { type: "string", enum: ["urgent", "not-urgent"] },
-        energy:    { type: "string", enum: ["Flow", "Quick", "Easy"] },
-        timeGoal:  { type: "number", description: "Target minutes for timed tasks." },
-        interval:  { type: "string", description: "Recurrence interval e.g. '30 Days', '2 Weeks', '6 Months'." },
-        routine:   { type: "string", enum: ["morning", "day", "evening"] },
-        habitType: { type: "string", enum: ["building", "breaking"] },
-        text:      { type: "string", description: "Raw note content." },
-        newTitle:  { type: "string", description: "New title when renaming a task." },
+        itemType:  { type: "string", enum: ["task", "habit", "note", "recurring"] },
+        action:    { type: "string", enum: ["create", "complete", "delete", "toggle", "focus"] },
+        title:     { type: "string", description: "Item title or note text string." },
+        sphere:    { type: "string" },
+        project:   { type: "string" }
       },
-      required: ["itemType", "action"],
+      required: ["itemType", "action", "title"],  // sphere intentionally omitted — Claude must ask when unspecified
     },
-  },
-  {
-    name: "manage_dashboard_structure",
-    description: "Creates or modifies dashboard structural containers: projects and spheres.",
-    input_schema: {
-      type: "object",
-      properties: {
-        action:      { type: "string", enum: ["create_project", "rename_project", "rename_sphere"] },
-        projectName: { type: "string", description: "Project name to create or target." },
-        sphereName:  { type: "string", description: "Sphere name for the project, or sphere to rename." },
-        sphereEmoji: { type: "string", description: "Emoji to associate with a sphere." },
-        newName:     { type: "string", description: "New name when renaming." },
-      },
-      required: ["action"],
-    },
-  },
-  {
-    name: "fetch_full_dashboard_snapshot",
-    description: "Reads and returns the full live dashboard data — tasks, habits, notes, recurring items — for context-aware queries and audits.",
-    input_schema: { type: "object", properties: {} },
-  },
+  }
 ];
 
-// ── manage_dashboard_item executor ───────────────────────────────────────────
 async function executeItem(input, snap) {
-  const { itemType, action, title, sphere, project, priority, urgency, energy, timeGoal, interval, routine, habitType, text, newTitle } = input;
-  const ts    = mkTimestamp();
+  const { itemType, action, title, sphere, project } = input;
   const today = new Date().toLocaleDateString('en-CA');
+  const ts = mkTimestamp();
 
-  // TASK ───────────────────────────────────────────────────────────────────────
+  // Resolve the target sphere by case-insensitive name match, falling back to
+  // the first available sphere. We keep the full object so we can use its UUID.
+  const matchedSphereObj  = sphere
+    ? snap.spheres.find(s => s.name?.toLowerCase() === sphere.toLowerCase())
+    : null;
+  const resolvedSphereObj = matchedSphereObj ?? snap.spheres[0] ?? null;
+  const resolvedSphere    = resolvedSphereObj?.name ?? 'iowa';
+  const resolvedSphereId  = resolvedSphereObj?.id   ?? null;
+
+  // Filter strictly by UUID so name-based collisions can never bleed projects
+  // from one sphere into another (mirrors the frontend's FK join behavior).
+  const sphereProjects  = resolvedSphereId
+    ? snap.projects.filter(p => p.sphereId === resolvedSphereId)
+    : [];
+  const matchedProject  = sphereProjects.find(p => p.name?.toLowerCase() === project?.toLowerCase());
+  const resolvedProject = matchedProject?.name ?? sphereProjects[0]?.name ?? 'No Project';
+
+  // Tasks
   if (itemType === "task") {
     if (action === "create") {
-      queueAction("ADD_TASK", {
-        title, sphere, project: project || 'No Project',
-        priority: priority || 'Med', energy: energy || 'Easy',
-        urgency: urgency || 'not-urgent',
-        done: false, deadline: null, notes: '', manualMinutes: 0,
+      await queueAction("ADD_TASK", {
+        title, sphere: resolvedSphere, project: resolvedProject,
+        priority: 'Med', energy: 'Easy', urgency: 'not-urgent',
+        done: false, deadline: null, notes: '', manualMinutes: 0, is_sample: false,
+        queuedDate: null, timeSpentMinutes: 0, intent: 'finish', dailyTargetMinutes: null,
+        rolloverCount: 0, dailyTracking: {}
       });
-      return `Task created: "${title}" — ${sphere} / ${project || 'No Project'}`;
-    }
-    if (action === "complete" || action === "update" || action === "log_status") {
-      const task = findByTitle(snap?.tasks, title);
-      if (!task) return `Task not found: "${title}"`;
-      const fields = action === "complete"
-        ? { done: true }
-        : {
-            ...(newTitle   && { title: newTitle }),
-            ...(priority   && { priority }),
-            ...(urgency    && { urgency }),
-            ...(energy     && { energy }),
-          };
-      queueAction("UPDATE_TASK", { id: task.id, fields });
-      if (action === "update" && newTitle) {
-        // 1. Queue browser dispatch to patch activeTask + session history in React state
-        queueAction("RENAME_TASK_REFS", { taskId: task.id, oldTitle: task.title, newTitle });
-        // 2. Patch snapshot on disk immediately — same execution pass
-        patchSnapshotForRename(task.id, task.title, newTitle);
-      }
-      return newTitle
-        ? `Task renamed: "${task.title}" → "${newTitle}"`
-        : `Task ${action}: "${task.title}"`;
-    }
-    if (action === "delete") {
-      const task = findByTitle(snap?.tasks, title);
-      if (!task) return `Task not found: "${title}"`;
-      queueAction("DELETE_TASK", { id: task.id });
-      return `Task deleted: "${task.title}"`;
-    }
-    if (action === "lock_day") {
-      if (!snap) return 'No snapshot — open the dashboard in your browser first.';
-      const yesterday = snap.currentTrackingDate || '';
-
-      // ── Core focus queue metrics ─────────────────────────────────────────────
-      const queued            = (snap.tasks || []).filter(t => t.queuedDate === yesterday);
-      const queuedCommitments = queued.filter(t => (t.intent ?? 'finish') !== 'maybe');
-      const wins              = queuedCommitments.filter(t => t.done);
-      const rolledOver        = queuedCommitments.filter(t => !t.done);
-      const habitsHit         = (snap.habits || []).filter(h => h.history?.[yesterday] === true);
-      const velocity          = queuedCommitments.length > 0
-        ? Math.round(wins.length / queuedCommitments.length * 100)
-        : 100;
-
-      // ── Missed calendar items ────────────────────────────────────────────────
-      // Any task whose deadline falls on the tracking date and is still undone —
-      // whether it was queued or not. No queuedDate guard: a deadline miss is a miss.
-      const missedCalendar = (snap.tasks || [])
-        .filter(t => t.deadline === yesterday && !t.done)
-        .map(t => t.title);
-
-      // ── Overdue recurring responsibilities ──────────────────────────────────
-      // Convert due date to a YYYY-MM-DD string for clean lexicographic comparison,
-      // avoiding millisecond/timezone drift from raw .getTime() arithmetic.
-      const overdueRecurring = (snap.recurringTasks || [])
-        .filter(r => {
-          if (!r.lastDoneDate) return true; // never completed — always overdue
-          const dueDateStr = new Date(
-            new Date(r.lastDoneDate).getTime() + r.intervalDays * 86_400_000
-          ).toLocaleDateString('en-CA'); // "YYYY-MM-DD"
-          return dueDateStr <= yesterday;  // ISO strings sort correctly as strings
-        })
-        .map(r => `${r.title} (${r.intervalLabel})`);
-
-      // ── Prompt payload ───────────────────────────────────────────────────────
-      // Bullet-point each section so the model cannot scan past them as inline noise.
-      const calendarLines  = missedCalendar.length
-        ? missedCalendar.map(t  => `  • ${t}`).join('\n')
-        : '  • None';
-      const recurringLines = overdueRecurring.length
-        ? overdueRecurring.map(r => `  • ${r}`).join('\n')
-        : '  • None';
-
-      const metrics = [
-        `Date locked: ${yesterday}`,
-        `Focus Queue: ${queuedCommitments.length} queued | ${wins.length} done | ${rolledOver.length} rolled over | ${velocity}% velocity`,
-        rolledOver.length ? `Stalled tasks: ${rolledOver.map(t => `"${t.title}"`).join(', ')}` : 'No rollovers.',
-        `Habits hit: ${habitsHit.length}/${(snap.habits || []).length}`,
-        `Total open tasks: ${(snap.tasks || []).filter(t => !t.done).length}`,
-        '',
-        '--- MISSED CALENDAR ITEMS (deadline was today, left undone) ---',
-        calendarLines,
-        '',
-        '--- OVERDUE RECURRING RESPONSIBILITIES (past their due date) ---',
-        recurringLines,
-      ].join('\n');
-
-      const recapRes = await anthropic.messages.create({
-        model:      'claude-haiku-4-5-20251001',
-        max_tokens: 80,
-        system: [
-          'You are Benicio, Olaf\'s direct peer and accountability partner.',
-          'Write a crisp 1-2 sentence recap of his previous day based on the data below.',
-          '',
-          'STRICT RULES:',
-          '1. ABSOLUTELY FORBID generic motivational fluff, filler words, or empty clichés.',
-          '2. Be human and direct, not robotic. High-density — just say what stalled or succeeded plainly.',
-          '3. If there are items listed under MISSED CALENDAR ITEMS or OVERDUE RECURRING RESPONSIBILITIES',
-          '   (i.e. anything other than "None"), you MUST integrate them into the 1-2 sentence friendly',
-          '   summary recap so the user is held accountable for leaving them behind.',
-          '4. Keep it crisp, direct, no-fluff, human, and strictly under 25-30 words total.',
-        ].join('\n'),
-        messages: [{ role: 'user', content: metrics }],
-      });
-
-      const recap = recapRes.content.find(b => b.type === 'text')?.text?.trim() || '';
-
-      // Queue LOCK_DAY so the frontend saves the historical log and recap banner
-      queueAction("LOCK_DAY", {
-        date:            yesterday,
-        dayVelocity:     velocity,
-        recap,
-        completedTasks:  wins.map(t => t.title),
-        rolledOverTasks: rolledOver.map(t => t.title),
-      });
-      console.log(`Day locked. Velocity: ${velocity}%. Recap: "${recap}"`);
-      return recap;
-    }
-  }
-
-  // HABIT ──────────────────────────────────────────────────────────────────────
-  if (itemType === "habit") {
-    if (action === "create") {
-      queueAction("ADD_HABIT", {
-        title,
-        type:        habitType === "breaking" ? 'stop' : 'start',
-        routine:     routine || 'day',
-        frequency:   'daily',
-        targetCount: 5,
-        emoji:       guessEmoji(title || ''),
-        notes:       '',
-      });
-      return `Habit created: "${title}" [${habitType || 'building'}/${routine || 'day'}]`;
+      return `Task created successfully.`;
     }
     if (action === "complete") {
-      const habit = findByTitle(snap?.habits, title);
-      if (!habit) return `Habit not found: "${title}"`;
-      queueAction("TOGGLE_HABIT_DATE", { id: habit.id, dateString: today });
-      return `Habit logged today: "${habit.title}"`;
-    }
-    if (action === "delete") {
-      const habit = findByTitle(snap?.habits, title);
-      if (!habit) return `Habit not found: "${title}"`;
-      queueAction("DELETE_HABIT", { id: habit.id });
-      return `Habit deleted: "${habit.title}"`;
-    }
-  }
-
-  // NOTE ───────────────────────────────────────────────────────────────────────
-  if (itemType === "note") {
-    if (action === "create") {
-      queueAction("ADD_QUICK_NOTE", {
-        text: text || title, sphere: sphere || 'iowa',
-        projectId: project || undefined, createdAt: ts,
-      });
-      return `Note saved to ${sphere}: "${text || title}"`;
-    }
-    if (action === "delete") {
-      const note = (snap?.quickNotes || []).find(n => n.text?.toLowerCase().includes((text || title || '').toLowerCase()));
-      if (!note) return `Note not found`;
-      queueAction("DELETE_QUICK_NOTE", { id: note.id });
-      return `Note deleted`;
-    }
-  }
-
-  // RECURRING ──────────────────────────────────────────────────────────────────
-  if (itemType === "recurring") {
-    if (action === "create") {
-      const { days, label } = parseInterval(interval);
-      queueAction("ADD_RECURRING_TASK", {
-        title, notes: '', intervalDays: days, intervalLabel: label,
-        sphere: sphere || 'iowa', lastDoneDate: null,
-      });
-      return `Recurring task created: "${title}" (${label})`;
-    }
-    if (action === "complete_recurring") {
-      const rec = findByTitle(snap?.recurringTasks, title);
-      if (!rec) return `Recurring task not found: "${title}"`;
-      queueAction("COMPLETE_RECURRING_TASK", { id: rec.id });
-      return `Recurring task completed: "${rec.title}"`;
-    }
-    if (action === "delete") {
-      const rec = findByTitle(snap?.recurringTasks, title);
-      if (!rec) return `Recurring task not found: "${title}"`;
-      queueAction("DELETE_RECURRING_TASK", { id: rec.id });
-      return `Recurring task deleted: "${rec.title}"`;
-    }
-  }
-
-  // TIMER ──────────────────────────────────────────────────────────────────────
-  if (itemType === "timer") {
-    if (action === "start_timer") {
       const task = findByTitle(snap?.tasks, title);
-      if (!task) return `Task not found for timer: "${title}"`;
-      queueAction("START_TASK", {
-        id: task.id, title: task.title, project: task.project,
-        sphere: task.sphere, estimatedMinutes: timeGoal || 25,
+      if (!task) return `Task not found.`;
+      await queueAction("UPDATE_TASK", { id: task.id, fields: { done: true } });
+      return `Task checked off.`;
+    }
+    if (action === "focus") {
+      const task = findByTitle(snap?.tasks, title);
+      if (!task) return `Task not found.`;
+      await queueAction("TOGGLE_TASK_FOR_TODAY", {
+        id: task.id,
+        dateString: today,
+        intent: "finish",
+        targetMinutes: null
       });
-      return `Timer started: "${task.title}" (${timeGoal || 25}m)`;
-    }
-    if (action === "pause_timer") {
-      queueAction("PAUSE_SESSION", {});
-      return `Timer paused`;
+      return `Task "${title}" pinned to Today's Focus deck.`;
     }
   }
 
-  return `No handler for ${itemType}/${action}`;
-}
-
-// ── manage_dashboard_structure executor ──────────────────────────────────────
-function executeStructure(input, snap) {
-  const { action, projectName, sphereName, sphereEmoji, newName } = input;
-
-  if (action === "create_project") {
-    queueAction("ADD_PROJECT", {
-      name: projectName, sphere: sphereName || 'iowa',
-      emoji: sphereEmoji || '📁', tagIds: [], status: 'on-track', milestone: 'In progress',
+  // Quick Notes — require an explicitly matched sphere; never silently fall back
+  if (itemType === "note" && action === "create") {
+    if (!sphere || !matchedSphereObj) {
+      return `Please specify which Area/Sphere this note belongs to. Active spheres: ${snap.spheres.map(s => s.name).join(', ')}.`;
+    }
+    await queueAction("ADD_QUICK_NOTE", {
+      text: title,
+      sphere: resolvedSphere,
+      projectId: undefined,
+      createdAt: ts,
+      isImportant: false
     });
-    return `Project created: "${projectName}" in "${sphereName}"`;
+    return `Note successfully logged under ${resolvedSphere}.`;
   }
 
-  if (action === "rename_project") {
-    const project = (snap?.projects || []).find(p => p.name.toLowerCase() === projectName?.toLowerCase());
-    if (!project) return `Project not found: "${projectName}"`;
-    queueAction("UPDATE_PROJECT", { id: project.id, fields: { name: newName } });
-    return `Project renamed: "${projectName}" → "${newName}"`;
+  if (itemType === "habit" && action === "toggle") {
+    const habit = findByTitle(snap?.habits, title);
+    if (!habit) return `Habit not found.`;
+    await queueAction("TOGGLE_HABIT_DATE", { id: habit.id, dateString: today });
+    return `Habit toggle command executed.`;
   }
 
-  if (action === "rename_sphere") {
-    return `Sphere renaming requires manual action in the dashboard settings.`;
+  if (itemType === "recurring" && action === "complete") {
+    const rec = (snap.recurringTasks || []).find(r => r.title?.toLowerCase() === title?.toLowerCase());
+    if (!rec) return `Recurring task not located.`;
+    await queueAction("COMPLETE_RECURRING_TASK", { id: rec.id });
+    return `Recurring target transaction sent to queue.`;
   }
 
-  return `Unhandled structure action: ${action}`;
+  return `Action complete.`;
 }
 
-// ── fetch_full_dashboard_snapshot executor ────────────────────────────────────
-function executeFetchSnapshot(snap) {
-  if (!snap) return "No snapshot available. Olaf needs to open the dashboard in his browser first.";
-  const today = snap.currentTrackingDate || '';
-  return JSON.stringify({
-    date:           today,
-    openTasks:      (snap.tasks || []).filter(t => !t.done)
-                      .map(t => ({ title: t.title, priority: t.priority, urgency: t.urgency, sphere: t.sphere, project: t.project })),
-    habits:         (snap.habits || []).map(h => ({ title: h.title, type: h.type, routine: h.routine, emoji: h.emoji })),
-    recurringTasks: (snap.recurringTasks || []).map(r => ({ title: r.title, intervalLabel: r.intervalLabel, sphere: r.sphere })),
-    notesToday:     (snap.quickNotes || []).filter(n => n.createdAt?.startsWith(today))
-                      .map(n => ({ text: n.text, sphere: n.sphere })),
-    projects:       (snap.projects || []).map(p => ({ name: p.name, sphere: p.sphere })),
-    spheres:        snap.spheres ? snap.spheres.map(s => s.name) : [...new Set((snap.projects || []).map(p => p.sphere))],
-  }, null, 2);
-}
-
-// ── Tool dispatcher ───────────────────────────────────────────────────────────
-async function dispatchTool(block, snap) {
-  const { name, input } = block;
-  if (name === 'manage_dashboard_item')         return executeItem(input, snap);
-  if (name === 'manage_dashboard_structure')    return executeStructure(input, snap);
-  if (name === 'fetch_full_dashboard_snapshot') return executeFetchSnapshot(snap);
-  return `Unknown tool: ${name}`;
-}
-
-// ── Boot ──────────────────────────────────────────────────────────────────────
-console.log("Benicio Online — Full Tool Suite v2 · Rolling Memory · Secure.");
-bot.on('polling_error', (err) => console.error("Polling:", err.message || err));
-
-// ── Message handler ───────────────────────────────────────────────────────────
+// Bot Loop
 bot.on('message', async (msg) => {
-  if (!msg.text) return;
-  if (msg.from.id !== allowedUserId) { bot.sendMessage(msg.from.id, "Access denied."); return; }
-
-  const text = msg.text;
-  console.log(`IN: "${text}"`);
+  if (!msg.text || msg.from.id !== allowedUserId) return;
 
   try {
-    // Fresh snapshot read on every message
-    const snap = readSnapshot();
+    const snap = await fetchDashboardData();
+    let system = fs.existsSync(MD_PATH) ? fs.readFileSync(MD_PATH, 'utf8') : "You are Benicio.";
 
-    // Live data extraction
-    const projects = (snap?.projects || []).map(p => ({ name: p.name, sphere: p.sphere }));
-    const spheres  = snap?.spheres
-      ? snap.spheres.map(s => s.name)
-      : [...new Set(projects.map(p => p.sphere))].filter(Boolean);
+    // Feed EVERY single widget list item directly into Claude's prompt context rooms
+    system += `\n\n## CURRENT LIVE DASHBOARD STATE:\n` +
+              `Spheres/Areas: ${snap.spheres.map(s => s.name).join(', ')}\n` +
+              `Projects: ${snap.projects.map(p => `${p.name} [${p.sphere}]`).join(', ')}\n` +
+              `Open Tasks: ${snap.tasks.filter(t=>!t.done).map(t => `${t.title} (${t.project})`).join(', ')}\n` +
+              `Habits: ${snap.habits.map(h => h.title).join(', ')}\n` +
+              `Recurring Allocations: ${snap.recurringTasks.map(r => r.title).join(', ')}\n` +
+              `Network Contacts: ${snap.networkContacts.map(c => c.name).join(', ')}\n` +
+              `Recent Calendar Recap items: ${snap.calendarLogs.join(' | ' || 'None')}\n`;
 
-    // System prompt: BENICIO.md + live context + validation guardrails
-    let system = fs.existsSync(MD_PATH) ? fs.readFileSync(MD_PATH, 'utf8') : "You are Benicio, Olaf's executive assistant.";
+    system += "\nCRITICAL: If the user commands you to create a task, note, or habit but does not specify which Area/Sphere it belongs to, DO NOT guess or call a tool. Instead, reply immediately asking the user which active sphere they would like to place it in.";
 
-    if (snap) {
-      const today  = snap.currentTrackingDate || '';
-      const open   = (snap.tasks || []).filter(t => !t.done);
-      const habits = snap.habits || [];
-      const notes  = (snap.quickNotes || []).filter(n => n.createdAt?.startsWith(today));
-
-      system +=
-        `\n\n---\n## Live Dashboard — ${today}` +
-        `\nOpen Tasks (${open.length}):\n` +
-        (open.length ? open.slice(0, 15).map(t => `- [${t.urgency === 'urgent' ? 'URGENT ' : ''}${t.priority}] ${t.title} (${t.project} / ${t.sphere})`).join('\n') : '- None') +
-        `\nHabits (${habits.length}):\n` +
-        (habits.length ? habits.map(h => `- ${h.emoji} ${h.title} [${h.type}]`).join('\n') : '- None') +
-        `\nNotes Today (${notes.length}):\n` +
-        (notes.length ? notes.map(n => `- "${n.text}" [${n.sphere}]`).join('\n') : '- None') +
-        `\n\n## Validation Guardrails` +
-        `\nValid spheres: ${spheres.map(s => `"${s}"`).join(', ')}` +
-        `\nValid projects:\n${projects.map(p => `- "${p.name}" (sphere: "${p.sphere}")`).join('\n')}` +
-        `\n\nTool rules:` +
-        `\n1. sphere and project MUST exactly match the lists above. No invented names.` +
-        `\n2. For tasks: if sphere or project is ambiguous or missing, do NOT fire the tool. Ask: "Which project, Olaf? Current lines: ${projects.map(p => p.name).join(', ')}"` +
-        `\n3. Only trigger tools on explicit create/update/delete/complete commands.` +
-        `\n---`;
-    }
-
-    pushMsg(allowedUserId, { role: 'user', content: text });
-
-    // First Claude call
     const res1 = await anthropic.messages.create({
-      model:      'claude-sonnet-4-6',
+      model:      'claude-3-5-haiku-20241022',
       max_tokens: 700,
       system,
       tools:      TOOLS,
-      messages:   getHistory(allowedUserId),
+      messages:   [{ role: 'user', content: msg.text }],
     });
 
     const toolBlocks = res1.content.filter(b => b.type === 'tool_use');
 
     if (toolBlocks.length > 0) {
-      // Execute every triggered tool and collect all results into one array
       const toolResults = await Promise.all(toolBlocks.map(async block => {
-        console.log(`Tool: ${block.name}`, JSON.stringify(block.input));
-        const result = await dispatchTool(block, snap);
-        console.log(`Result [${block.name}]: ${result}`);
+        const result = await executeItem(block.input, snap);
         return { type: 'tool_result', tool_use_id: block.id, content: result };
       }));
 
-      // Push assistant message (contains all tool_use blocks) then all results in one user turn
-      pushMsg(allowedUserId, { role: 'assistant', content: res1.content });
-      pushMsg(allowedUserId, { role: 'user', content: toolResults });
-
-      // Second call — Claude receives all results and generates confirmation
       const res2 = await anthropic.messages.create({
-        model:      'claude-sonnet-4-6',
+        model:      'claude-3-5-haiku-20241022',
         max_tokens: 200,
         system,
         tools:      TOOLS,
-        messages:   getHistory(allowedUserId),
+        messages:   [{ role: 'user', content: msg.text }, { role: 'assistant', content: res1.content }, { role: 'user', content: toolResults }],
       });
 
-      const reply = res2.content.find(b => b.type === 'text')?.text || 'Done.';
-      pushMsg(allowedUserId, { role: 'assistant', content: reply });
-      await bot.sendMessage(allowedUserId, reply);
-      console.log(`OUT (tool×${toolBlocks.length}): "${reply.replace(/\n/g,' ')}"`);
-
+      await bot.sendMessage(allowedUserId, res2.content.find(b => b.type === 'text')?.text || 'Done.');
     } else {
-      const reply = res1.content.find(b => b.type === 'text')?.text || '...';
-      pushMsg(allowedUserId, { role: 'assistant', content: reply });
-      await bot.sendMessage(allowedUserId, reply);
-      console.log(`OUT: "${reply.replace(/\n/g,' ')}"`);
+      await bot.sendMessage(allowedUserId, res1.content.find(b => b.type === 'text')?.text || '...');
     }
-
   } catch (err) {
-    console.error("Engine fault:", err);
-    await bot.sendMessage(allowedUserId, "Engine fault. Check the terminal, Olaf.");
+    console.error(err);
+    await bot.sendMessage(allowedUserId, "Engine error.");
   }
 });
+
+console.log("Benicio Connected — Global Full Widget Vision initialized.");

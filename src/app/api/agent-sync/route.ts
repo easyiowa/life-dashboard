@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
-const SNAPSHOT_PATH = path.join(process.cwd(), "agent-server", "dashboard-snapshot.json");
-
+// The Telegram agent (Benicio) reads live context directly from Supabase on
+// every turn, so a local snapshot file is no longer needed. This endpoint is
+// kept for backwards compatibility with older DashboardContext versions that
+// POST here after every state change; it drains the body and acknowledges.
 export async function POST(req: NextRequest) {
-  // Vercel's filesystem is read-only — skip the write and let localStorage own state
-  if (process.env.VERCEL) {
-    await req.json(); // drain body
-    return NextResponse.json({ ok: true, serverless: true });
-  }
-  try {
-    const data = await req.json();
-    fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(data, null, 2), "utf8");
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("[agent-sync] Write failed:", err);
-    return NextResponse.json({ ok: false }, { status: 500 });
-  }
+  await req.json().catch(() => {});
+  return NextResponse.json({ ok: true });
 }

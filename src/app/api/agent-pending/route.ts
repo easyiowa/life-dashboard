@@ -1,30 +1,52 @@
+export const dynamic = "force-dynamic";
+
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
-const PENDING_PATH = path.join(process.cwd(), "agent-server", "agent-pending.json");
-
-// Browser polls this to pick up agent-originated actions
-export async function GET() {
-  // On Vercel there is no writable agent-server — return an empty queue
-  if (process.env.VERCEL) return NextResponse.json([]);
-  if (!fs.existsSync(PENDING_PATH)) return NextResponse.json([]);
-  try {
-    const data = JSON.parse(fs.readFileSync(PENDING_PATH, "utf8"));
-    return NextResponse.json(Array.isArray(data) ? data : []);
-  } catch {
-    return NextResponse.json([]);
-  }
+async function makeClient() {
+  const jar = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return jar.getAll(); },
+        setAll(list) {
+          try { list.forEach(({ name, value, options }) => jar.set(name, value, options)); } catch { /* */ }
+        },
+      },
+    }
+  );
 }
 
-// Browser calls this after processing to clear the queue
+// Browser polls this every 3 s to pick up actions queued by the Telegram agent.
+export async function GET() {
+  const db = await makeClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return NextResponse.json([]);
+
+  const { data } = await db
+    .from("agent_actions_queue")
+    .select("type, payload")
+    .eq("user_id", user.id)
+    .is("processed_at", null)
+    .order("queued_at", { ascending: true });
+
+  return NextResponse.json(data ?? []);
+}
+
+// Browser calls this after processing the batch to clear consumed rows.
 export async function DELETE() {
-  // Nothing to clear on Vercel — acknowledge silently
-  if (process.env.VERCEL) return NextResponse.json({ ok: true, serverless: true });
-  try {
-    fs.writeFileSync(PENDING_PATH, "[]", "utf8");
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    return NextResponse.json({ ok: false }, { status: 500 });
-  }
+  const db = await makeClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false }, { status: 401 });
+
+  await db
+    .from("agent_actions_queue")
+    .delete()
+    .eq("user_id", user.id)
+    .is("processed_at", null);
+
+  return NextResponse.json({ ok: true });
 }

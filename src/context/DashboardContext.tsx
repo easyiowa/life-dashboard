@@ -28,6 +28,37 @@ const DEFAULT_WIDGET_IDS = [
   "calendar", "habits", "recurring", "network",
 ];
 
+// ── Offline backup ────────────────────────────────────────────────────────────
+
+const OFFLINE_BACKUP_KEY = "ld_offline_backup";
+
+type OfflineTable = "tasks" | "quick_notes" | "habits";
+
+interface OfflinePendingItem {
+  table: OfflineTable;
+  id: string;
+  appItem: Record<string, unknown>;
+}
+
+function readOfflineBackup(): OfflinePendingItem[] {
+  try {
+    const raw = localStorage.getItem(OFFLINE_BACKUP_KEY);
+    return raw ? (JSON.parse(raw) as OfflinePendingItem[]) : [];
+  } catch { return []; }
+}
+
+function appendOfflineItem(item: OfflinePendingItem): void {
+  try {
+    const existing = readOfflineBackup();
+    if (existing.some(i => i.id === item.id)) return;
+    localStorage.setItem(OFFLINE_BACKUP_KEY, JSON.stringify([...existing, item]));
+  } catch { /* storage full */ }
+}
+
+function clearOfflineBackup(): void {
+  try { localStorage.removeItem(OFFLINE_BACKUP_KEY); } catch { /* */ }
+}
+
 // ── Public types ─────────────────────────────────────────────────────────────
 
 export type SphereId  = string;
@@ -1284,6 +1315,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
+  // Tracks the current user without creating stale closures inside zero-dep effects.
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
 
   // ── Lookup helpers (read from stateRef for pre-dispatch values) ──────────────
   const getSphereId = (name: string) => stateRef.current.spheres.find(s => s.name === name)?.id ?? null;
@@ -1300,6 +1334,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     loadDashboardData(user.id)
       .then(payload => {
+        const pending = readOfflineBackup();
+        if (pending.length > 0) {
+          const existingTaskIds  = new Set((payload.tasks      ?? []).map((t: Task)      => t.id));
+          const existingNoteIds  = new Set((payload.quickNotes ?? []).map((n: QuickNote) => n.id));
+          const existingHabitIds = new Set((payload.habits     ?? []).map((h: Habit)     => h.id));
+
+          const offlineTasks  = pending.filter(i => i.table === "tasks"       && !existingTaskIds.has(i.id)).map(i => i.appItem as unknown as Task);
+          const offlineNotes  = pending.filter(i => i.table === "quick_notes" && !existingNoteIds.has(i.id)).map(i => i.appItem as unknown as QuickNote);
+          const offlineHabits = pending.filter(i => i.table === "habits"      && !existingHabitIds.has(i.id)).map(i => i.appItem as unknown as Habit);
+
+          if (offlineTasks.length)  payload.tasks      = [...(payload.tasks      ?? []), ...offlineTasks];
+          if (offlineNotes.length)  payload.quickNotes = [...offlineNotes, ...(payload.quickNotes ?? [])];
+          if (offlineHabits.length) payload.habits     = [...(payload.habits     ?? []), ...offlineHabits];
+        }
         dispatch({ type: "HYDRATE", state: payload });
         setIsLoading(false);
       })
@@ -1359,19 +1407,106 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         if (!res.ok) return;
         const actions: Array<{ type: string; payload: Record<string, unknown> }> = await res.json();
         if (!actions.length) return;
+        // Helpers for creation actions — read fresh values at call time via refs.
+        const agentDb  = supabase && userRef.current ? supabase : null;
+        const agentUid = userRef.current?.id;
+        const agentState = stateRef.current;
+        const agentSphereId  = (name: string) => agentState.spheres.find(s => s.name === name)?.id ?? null;
+        const agentProjectId = (pName: string, sName: string) => agentState.projects.find(p => p.name === pName && p.sphere === sName)?.id ?? null;
+
         for (const action of actions) {
-          if (action.type === "ADD_QUICK_NOTE")        dispatch({ type: "ADD_QUICK_NOTE",  note: action.payload as Omit<QuickNote, "id"> });
-          else if (action.type === "DELETE_QUICK_NOTE") dispatch({ type: "DELETE_QUICK_NOTE", id: action.payload.id as string });
-          else if (action.type === "ADD_HABIT")         dispatch({ type: "ADD_HABIT", habit: action.payload as Omit<Habit, "id" | "history"> });
+          if (action.type === "ADD_TASK") {
+            const _id = crypto.randomUUID();
+            const task = action.payload as Omit<Task, "id">;
+            dispatch({ type: "ADD_TASK", task, _id });
+            if (agentDb && agentUid) {
+              Promise.resolve(agentDb.from("tasks").insert({
+                id: _id, user_id: agentUid,
+                sphere_id: agentSphereId(task.sphere),
+                project_id: agentProjectId(task.project, task.sphere),
+                title: task.title, priority: task.priority ?? "Med", energy: task.energy ?? "Easy",
+                urgency: task.urgency ?? "not-urgent", done: task.done ?? false,
+                deadline: task.deadline ?? null, notes: task.notes ?? "",
+                manual_minutes: task.manualMinutes ?? 0, queued_date: task.queuedDate ?? null,
+                time_spent_minutes: task.timeSpentMinutes ?? 0, intent: task.intent ?? "finish",
+                daily_target_minutes: task.dailyTargetMinutes ?? null,
+                rollover_count: task.rolloverCount ?? 0, daily_tracking: task.dailyTracking ?? {},
+              })).then(() => {}).catch(console.error);
+            }
+          } else if (action.type === "ADD_QUICK_NOTE") {
+            const _id = crypto.randomUUID();
+            const p = action.payload as { text: string; sphere: string; projectId?: string };
+            const now = new Date();
+            const createdAt = `${now.toLocaleDateString("en-CA")} ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+            dispatch({ type: "ADD_QUICK_NOTE", note: { text: p.text, sphere: p.sphere, projectId: p.projectId, createdAt }, _id });
+            if (agentDb && agentUid) {
+              Promise.resolve(agentDb.from("quick_notes").insert({
+                id: _id, user_id: agentUid, text: p.text,
+                sphere_id: agentSphereId(p.sphere),
+                project_id: p.projectId ? agentProjectId(p.projectId, p.sphere) : null,
+                is_important: false,
+              })).then(() => {}).catch(console.error);
+            }
+          } else if (action.type === "ADD_HABIT") {
+            const _id = crypto.randomUUID();
+            const habit = action.payload as Omit<Habit, "id" | "history">;
+            dispatch({ type: "ADD_HABIT", habit, _id });
+            if (agentDb && agentUid) {
+              Promise.resolve(agentDb.from("habits").insert({
+                id: _id, user_id: agentUid, title: habit.title, type: habit.type,
+                routine: habit.routine ?? "day", frequency: habit.frequency,
+                target_count: habit.targetCount, emoji: habit.emoji, notes: habit.notes ?? "",
+              })).then(() => {}).catch(console.error);
+            }
+          } else if (action.type === "TOGGLE_HABIT_DATE") {
+            const hId = action.payload.id as string;
+            const dateString = action.payload.dateString as string;
+            const alreadyDone = agentState.habits.find(h => h.id === hId)?.history[dateString] ?? false;
+            dispatch({ type: "TOGGLE_HABIT_DATE", id: hId, dateString });
+            if (agentDb) {
+              if (alreadyDone) {
+                Promise.resolve(agentDb.from("habit_completions").delete().eq("habit_id", hId).eq("completed_on", dateString)).then(() => {}).catch(console.error);
+              } else {
+                Promise.resolve(agentDb.from("habit_completions").insert({ habit_id: hId, completed_on: dateString })).then(() => {}).catch(console.error);
+              }
+            }
+          } else if (action.type === "ADD_RECURRING_TASK") {
+            const _id = crypto.randomUUID();
+            const task = action.payload as Omit<RecurringTask, "id" | "completionCount" | "history">;
+            dispatch({ type: "ADD_RECURRING_TASK", task, _id });
+            if (agentDb && agentUid) {
+              Promise.resolve(agentDb.from("recurring_tasks").insert({
+                id: _id, user_id: agentUid,
+                sphere_id: agentSphereId(task.sphere),
+                title: task.title, notes: task.notes ?? "",
+                interval_days: task.intervalDays, interval_label: task.intervalLabel,
+                anchor_day: task.anchorDay ?? null, start_date: task.startDate ?? null,
+                last_done_date: null, completion_count: 0,
+              })).then(() => {}).catch(console.error);
+            }
+          } else if (action.type === "TOGGLE_TASK_FOR_TODAY") {
+            const id          = action.payload.id as string;
+            const dateString  = action.payload.dateString as string;
+            const intent      = (action.payload.intent as Task["intent"]) ?? "finish";
+            const targetMinutes = action.payload.targetMinutes as number | null;
+            const task = agentState.tasks.find(t => t.id === id);
+            dispatch({ type: "TOGGLE_TASK_FOR_TODAY", id, dateString, intent, targetMinutes });
+            if (agentDb && task) {
+              const alreadyQueued = (task.queuedDate ?? null) === dateString;
+              if (alreadyQueued) {
+                Promise.resolve(agentDb.from("tasks").update({ queued_date: null }).eq("id", id)).then(() => {}).catch(console.error);
+              } else {
+                const newTracking = { ...(task.dailyTracking ?? {}), [dateString]: { timeSpentMinutes: 0, intent: "finish", dailyTargetMinutes: null } };
+                Promise.resolve(agentDb.from("tasks").update({ queued_date: dateString, daily_tracking: newTracking }).eq("id", id)).then(() => {}).catch(console.error);
+              }
+            }
+          } else if (action.type === "DELETE_QUICK_NOTE") dispatch({ type: "DELETE_QUICK_NOTE", id: action.payload.id as string });
           else if (action.type === "DELETE_HABIT")      dispatch({ type: "DELETE_HABIT", id: action.payload.id as string });
-          else if (action.type === "TOGGLE_HABIT_DATE") dispatch({ type: "TOGGLE_HABIT_DATE", id: action.payload.id as string, dateString: action.payload.dateString as string });
-          else if (action.type === "ADD_TASK")          dispatch({ type: "ADD_TASK", task: action.payload as Omit<Task, "id"> });
           else if (action.type === "UPDATE_TASK")       dispatch({ type: "UPDATE_TASK", id: action.payload.id as string, fields: action.payload.fields as Partial<Task> });
           else if (action.type === "RENAME_TASK_REFS")  dispatch({ type: "RENAME_TASK_REFS", taskId: action.payload.taskId as string, oldTitle: action.payload.oldTitle as string, newTitle: action.payload.newTitle as string });
           else if (action.type === "DELETE_TASK")       dispatch({ type: "DELETE_TASK", id: action.payload.id as string });
           else if (action.type === "ADD_PROJECT")       dispatch({ type: "ADD_PROJECT", project: action.payload as Omit<Project, "id"> });
           else if (action.type === "UPDATE_PROJECT")    dispatch({ type: "UPDATE_PROJECT", id: action.payload.id as string, fields: action.payload.fields as Partial<Omit<Project, "id">> });
-          else if (action.type === "ADD_RECURRING_TASK")    dispatch({ type: "ADD_RECURRING_TASK", task: action.payload as Omit<RecurringTask, "id" | "completionCount" | "history"> });
           else if (action.type === "COMPLETE_RECURRING_TASK") dispatch({ type: "COMPLETE_RECURRING_TASK", id: action.payload.id as string });
           else if (action.type === "DELETE_RECURRING_TASK")   dispatch({ type: "DELETE_RECURRING_TASK", id: action.payload.id as string });
           else if (action.type === "START_TASK")   dispatch({ type: "START_TASK", task: action.payload as unknown as ActiveTask });
@@ -1384,6 +1519,54 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(poll, 3000);
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Offline → online sync ────────────────────────────────────────────────────
+  useEffect(() => {
+    function handleOnline() {
+      const pending = readOfflineBackup();
+      if (!pending.length) return;
+      const currentDb  = supabase && user ? supabase : null;
+      const currentUid = user?.id;
+      if (!currentDb || !currentUid) return;
+      const s = stateRef.current;
+      const resolveSphereId  = (name: string) => s.spheres.find(sp => sp.name === name)?.id ?? null;
+      const resolveProjectId = (pName: string, sName: string) => s.projects.find(p => p.name === pName && p.sphere === sName)?.id ?? null;
+      Promise.all(pending.map(async (item) => {
+        if (item.table === "tasks") {
+          const task = item.appItem as unknown as Task;
+          await currentDb.from("tasks").insert({
+            id: item.id, user_id: currentUid,
+            sphere_id: resolveSphereId(task.sphere),
+            project_id: resolveProjectId(task.project, task.sphere),
+            title: task.title, priority: task.priority, energy: task.energy,
+            urgency: task.urgency ?? "not-urgent", done: task.done,
+            deadline: task.deadline, notes: task.notes ?? "",
+            manual_minutes: task.manualMinutes ?? 0, queued_date: task.queuedDate ?? null,
+            time_spent_minutes: task.timeSpentMinutes ?? 0, intent: task.intent ?? "finish",
+            daily_target_minutes: task.dailyTargetMinutes ?? null,
+            rollover_count: task.rolloverCount ?? 0, daily_tracking: task.dailyTracking ?? {},
+          });
+        } else if (item.table === "quick_notes") {
+          const note = item.appItem as unknown as QuickNote;
+          await currentDb.from("quick_notes").insert({
+            id: item.id, user_id: currentUid, text: note.text,
+            sphere_id: resolveSphereId(note.sphere),
+            project_id: note.projectId ? resolveProjectId(note.projectId, note.sphere) : null,
+            is_important: note.isImportant ?? false,
+          });
+        } else if (item.table === "habits") {
+          const habit = item.appItem as unknown as Habit;
+          await currentDb.from("habits").insert({
+            id: item.id, user_id: currentUid, title: habit.title, type: habit.type,
+            routine: habit.routine ?? "day", frequency: habit.frequency,
+            target_count: habit.targetCount, emoji: habit.emoji, notes: habit.notes ?? "",
+          });
+        }
+      })).then(() => { clearOfflineBackup(); }).catch(console.error);
+    }
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Supabase write helpers ────────────────────────────────────────────────────
   const db = supabase && user ? supabase : null;
@@ -1658,6 +1841,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         addTask: (task, projectId) => {
           const _id = crypto.randomUUID();
           dispatch({ type: "ADD_TASK", task, _id });
+          if (!navigator.onLine) {
+            appendOfflineItem({ table: "tasks", id: _id, appItem: { ...task, id: _id } as unknown as Record<string, unknown> });
+            return;
+          }
           if (db && uid) {
             Promise.resolve(db.from("tasks").insert({
               id: _id, user_id: uid,
@@ -1752,6 +1939,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         addHabit: (habit) => {
           const _id = crypto.randomUUID();
           dispatch({ type: "ADD_HABIT", habit, _id });
+          if (!navigator.onLine) {
+            appendOfflineItem({ table: "habits", id: _id, appItem: { ...habit, id: _id, history: {} } as unknown as Record<string, unknown> });
+            return;
+          }
           if (db && uid) db.from("habits").insert({
             id: _id, user_id: uid, title: habit.title, type: habit.type,
             routine: habit.routine ?? "day", frequency: habit.frequency,
@@ -1796,6 +1987,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           const mm = String(now.getMinutes()).padStart(2, "0");
           const createdAt = `${now.toLocaleDateString("en-CA")} ${hh}:${mm}`;
           dispatch({ type: "ADD_QUICK_NOTE", note: { text, sphere, projectId, createdAt }, _id });
+          if (!navigator.onLine) {
+            appendOfflineItem({ table: "quick_notes", id: _id, appItem: { id: _id, text, sphere, projectId, createdAt, isImportant: false } as unknown as Record<string, unknown> });
+            return;
+          }
           if (db && uid) {
             db.from("quick_notes").insert({
               id: _id, user_id: uid, text,
