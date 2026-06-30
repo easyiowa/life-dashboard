@@ -16,6 +16,7 @@ export const personalLifeTemplate: IndustryTemplate = {
   projects: [
     { projectKey: "family-sync",  areaKey: "home", name: "Family Planning",      emoji: "📅", tags: ["Kids", "Schedules"] },
     { projectKey: "home-upgrade", areaKey: "home", name: "Kitchen Organization", emoji: "🏡", tags: ["Home"] },
+    { projectKey: "home_simple",  areaKey: "home", name: "Simple Tasks",         emoji: "📝" },
   ],
 
   tasks: [

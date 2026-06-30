@@ -14,8 +14,9 @@ export const realEstateTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "listing-push",  areaKey: "re", name: "Noblessner Seaside Apartment Sale",  emoji: "🏢", tags: ["Listings", "Luxury"] },
-    { projectKey: "brokerage-out", areaKey: "re", name: "Commercial Portfolio Expansion",     emoji: "🤝", tags: ["Acquisitions"] },
+    { projectKey: "listing-push",  areaKey: "re", name: "Noblessner Seaside Apartment Sale", emoji: "🏢", tags: ["Listings", "Luxury"] },
+    { projectKey: "brokerage-out", areaKey: "re", name: "Commercial Portfolio Expansion",    emoji: "🤝", tags: ["Acquisitions"] },
+    { projectKey: "re_simple",     areaKey: "re", name: "Simple Tasks",                      emoji: "📝" },
   ],
 
   tasks: [

@@ -1,6 +1,7 @@
 export interface AreaColorSet {
   text:         string;  // text-{color}-400         — muted colored text
-  bgTint:       string;  // bg-{color}-500/10         — light background tint
+  bgTint:       string;  // bg-{color}-500/10         — light background tint (class-based)
+  bgRgba:       string;  // rgba(..., 0.14)           — inline-style background; survives browser UA overrides on <select>
   border:       string;  // border-{color}-500/25     — subtle border
   borderAccent: string;  // border-{color}-500        — solid accent border (left-bar etc.)
   borderLMuted: string;  // border-l-{color}-500/50   — semi-transparent left border for cards
@@ -12,6 +13,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   emerald: {
     text:         "text-emerald-400",
     bgTint:       "bg-emerald-500/10",
+    bgRgba:       "rgba(16,185,129,0.14)",
     border:       "border-emerald-500/25",
     borderAccent: "border-emerald-500",
     borderLMuted: "border-l-emerald-500/50",
@@ -21,6 +23,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   violet: {
     text:         "text-violet-400",
     bgTint:       "bg-violet-500/10",
+    bgRgba:       "rgba(139,92,246,0.14)",
     border:       "border-violet-500/25",
     borderAccent: "border-violet-500",
     borderLMuted: "border-l-violet-500/50",
@@ -30,6 +33,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   sky: {
     text:         "text-sky-400",
     bgTint:       "bg-sky-500/10",
+    bgRgba:       "rgba(14,165,233,0.14)",
     border:       "border-sky-500/25",
     borderAccent: "border-sky-500",
     borderLMuted: "border-l-sky-500/50",
@@ -39,6 +43,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   amber: {
     text:         "text-amber-400",
     bgTint:       "bg-amber-500/10",
+    bgRgba:       "rgba(245,158,11,0.14)",
     border:       "border-amber-500/25",
     borderAccent: "border-amber-500",
     borderLMuted: "border-l-amber-500/50",
@@ -48,6 +53,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   pink: {
     text:         "text-pink-400",
     bgTint:       "bg-pink-500/10",
+    bgRgba:       "rgba(236,72,153,0.14)",
     border:       "border-pink-500/25",
     borderAccent: "border-pink-500",
     borderLMuted: "border-l-pink-500/50",
@@ -57,6 +63,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   teal: {
     text:         "text-teal-400",
     bgTint:       "bg-teal-500/10",
+    bgRgba:       "rgba(20,184,166,0.14)",
     border:       "border-teal-500/25",
     borderAccent: "border-teal-500",
     borderLMuted: "border-l-teal-500/50",
@@ -66,6 +73,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   blue: {
     text:         "text-blue-400",
     bgTint:       "bg-blue-500/10",
+    bgRgba:       "rgba(59,130,246,0.14)",
     border:       "border-blue-500/25",
     borderAccent: "border-blue-500",
     borderLMuted: "border-l-blue-500/50",
@@ -75,6 +83,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   rose: {
     text:         "text-rose-400",
     bgTint:       "bg-rose-500/10",
+    bgRgba:       "rgba(244,63,94,0.14)",
     border:       "border-rose-500/25",
     borderAccent: "border-rose-500",
     borderLMuted: "border-l-rose-500/50",
@@ -84,6 +93,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   orange: {
     text:         "text-orange-400",
     bgTint:       "bg-orange-500/10",
+    bgRgba:       "rgba(249,115,22,0.14)",
     border:       "border-orange-500/25",
     borderAccent: "border-orange-500",
     borderLMuted: "border-l-orange-500/50",
@@ -93,6 +103,7 @@ export const AREA_COLORS: Record<string, AreaColorSet> = {
   indigo: {
     text:         "text-indigo-400",
     bgTint:       "bg-indigo-500/10",
+    bgRgba:       "rgba(99,102,241,0.14)",
     border:       "border-indigo-500/25",
     borderAccent: "border-indigo-500",
     borderLMuted: "border-l-indigo-500/50",

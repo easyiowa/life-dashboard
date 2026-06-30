@@ -14,8 +14,9 @@ export const retailTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "window-style", areaKey: "retail", name: "Midsummer Collection Showcase", emoji: "👗", tags: ["Visuals", "Merch"] },
-    { projectKey: "stock-intake", areaKey: "retail", name: "Capsule Brand Onboarding",       emoji: "📦", tags: ["Inventory"] },
+    { projectKey: "window-style",   areaKey: "retail", name: "Midsummer Collection Showcase", emoji: "👗", tags: ["Visuals", "Merch"] },
+    { projectKey: "stock-intake",   areaKey: "retail", name: "Capsule Brand Onboarding",      emoji: "📦", tags: ["Inventory"] },
+    { projectKey: "retail_simple",  areaKey: "retail", name: "Simple Tasks",                  emoji: "📝" },
   ],
 
   tasks: [

@@ -14,8 +14,9 @@ export const gastroTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "menu-refresh", areaKey: "gastro", name: "Summer Bistro Menu Launch",         emoji: "🍽️", tags: ["Kitchen", "Seasonal"] },
-    { projectKey: "supplier-deal", areaKey: "gastro", name: "Local Eco-Distributor Onboarding", emoji: "🚜", tags: ["Supply-Chain"] },
+    { projectKey: "menu-refresh",   areaKey: "gastro", name: "Summer Bistro Menu Launch",        emoji: "🍽️", tags: ["Kitchen", "Seasonal"] },
+    { projectKey: "supplier-deal",  areaKey: "gastro", name: "Local Eco-Distributor Onboarding", emoji: "🚜", tags: ["Supply-Chain"] },
+    { projectKey: "gastro_simple",  areaKey: "gastro", name: "Simple Tasks",                     emoji: "📝" },
   ],
 
   tasks: [

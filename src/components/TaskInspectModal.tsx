@@ -6,7 +6,7 @@ import ChecklistEditor from "@/components/ui/ChecklistEditor";
 import { secsToMins } from "@/lib/time";
 import { areaColor } from "@/lib/areaColors";
 import { makeChecklistToggleHandler, stripHtml } from "@/lib/richText";
-import { X, Clock, CheckCircle2, Circle, ChevronDown, Pencil } from "lucide-react";
+import { X, Clock, CheckCircle2, Circle, ChevronDown } from "lucide-react";
 import {
   useDashboard,
   type Task,
@@ -41,7 +41,7 @@ function ToggleGroup<T extends string>({
   activeStyles,
 }: {
   options: T[];
-  value: T;
+  value: T | null;
   onChange: (v: T) => void;
   activeStyles: Record<T, string>;
 }) {
@@ -180,21 +180,19 @@ export default function TaskInspectModal({ task, onClose }: Props) {
             />
           </div>
 
-          {/* Notes — front and centre for comfortable reading. Read-only by default (so a
-              saved checklist/bullet stays tap-to-toggle without ever focusing a contentEditable
-              or popping the mobile keyboard); the Edit trigger switches to the same rich
-              ChecklistEditor Quick Notes and the Add Task modal use. */}
+          {/* Notes — read-only by default; double-click to enter edit mode */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notes</label>
-              <button
-                type="button"
-                onClick={() => setIsEditingNotes((v) => !v)}
-                className="flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-violet-300 transition-colors"
-              >
-                <Pencil className="w-2.5 h-2.5" />
-                {isEditingNotes ? "Done" : "Edit"}
-              </button>
+              {isEditingNotes && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingNotes(false)}
+                  className="text-[10px] font-medium text-violet-400 hover:text-violet-300 transition-colors"
+                >
+                  Done
+                </button>
+              )}
             </div>
 
             {isEditingNotes ? (
@@ -208,8 +206,10 @@ export default function TaskInspectModal({ task, onClose }: Props) {
               />
             ) : stripHtml(form.notes).trim() ? (
               <div
-                className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white leading-relaxed"
+                title="Double-click to edit"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white leading-relaxed cursor-default"
                 onClick={makeChecklistToggleHandler((html) => setForm((f) => f ? { ...f, notes: html } : f))}
+                onDoubleClick={() => setIsEditingNotes(true)}
                 dangerouslySetInnerHTML={{ __html: form.notes }}
               />
             ) : (

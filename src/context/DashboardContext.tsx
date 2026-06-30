@@ -91,8 +91,8 @@ export interface Task {
   sphere: SphereId;
   project: string;
   title: string;
-  priority: Priority;
-  energy: Energy;
+  priority: Priority | null;
+  energy: Energy | null;
   urgency?: Urgency;                   // defaults to "not-urgent"
   done: boolean;
   deadline: string | null; // "YYYY-MM-DD"
@@ -1026,8 +1026,8 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
     sphere:             sphereNameById.get(t.sphere_id as string) ?? "",
     project:            projectNameById.get(t.project_id as string) ?? "",
     title:              t.title as string,
-    priority:           t.priority as Priority,
-    energy:             t.energy as Energy,
+    priority:           (t.priority as Priority) ?? null,
+    energy:             (t.energy as Energy) ?? null,
     urgency:            (t.urgency as Urgency) ?? "not-urgent",
     done:               t.done as boolean,
     deadline:           (t.deadline as string) ?? null,
@@ -1312,7 +1312,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // Flips true the instant the user starts their first widget drag — DuduAssistant
   // watches this to fire the rearrange tip immediately rather than waiting on a timer.
   const [hasDraggedOnce, setHasDraggedOnce] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const backfillDoneRef = useRef(false);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
   // Tracks the current user without creating stale closures inside zero-dep effects.
@@ -1356,6 +1357,52 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       });
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Post-hydration "Simple Tasks" backfill ────────────────────────────────────
+  // Runs once per session after the first successful HYDRATE.
+  // Case A — a sphere has a legacy "Random" project: rename it in place so all
+  //   existing task FK references remain intact (no delete/re-insert needed).
+  // Case B — a sphere has neither "Random" nor "Simple Tasks": insert a fresh row.
+  // Spheres that already have "Simple Tasks" are skipped entirely.
+  // backfillDoneRef prevents re-entry under React 18 StrictMode double-invoke.
+  useEffect(() => {
+    if (isLoading || backfillDoneRef.current || !supabase || !user) return;
+    backfillDoneRef.current = true;
+
+    const { spheres, projects } = stateRef.current;
+
+    for (const sphere of spheres) {
+      const sphereProjects = projects.filter((p) => p.sphere === sphere.name);
+      if (sphereProjects.some((p) => p.name === "Simple Tasks")) continue;
+
+      const legacyRandom = sphereProjects.find((p) => p.name === "Random");
+
+      if (legacyRandom) {
+        // Case A: rename "Random" → "Simple Tasks" in place
+        dispatch({ type: "UPDATE_PROJECT", id: legacyRandom.id, fields: { name: "Simple Tasks", emoji: "📝" } });
+        Promise.resolve(
+          supabase.from("projects")
+            .update({ name: "Simple Tasks", emoji: "📝" })
+            .eq("id", legacyRandom.id)
+        ).then(() => {}).catch(console.error);
+      } else {
+        // Case B: sphere has no container at all — insert a fresh row
+        const projectId = crypto.randomUUID();
+        const sortOrder = sphereProjects.length;
+        dispatch({ type: "ADD_PROJECT", project: {
+          sphere: sphere.name, name: "Simple Tasks", emoji: "📝",
+          tagIds: [], status: "on-track", milestone: "In progress", sortOrder,
+        }, _id: projectId });
+        Promise.resolve(
+          supabase.from("projects").insert({
+            id: projectId, user_id: user.id, sphere_id: sphere.id,
+            name: "Simple Tasks", emoji: "📝", status: "on-track",
+            milestone: "In progress", sort_order: sortOrder,
+          })
+        ).then(() => {}).catch(console.error);
+      }
+    }
+  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Timer tick ────────────────────────────────────────────────────────────────
   // The 1s interval is just a cheap "wake me up to recompute" pulse — TICK derives elapsed
@@ -1735,10 +1782,25 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
         spheres: state.spheres,
         addSphere: (name, labelColor) => {
-          const _id = crypto.randomUUID();
+          const _id       = crypto.randomUUID();
+          const projectId = crypto.randomUUID();
           const sortOrder = stateRef.current.spheres.length;
+          // Optimistic: sphere + its default "Simple Tasks" project land in state together
           dispatch({ type: "ADD_SPHERE", name, labelColor, _id });
-          if (db && uid) db.from("spheres").insert({ id: _id, user_id: uid, name, label_color: labelColor, sort_order: sortOrder }).then(() => {});
+          dispatch({ type: "ADD_PROJECT", project: { sphere: name, name: "Simple Tasks", emoji: "📝", tagIds: [], status: "on-track", milestone: "In progress", sortOrder: 0 }, _id: projectId });
+          if (db && uid) {
+            // Chain DB writes so project FK resolves: sphere row must exist first.
+            // Promise.resolve() is required because Supabase returns PromiseLike<void>
+            // which lacks a .catch() method.
+            Promise.resolve(
+              db.from("spheres")
+                .insert({ id: _id, user_id: uid, name, label_color: labelColor, sort_order: sortOrder })
+            ).then(() => db.from("projects").insert({
+              id: projectId, user_id: uid, sphere_id: _id,
+              name: "Simple Tasks", emoji: "📝", status: "on-track",
+              milestone: "In progress", sort_order: 0,
+            })).then(() => {}).catch(console.error);
+          }
         },
         updateSphere: (id, fields) => {
           dispatch({ type: "UPDATE_SPHERE", id, fields });
@@ -1850,14 +1912,24 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
               id: _id, user_id: uid,
               sphere_id: getSphereId(task.sphere),
               project_id: projectId ?? getProjectId(task.project, task.sphere),
-              title: task.title, priority: task.priority, energy: task.energy,
+              title: task.title,
+              // Omit priority/energy entirely when unset — sending an explicit null
+              // trips Postgres CHECK constraints on pre-migration schemas; omitting
+              // the key lets the DB use its column default (pre-migration) or NULL
+              // (post-migration once DROP DEFAULT + DROP NOT NULL are applied).
+              ...(task.priority ? { priority: task.priority } : {}),
+              ...(task.energy   ? { energy:   task.energy   } : {}),
               urgency: task.urgency ?? "not-urgent", done: task.done,
-              deadline: task.deadline, notes: task.notes ?? "",
+              deadline: task.deadline ?? null, notes: task.notes ?? "",
               manual_minutes: task.manualMinutes ?? 0, queued_date: task.queuedDate ?? null,
               time_spent_minutes: task.timeSpentMinutes ?? 0, intent: task.intent ?? "finish",
               daily_target_minutes: task.dailyTargetMinutes ?? null,
               rollover_count: task.rolloverCount ?? 0, daily_tracking: task.dailyTracking ?? {},
-            })).then(() => {
+            })).then(({ error: insertError }) => {
+              if (insertError) {
+                console.error("[addTask] Supabase insert failed — full error:", insertError);
+                return;
+              }
               if ((task.manualMinutes ?? 0) > 0) {
                 const now = new Date();
                 db.from("focus_sessions").insert({

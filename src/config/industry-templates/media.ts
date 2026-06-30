@@ -14,8 +14,9 @@ export const mediaTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "launch-wire", areaKey: "pr", name: "Startup Media Push",       emoji: "📰", tags: ["Campaign", "Tallinn"] },
+    { projectKey: "launch-wire", areaKey: "pr", name: "Startup Media Push",      emoji: "📰", tags: ["Campaign", "Tallinn"] },
     { projectKey: "brand-strat", areaKey: "pr", name: "Crisis Management Guide", emoji: "🛡️", tags: ["Internal"] },
+    { projectKey: "pr_simple",   areaKey: "pr", name: "Simple Tasks",            emoji: "📝" },
   ],
 
   tasks: [

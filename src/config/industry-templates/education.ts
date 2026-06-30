@@ -16,6 +16,7 @@ export const educationTemplate: IndustryTemplate = {
   projects: [
     { projectKey: "yt-growth",    areaKey: "edu", name: "Public Speaking Video Masterclass", emoji: "🎬", tags: ["YouTube", "Content"] },
     { projectKey: "course-build", areaKey: "edu", name: "Interactive Cohort Syllabus",        emoji: "📚", tags: ["Teaching"] },
+    { projectKey: "edu_simple",   areaKey: "edu", name: "Simple Tasks",                       emoji: "📝" },
   ],
 
   tasks: [

@@ -102,7 +102,7 @@ function sortTasks(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => {
     const uDiff = (URGENCY_W[b.urgency ?? "not-urgent"] ?? 1) - (URGENCY_W[a.urgency ?? "not-urgent"] ?? 1);
     if (uDiff !== 0) return uDiff;
-    return (PRIORITY_W[b.priority] ?? 0) - (PRIORITY_W[a.priority] ?? 0);
+    return (b.priority ? (PRIORITY_W[b.priority] ?? 0) : 0) - (a.priority ? (PRIORITY_W[a.priority] ?? 0) : 0);
   });
 }
 
@@ -161,8 +161,8 @@ function TaskRow({
               {task.urgency === "urgent" && (
                 <span className="text-[11px] leading-none" title="Urgent">🔥</span>
               )}
-              <Pill label={task.priority} className={PRIORITY_STYLE[task.priority]} />
-              <Pill label={task.energy}   className={ENERGY_STYLE[task.energy]}     />
+              {task.priority && <Pill label={task.priority} className={PRIORITY_STYLE[task.priority]} />}
+              {task.energy   && <Pill label={task.energy}   className={ENERGY_STYLE[task.energy]}     />}
               {task.deadline && (
                 <span className="text-[10px] text-slate-500">
                   {new Date(task.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}

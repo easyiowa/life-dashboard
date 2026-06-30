@@ -14,8 +14,9 @@ export const eventsTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "feb-night",    areaKey: "bookings",  name: "February Closing Set",        emoji: "🎛️", tags: ["Headliner", "Minimal"] },
-    { projectKey: "spring-series", areaKey: "bookings", name: "Spring Residency Series",      emoji: "🔊", tags: ["Residents", "Series"] },
+    { projectKey: "feb-night",       areaKey: "bookings", name: "February Closing Set",    emoji: "🎛️", tags: ["Headliner", "Minimal"] },
+    { projectKey: "spring-series",   areaKey: "bookings", name: "Spring Residency Series", emoji: "🔊", tags: ["Residents", "Series"] },
+    { projectKey: "bookings_simple", areaKey: "bookings", name: "Simple Tasks",            emoji: "📝" },
   ],
 
   tasks: [

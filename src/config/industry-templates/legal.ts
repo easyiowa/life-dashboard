@@ -22,6 +22,7 @@ export const legalTemplate: IndustryTemplate = {
   projects: [
     { projectKey: "corp-audit",    areaKey: "law", name: "Corporate Compliance Audit",     emoji: "⚖️", tags: ["Corporate", "Funding"] },
     { projectKey: "ip-protection", areaKey: "law", name: "Trademark Registration Package", emoji: "🔒", tags: ["IP"] },
+    { projectKey: "law_simple",    areaKey: "law", name: "Simple Tasks",                   emoji: "📝" },
   ],
 
   tasks: [

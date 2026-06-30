@@ -14,7 +14,8 @@ export const creativeTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "portfolio", areaKey: "portfolio", name: "Portfolio Refresh",      emoji: "🖼️", tags: ["Branding", "Website"] },
+    { projectKey: "portfolio",        areaKey: "portfolio", name: "Portfolio Refresh", emoji: "🖼️", tags: ["Branding", "Website"] },
+    { projectKey: "portfolio_simple", areaKey: "portfolio", name: "Simple Tasks",      emoji: "📝" },
   ],
 
   tasks: [

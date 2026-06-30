@@ -14,8 +14,9 @@ export const financeTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "tax-vault",   areaKey: "ops", name: "Q2 Tax Filings",     emoji: "📊", tags: ["EMTA", "Quarterly"] },
+    { projectKey: "tax-vault",   areaKey: "ops", name: "Q2 Tax Filings",   emoji: "📊", tags: ["EMTA", "Quarterly"] },
     { projectKey: "audit-ready", areaKey: "ops", name: "Client Audit Prep", emoji: "📑", tags: ["Internal"] },
+    { projectKey: "ops_simple",  areaKey: "ops", name: "Simple Tasks",      emoji: "📝" },
   ],
 
   tasks: [

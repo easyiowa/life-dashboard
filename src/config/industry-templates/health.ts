@@ -15,8 +15,10 @@ export const healthTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "meal-plans",  areaKey: "clients",  name: "Client Meal Plans",         emoji: "🥗", tags: ["Nutrition", "Plans"] },
-    { projectKey: "group-prog",  areaKey: "clients",  name: "12-Week Group Programme",    emoji: "👥", tags: ["Group", "Coaching"] },
+    { projectKey: "meal-plans",      areaKey: "clients", name: "Client Meal Plans",       emoji: "🥗", tags: ["Nutrition", "Plans"] },
+    { projectKey: "group-prog",      areaKey: "clients", name: "12-Week Group Programme", emoji: "👥", tags: ["Group", "Coaching"] },
+    { projectKey: "clients_simple",  areaKey: "clients", name: "Simple Tasks",            emoji: "📝" },
+    { projectKey: "content_simple",  areaKey: "content", name: "Simple Tasks",            emoji: "📝" },
   ],
 
   tasks: [

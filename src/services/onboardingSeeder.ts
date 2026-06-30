@@ -99,6 +99,7 @@ function resolveParent(
 }
 
 export async function seedOnboardingTemplate(template: IndustryTemplate, userId: string): Promise<SeedResult> {
+  if (!userId) throw new Error("seedOnboardingTemplate: userId is empty — auth record not yet available.");
   if (!supabase) throw new Error("Supabase is not configured — cannot seed onboarding data.");
   const db = supabase;
 
@@ -344,6 +345,10 @@ export async function seedOnboardingTemplate(template: IndustryTemplate, userId:
 //   - Each template gets its own try/catch so one failure can't silently skip
 //     every template queued after it.
 export async function seedSelectedTemplates(templates: IndustryTemplate[], userId: string): Promise<void> {
+  if (!userId) {
+    console.error("[onboardingSeeder] seedSelectedTemplates: userId is empty — skipping seeding until auth is fully resolved.");
+    return;
+  }
   const toSeed = templates.length > 0 ? templates : [cleanSlateTemplate];
   for (const template of toSeed) {
     try {

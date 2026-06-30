@@ -16,9 +16,10 @@ export const startupTemplate: IndustryTemplate = {
 
   // 2. All projects moved under the Startup area
   projects: [
-    { projectKey: "life-dash",  areaKey: "product", name: "Launch Life Dashboard", emoji: "🔮", tags: ["Personal", "V1"] },
-    { projectKey: "mvp-build",  areaKey: "product", name: "Build MVP, FAST!",      emoji: "🚀", tags: ["Dev", "Sprint-1"] },
-    { projectKey: "beta-push",  areaKey: "product", name: "Friends as Testers",    emoji: "📣", tags: ["Marketing", "Tallinn"] },
+    { projectKey: "life-dash",      areaKey: "product", name: "Launch Life Dashboard", emoji: "🔮", tags: ["Personal", "V1"] },
+    { projectKey: "mvp-build",      areaKey: "product", name: "Build MVP, FAST!",      emoji: "🚀", tags: ["Dev", "Sprint-1"] },
+    { projectKey: "beta-push",      areaKey: "product", name: "Friends as Testers",    emoji: "📣", tags: ["Marketing", "Tallinn"] },
+    { projectKey: "product_simple", areaKey: "product", name: "Simple Tasks",          emoji: "📝" },
   ],
 
   // 3. All tasks now point under projects housed in the Startup area

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, ChevronDown } from "lucide-react";
 import ChecklistEditor from "@/components/ui/ChecklistEditor";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import {
@@ -84,7 +84,7 @@ const INACTIVE = "border-white/[0.07] bg-white/[0.03] text-slate-400 hover:bg-wh
 function ToggleGroup<T extends string>({
   options, value, onChange, activeStyles,
 }: {
-  options: T[]; value: T; onChange: (v: T) => void; activeStyles: Record<T, string>;
+  options: T[]; value: T | null; onChange: (v: T) => void; activeStyles: Record<T, string>;
 }) {
   return (
     <div className="flex gap-2">
@@ -111,9 +111,14 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
 
   const blank = (): FormData => ({
     sphere: fallbackSphere, project: fallbackProject, title: "",
-    priority: "Med", energy: "Easy", urgency: "not-urgent",
+    priority: null, energy: null, urgency: undefined,
     deadline: null, notes: "", manualMinutes: 0,
   });
+
+  // ── Session-sticky project: remembers the last explicitly chosen project per
+  //    sphere while this component instance stays mounted. Resets to "Simple Tasks"
+  //    when the sphere switches or the parent unmounts (widget is hidden/remounted).
+  const sessionProjectBySphere = useRef<Record<string, string>>({});
 
   // ── Core form state ──────────────────────────────────────────────────────────
   const [form,       setForm]       = useState<FormData>(blank);
@@ -123,6 +128,7 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
   // actually ready, rather than capturing whatever form.notes was during the open=true render
   // that fires a tick before this same effect updates it.
   const [notesResetKey, setNotesResetKey] = useState(0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // ── New Project panel state ──────────────────────────────────────────────────
   const [showNewProject,        setShowNewProject]        = useState(false);
@@ -158,33 +164,40 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
     }
   }, [tags, pendingPTagLabel]);
 
-  // ── Reset on open ────────────────────────────────────────────────────────────
+  // ── Reset on open / clear session memory on close ───────────────────────────
   useEffect(() => {
-    if (open) {
-      const targetSphere = defaultSphere ?? fallbackSphere;
-      const sphereTasks  = tasks.filter((t) => t.sphere === targetSphere);
-      const lastTask     = sphereTasks[sphereTasks.length - 1];
-      const targetProject =
-        lastTask?.project ??
-        projects.find((p) => p.sphere === targetSphere)?.name ??
-        fallbackProject;
-
-      setForm({ ...blank(), sphere: targetSphere, project: targetProject, title: defaultTitle ?? "", notes: defaultNotes ?? "" });
-      setNotesResetKey((k) => k + 1);
-      setTitleError(false);
-      setShowNewProject(false);
-      setNewProjectName("");
-      setNewProjectEmoji("📁");
-      setNewProjectEmojiLocked(false);
-      setNewProjectSphere(targetSphere);
-      setNewProjectTagIds(tags[0] ? [tags[0].id] : []);
-      setNewProjectError(false);
-      setAddingPTag(false);
-      setNewPTagName("");
-      setNewPTagColor("violet");
-      setPendingPTagLabel(null);
-      setEditingPTagId(null);
+    if (!open) {
+      // Hard-reset session memory on close so the next open always starts from "Simple Tasks".
+      sessionProjectBySphere.current = {};
+      return;
     }
+
+    const targetSphere = defaultSphere ?? fallbackSphere;
+    // Within a single open session, honour the user's last explicit pick; otherwise default to "Simple Tasks".
+    const sessionPick = sessionProjectBySphere.current[targetSphere];
+    const simpleTasksName = projects.find((p) => p.name === "Simple Tasks" && p.sphere === targetSphere)?.name;
+    const targetProject =
+      (sessionPick && projects.some((p) => p.name === sessionPick && p.sphere === targetSphere) ? sessionPick : undefined) ??
+      simpleTasksName ??
+      projects.find((p) => p.sphere === targetSphere)?.name ??
+      fallbackProject;
+
+    setForm({ ...blank(), sphere: targetSphere, project: targetProject, title: defaultTitle ?? "", notes: defaultNotes ?? "" });
+    setNotesResetKey((k) => k + 1);
+    setShowAdvanced(false);
+    setTitleError(false);
+    setShowNewProject(false);
+    setNewProjectName("");
+    setNewProjectEmoji("📁");
+    setNewProjectEmojiLocked(false);
+    setNewProjectSphere(targetSphere);
+    setNewProjectTagIds(tags[0] ? [tags[0].id] : []);
+    setNewProjectError(false);
+    setAddingPTag(false);
+    setNewPTagName("");
+    setNewPTagColor("violet");
+    setPendingPTagLabel(null);
+    setEditingPTagId(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -197,8 +210,14 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
   function handleSphereChange(name: string) {
-    const firstProject = projects.find((p) => p.sphere === name)?.name ?? "";
-    setForm((f) => ({ ...f, sphere: name, project: firstProject }));
+    const sessionPick = sessionProjectBySphere.current[name];
+    const simpleTasksName = projects.find((p) => p.name === "Simple Tasks" && p.sphere === name)?.name;
+    const project =
+      (sessionPick && projects.some((p) => p.name === sessionPick && p.sphere === name) ? sessionPick : undefined) ??
+      simpleTasksName ??
+      projects.find((p) => p.sphere === name)?.name ??
+      "";
+    setForm((f) => ({ ...f, sphere: name, project }));
     setShowNewProject(false);
   }
 
@@ -224,20 +243,24 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
     e.preventDefault();
     if (!form.title.trim()) { setTitleError(true); return; }
 
-    // Auto-route fallback: if no project selected, find or create a "Random" catch-all.
-    // When creating a new project we capture its generated ID and pass it explicitly to
-    // addTask so the Supabase insert gets the correct project_id even though stateRef
-    // hasn't been updated yet by the concurrent addProject dispatch.
-    let projectName = form.project.trim();
-    let resolvedProjectId: string | undefined;
-    if (!projectName) {
-      const existing = projects.find((p) => p.name === "Random" && p.sphere === form.sphere);
-      if (existing) {
-        projectName = existing.name;
-      } else {
-        resolvedProjectId = addProject({ sphere: form.sphere, name: "Random", emoji: "🎲", tagIds: [], status: "on-track", milestone: "In progress" });
-        projectName = "Random";
-      }
+    // "Simple Tasks" is now guaranteed to exist in DB for every sphere.
+    // Fall back to it only if the form somehow has no project (edge case: sphere
+    // was just created in this same render before the DB write settled).
+    const projectName = form.project.trim() || "Simple Tasks";
+
+    // Always look up the UUID explicitly from the rendered state so the Supabase
+    // insert gets a concrete project_id without depending on stateRef timing.
+    let resolvedProjectId: string | undefined =
+      projects.find((p) => p.name === projectName && p.sphere === form.sphere)?.id;
+
+    if (!resolvedProjectId) {
+      // Last resort: "Simple Tasks" missing in client state (new sphere race).
+      // Create it now and pass the UUID through so the task insert doesn't
+      // land with a null project_id while the project row is still in flight.
+      resolvedProjectId = addProject({
+        sphere: form.sphere, name: "Simple Tasks", emoji: "📝",
+        tagIds: [], status: "on-track", milestone: "In progress",
+      });
     }
 
     addTask({ ...form, project: projectName, done: false }, resolvedProjectId);
@@ -302,7 +325,8 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Area</label>
                 <select value={form.sphere} onChange={(e) => handleSphereChange(e.target.value)}
-                  className={`h-10 px-3 rounded-xl border text-sm text-white outline-none transition-colors appearance-none cursor-pointer ${ac.bgTint} ${ac.border}`}>
+                  className={`h-10 px-3 rounded-xl border text-sm text-white outline-none transition-colors appearance-none cursor-pointer ${ac.border}`}
+                  style={{ backgroundColor: ac.bgRgba }}>
                   {spheres.map((s) => <option key={s.id} value={s.name} className="bg-[#0F1629]">{s.name}</option>)}
                 </select>
               </div>
@@ -314,10 +338,14 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
                     <Plus className="w-3 h-3" /> New Project
                   </button>
                 </div>
-                <select value={form.project} onChange={(e) => setForm((f) => ({ ...f, project: e.target.value }))}
+                <select value={form.project} onChange={(e) => {
+                  const picked = e.target.value;
+                  sessionProjectBySphere.current[form.sphere] = picked;
+                  setForm((f) => ({ ...f, project: picked }));
+                }}
                   className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors appearance-none cursor-pointer">
-                  <option value="" className="bg-[#0F1629]">(🎲 Auto-route to Random)</option>
                   {sphereProjects.map((p) => <option key={p.id} value={p.name} className="bg-[#0F1629]">{p.name}</option>)}
+                  {sphereProjects.length === 0 && <option value="" className="bg-[#0F1629]">Simple Tasks (auto)</option>}
                 </select>
               </div>
             </div>
@@ -364,7 +392,8 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Area</label>
                   <select value={newProjectSphere} onChange={(e) => setNewProjectSphere(e.target.value)}
-                    className={`h-9 px-3 rounded-lg border text-sm text-white outline-none transition-colors appearance-none cursor-pointer ${acNewProject.bgTint} ${acNewProject.border}`}>
+                    className={`h-9 px-3 rounded-lg border text-sm text-white outline-none transition-colors appearance-none cursor-pointer ${acNewProject.border}`}
+                    style={{ backgroundColor: acNewProject.bgRgba }}>
                     {spheres.map((s) => <option key={s.id} value={s.name} className="bg-[#0F1629]">{s.name}</option>)}
                   </select>
                 </div>
@@ -522,68 +551,6 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
             )}
           </div>
 
-          {/* Priority */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Priority</label>
-            <ToggleGroup<Priority> options={["High", "Med", "Low"]} value={form.priority}
-              onChange={(v) => setForm((f) => ({ ...f, priority: v }))} activeStyles={PRIORITY_ACTIVE} />
-          </div>
-
-          {/* Energy */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Energy</label>
-            <ToggleGroup<Energy> options={["Flow", "Quick", "Easy"]} value={form.energy}
-              onChange={(v) => setForm((f) => ({ ...f, energy: v }))} activeStyles={ENERGY_ACTIVE} />
-          </div>
-
-          {/* Urgency */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Urgency</label>
-            <div className="flex gap-2">
-              {([
-                { value: "urgent",     label: "🔥 Urgent"    },
-                { value: "not-urgent", label: "🧊 Not Urgent" },
-              ] as { value: Urgency; label: string }[]).map(({ value, label }) => (
-                <button key={value} type="button" onClick={() => setForm((f) => ({ ...f, urgency: value }))}
-                  className={`flex-1 h-8 rounded-lg text-xs font-medium border transition-all duration-150 ${
-                    (form.urgency ?? "not-urgent") === value
-                      ? value === "urgent"
-                        ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
-                        : "bg-white/[0.06] border-white/[0.12] text-slate-300"
-                      : "border-white/[0.07] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]"
-                  }`}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Deadline + Manual Time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Deadline</label>
-              <DatePickerInput
-                value={form.deadline ?? null}
-                onChange={(v) => setForm((f) => ({ ...f, deadline: v }))}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Manual Time (min)</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="0"
-                value={form.manualMinutes === 0 ? "" : String(form.manualMinutes)}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^0-9]/g, "");
-                  setForm((f) => ({ ...f, manualMinutes: raw === "" ? 0 : Math.max(0, Number(raw)) }));
-                }}
-                className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
-              />
-            </div>
-          </div>
-
           {/* Notes — rich text (checklist + bullet list), saved as HTML */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notes</label>
@@ -593,8 +560,89 @@ export default function TaskModal({ open, onClose, defaultSphere, defaultTitle, 
               onChange={(html) => setForm((f) => ({ ...f, notes: html }))}
               placeholder="Optional context or links…"
               maxHeightVariant="modal"
+              minHeightClassName="min-h-[6.5rem]"
               className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] transition-colors"
             />
+          </div>
+
+          {/* Advanced Properties accordion */}
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-slate-400 hover:text-slate-200 hover:bg-white/[0.05] transition-all duration-150"
+            >
+              <span className="font-medium">Advanced Properties</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`} />
+            </button>
+
+            {showAdvanced && (
+              <div className="flex flex-col gap-5">
+
+                {/* Priority */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Priority</label>
+                  <ToggleGroup<Priority> options={["High", "Med", "Low"]} value={form.priority}
+                    onChange={(v) => setForm((f) => ({ ...f, priority: v }))} activeStyles={PRIORITY_ACTIVE} />
+                </div>
+
+                {/* Energy */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Energy</label>
+                  <ToggleGroup<Energy> options={["Flow", "Quick", "Easy"]} value={form.energy}
+                    onChange={(v) => setForm((f) => ({ ...f, energy: v }))} activeStyles={ENERGY_ACTIVE} />
+                </div>
+
+                {/* Urgency */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Urgency</label>
+                  <div className="flex gap-2">
+                    {([
+                      { value: "urgent",     label: "🔥 Urgent"    },
+                      { value: "not-urgent", label: "🧊 Not Urgent" },
+                    ] as { value: Urgency; label: string }[]).map(({ value, label }) => (
+                      <button key={value} type="button" onClick={() => setForm((f) => ({ ...f, urgency: value }))}
+                        className={`flex-1 h-8 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                          form.urgency === value
+                            ? value === "urgent"
+                              ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
+                              : "bg-white/[0.06] border-white/[0.12] text-slate-300"
+                            : "border-white/[0.07] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]"
+                        }`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Deadline + Manual Time */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Deadline</label>
+                    <DatePickerInput
+                      value={form.deadline ?? null}
+                      onChange={(v) => setForm((f) => ({ ...f, deadline: v }))}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Manual Time (min)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="0"
+                      value={form.manualMinutes === 0 ? "" : String(form.manualMinutes)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, "");
+                        setForm((f) => ({ ...f, manualMinutes: raw === "" ? 0 : Math.max(0, Number(raw)) }));
+                      }}
+                      className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
+                    />
+                  </div>
+                </div>
+
+              </div>
+            )}
           </div>
 
           {/* Actions */}

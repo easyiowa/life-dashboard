@@ -29,6 +29,8 @@ interface ChecklistEditorProps {
   placeholder?: string;
   className?: string;
   maxHeightVariant?: MaxHeightVariant;
+  /** Optional Tailwind min-height class applied to the inner contentEditable div — e.g. "min-h-[5.5rem]" for a 4-row starting height. */
+  minHeightClassName?: string;
 }
 
 // The enlarged ~44x44px invisible tap target lives in globals.css as a plain ".qn-check-circle"
@@ -130,7 +132,7 @@ function isCaretAtLineTextStart(sel: Selection | null, textSpan: Element): boole
 }
 
 const ChecklistEditor = forwardRef<ChecklistEditorHandle, ChecklistEditorProps>(function ChecklistEditor(
-  { onChange, onSubmitShortcut, defaultValue, autoFocus, placeholder = "", className = "", maxHeightVariant = "modal" },
+  { onChange, onSubmitShortcut, defaultValue, autoFocus, placeholder = "", className = "", maxHeightVariant = "modal", minHeightClassName = "" },
   ref
 ) {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -382,7 +384,7 @@ const ChecklistEditor = forwardRef<ChecklistEditorHandle, ChecklistEditorProps>(
         onPaste={handlePaste}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`px-3 py-2 overflow-y-auto outline-none text-sm text-white empty:before:content-[attr(data-placeholder)] empty:before:text-slate-600 empty:before:pointer-events-none ${MAX_HEIGHT[maxHeightVariant]}`}
+        className={`px-3 py-2 overflow-y-auto outline-none text-sm text-white empty:before:content-[attr(data-placeholder)] empty:before:text-slate-600 empty:before:pointer-events-none ${MAX_HEIGHT[maxHeightVariant]} ${minHeightClassName}`}
       />
 
       {/* Formatting toolbar — only while the editor is actively focused */}

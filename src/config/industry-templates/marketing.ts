@@ -14,8 +14,9 @@ export const marketingTemplate: IndustryTemplate = {
   ],
 
   projects: [
-    { projectKey: "paid-ads",  areaKey: "mktg", name: "Q3 Paid Acquisition", emoji: "🎯", tags: ["Growth", "Ads"] },
-    { projectKey: "seo-boost", areaKey: "mktg", name: "SEO Content Engine",  emoji: "🚀", tags: ["Content"] },
+    { projectKey: "paid-ads",    areaKey: "mktg", name: "Q3 Paid Acquisition", emoji: "🎯", tags: ["Growth", "Ads"] },
+    { projectKey: "seo-boost",   areaKey: "mktg", name: "SEO Content Engine",  emoji: "🚀", tags: ["Content"] },
+    { projectKey: "mktg_simple", areaKey: "mktg", name: "Simple Tasks",        emoji: "📝" },
   ],
 
   tasks: [
