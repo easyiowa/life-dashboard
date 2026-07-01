@@ -190,7 +190,14 @@ const ChecklistEditor = forwardRef<ChecklistEditorHandle, ChecklistEditorProps>(
 
     const sel = window.getSelection();
     const container = getLineContainer(editor, sel);
-    if (!container || container.classList?.contains("qn-check-line")) return; // already a checklist line
+    if (!container) return;
+
+    // Toggle off: cursor is already on a checklist line → unwrap back to plain div
+    if (container.classList?.contains("qn-check-line")) {
+      const textSpan = container.querySelector(".qn-check-text");
+      if (textSpan) unwrapChecklistLine(container, textSpan);
+      return;
+    }
 
     stripLeadingBulletPrefix(container);
 
@@ -239,7 +246,18 @@ const ChecklistEditor = forwardRef<ChecklistEditorHandle, ChecklistEditorProps>(
     const sel = window.getSelection();
     const container = getLineContainer(editor, sel);
     if (!container || container.classList?.contains("qn-check-line")) return;
-    if (BULLET_LINE_RE.test(container.textContent ?? "")) return; // already a bullet line
+
+    // Toggle off: cursor is already on a bullet line → strip the "• " prefix
+    if (BULLET_LINE_RE.test(container.textContent ?? "")) {
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+      const firstText = walker.nextNode() as Text | null;
+      if (firstText) {
+        firstText.data = firstText.data.replace(/^•\s/, "");
+        placeCursor(container, false);
+        emitChange();
+      }
+      return;
+    }
 
     stripLeadingBulletPrefix(container);
 

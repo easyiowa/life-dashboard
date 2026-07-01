@@ -174,29 +174,26 @@ function ArchiveNoteItem({
   const ac = areaColor(spheres.find((s) => s.name === note.sphere)?.labelColor);
 
   function startEdit() {
-    setDraft(stripHtml(note.text));
+    setDraft(note.text); // preserve HTML so ChecklistEditor can render existing formatting
     setEditing(true);
   }
 
   function save() {
     const trimmed = draft.trim();
-    if (trimmed) onUpdateText(note.id, `<div>${trimmed}</div>`);
+    if (trimmed) onUpdateText(note.id, trimmed);
     setEditing(false);
   }
 
   if (editing) {
     return (
       <div className="flex flex-col gap-2 py-2.5 border-b border-white/[0.04] last:border-0">
-        <textarea
+        <ChecklistEditor
+          defaultValue={draft}
           autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") save();
-            if (e.key === "Escape") setEditing(false);
-          }}
-          className="w-full text-xs text-white bg-white/[0.06] border border-violet-500/40 rounded-lg px-3 py-2 resize-none outline-none leading-relaxed"
-          rows={Math.max(2, draft.split("\n").length + 1)}
+          onChange={setDraft}
+          onSubmitShortcut={save}
+          maxHeightVariant="modal"
+          className="w-full rounded-lg bg-white/[0.06] border border-violet-500/40 transition-colors"
         />
         <div className="flex items-center gap-2">
           <button onClick={save}
