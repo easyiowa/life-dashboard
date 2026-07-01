@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
-import { NotebookPen, Trash2, X, Search, Zap, ChevronDown, Pencil, MoreVertical } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { NotebookPen, Trash2, X, Search, Zap, Pencil, MoreVertical } from "lucide-react";
 import { useDashboard, type QuickNote, type Sphere } from "@/context/DashboardContext";
 import ManageAreasModal from "@/components/modals/ManageAreasModal";
 import ChecklistEditor, { type ChecklistEditorHandle } from "@/components/ui/ChecklistEditor";
@@ -162,76 +162,96 @@ function NoteRow({
   );
 }
 
-// ── Archive note item ─────────────────────────────────────────────────────────
+// ── Archive note item (inline-editable) ──────────────────────────────────────
 
 function ArchiveNoteItem({
-  note,
-  spheres,
-  onUpdateText,
+  note, spheres, onUpdateText,
 }: {
-  note: QuickNote;
-  spheres: Sphere[];
-  onUpdateText: (id: string, text: string) => void;
+  note: QuickNote; spheres: Sphere[]; onUpdateText: (id: string, text: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft,   setDraft]   = useState("");
   const ac = areaColor(spheres.find((s) => s.name === note.sphere)?.labelColor);
+
+  function startEdit() {
+    setDraft(stripHtml(note.text));
+    setEditing(true);
+  }
+
+  function save() {
+    const trimmed = draft.trim();
+    if (trimmed) onUpdateText(note.id, `<div>${trimmed}</div>`);
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-2 py-2.5 border-b border-white/[0.04] last:border-0">
+        <textarea
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") save();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          className="w-full text-xs text-white bg-white/[0.06] border border-violet-500/40 rounded-lg px-3 py-2 resize-none outline-none leading-relaxed"
+          rows={Math.max(2, draft.split("\n").length + 1)}
+        />
+        <div className="flex items-center gap-2">
+          <button onClick={save}
+            className="px-3 h-6 rounded-md text-[11px] font-medium bg-violet-600/25 border border-violet-500/30 text-violet-300 hover:bg-violet-600/40 transition-colors">
+            Save
+          </button>
+          <button onClick={() => setEditing(false)}
+            className="px-3 h-6 rounded-md text-[11px] text-slate-500 hover:text-slate-300 transition-colors">
+            Cancel
+          </button>
+          <span className="text-[10px] text-slate-700 ml-auto">⌘↵ to save</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`flex flex-col gap-1 p-2.5 bg-white/[0.01] border-l-2 ${ac.borderLMuted} rounded-r-lg transition-all hover:bg-white/[0.03]`}
+      onDoubleClick={startEdit}
+      className="group flex items-start gap-2 py-2.5 border-b border-white/[0.04] last:border-0 cursor-default"
     >
-      <div
-        className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words"
-        onClick={makeChecklistToggleHandler((html) => onUpdateText(note.id, html))}
-        dangerouslySetInnerHTML={{ __html: note.text }}
-      />
-      {/* No hover action buttons here — the archive is a minimal, read-mostly view. A
-          persisted favorite stays visible as a static badge instead of an interactive toggle. */}
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
-        {note.isImportant && <span className="text-[10px] leading-none">🔥</span>}
-        {note.sphere && (
-          <>
-            <span className="text-slate-700 text-[10px]">·</span>
-            <span className={`text-[10px] ${ac.text}`}>{note.sphere}</span>
-          </>
-        )}
-        {note.projectId && (
-          <>
-            <span className="text-slate-700 text-[10px]">·</span>
-            <span className="text-[10px] text-slate-600">{note.projectId}</span>
-          </>
-        )}
+      <div className={`flex-1 min-w-0 border-l-2 ${ac.borderLMuted} pl-2.5 flex flex-col gap-1`}>
+        <div
+          className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words"
+          onClick={makeChecklistToggleHandler((html) => onUpdateText(note.id, html))}
+          dangerouslySetInnerHTML={{ __html: note.text }}
+        />
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-slate-600 tabular-nums">{fmtTime(note.createdAt)}</span>
+          {note.isImportant && <span className="text-[10px] leading-none">🔥</span>}
+          {note.sphere && (
+            <>
+              <span className="text-slate-700 text-[10px]">·</span>
+              <span className={`text-[10px] ${ac.text}`}>{note.sphere}</span>
+            </>
+          )}
+        </div>
       </div>
+      <button
+        onClick={startEdit}
+        title="Edit note (or double-click)"
+        className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all mt-0.5"
+      >
+        <Pencil className="w-3 h-3" />
+      </button>
     </div>
   );
 }
 
-// ── Archive grouping & accordion ─────────────────────────────────────────────
+// ── Archive flat bucketing ────────────────────────────────────────────────────
 
 interface NoteDayGroup {
   key: string;
   label: string;
   notes: QuickNote[];
-}
-
-function getMonday(d: Date): Date {
-  const date = new Date(d);
-  const day  = date.getDay();
-  date.setDate(date.getDate() - day + (day === 0 ? -6 : 1));
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
-}
-
-function dk(d: Date): string { return d.toLocaleDateString("en-CA"); }
-
-function fmtMonthKey(monthKey: string): string {
-  const [y, m] = monthKey.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 function groupNotesByDay(notes: QuickNote[]): NoteDayGroup[] {
@@ -250,116 +270,67 @@ function groupNotesByDay(notes: QuickNote[]): NoteDayGroup[] {
     }));
 }
 
-interface NoteBucket { id: string; label: string; days: NoteDayGroup[] }
+interface FlatBucket { id: string; label: string; notes: QuickNote[] }
 
-function bucketNotes(notes: QuickNote[]): {
-  currentWeek: NoteBucket;
-  previousWeek: NoteBucket;
-  monthlyArchive: NoteBucket[];
-} {
-  const today      = new Date();
-  const thisMonday = getMonday(today);
-  const thisSunday = addDays(thisMonday, 6);
-  const prevMonday = addDays(thisMonday, -7);
-  const prevSunday = addDays(thisMonday, -1);
+function flatBuckets(notes: QuickNote[]): FlatBucket[] {
+  const today    = new Date();
+  const thisYear = today.getFullYear();
 
-  const allDays  = groupNotesByDay(notes);
-  const curDays:  NoteDayGroup[] = [];
-  const prevDays: NoteDayGroup[] = [];
-  const archDays: NoteDayGroup[] = [];
+  const cutoff7  = new Date(today); cutoff7.setDate(cutoff7.getDate() - 7);
+  const cutoff30 = new Date(today); cutoff30.setDate(cutoff30.getDate() - 30);
+  const key7     = cutoff7.toLocaleDateString("en-CA");
+  const key30    = cutoff30.toLocaleDateString("en-CA");
 
-  for (const g of allDays) {
-    if      (g.key >= dk(thisMonday) && g.key <= dk(thisSunday)) curDays.push(g);
-    else if (g.key >= dk(prevMonday) && g.key <= dk(prevSunday)) prevDays.push(g);
-    else archDays.push(g);
+  const recent7:  QuickNote[] = [];
+  const recent30: QuickNote[] = [];
+  const monthMap = new Map<string, QuickNote[]>();
+  const yearMap  = new Map<number, QuickNote[]>();
+
+  for (const note of [...notes].sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+    const dateKey = note.createdAt.split(" ")[0];
+    const year    = parseInt(dateKey.split("-")[0], 10);
+    if (dateKey >= key7) {
+      recent7.push(note);
+    } else if (dateKey >= key30) {
+      recent30.push(note);
+    } else if (year === thisYear) {
+      const mk = dateKey.slice(0, 7);
+      if (!monthMap.has(mk)) monthMap.set(mk, []);
+      monthMap.get(mk)!.push(note);
+    } else {
+      if (!yearMap.has(year)) yearMap.set(year, []);
+      yearMap.get(year)!.push(note);
+    }
   }
 
-  const monthMap = new Map<string, NoteDayGroup[]>();
-  for (const g of archDays) {
-    const mk = g.key.slice(0, 7);
-    if (!monthMap.has(mk)) monthMap.set(mk, []);
-    monthMap.get(mk)!.push(g);
-  }
+  const result: FlatBucket[] = [];
+  if (recent7.length)  result.push({ id: "7d",  label: "Previous 7 Days",  notes: recent7  });
+  if (recent30.length) result.push({ id: "30d", label: "Previous 30 Days", notes: recent30 });
 
-  return {
-    currentWeek:  { id: "cur",  label: "Current Week",  days: curDays },
-    previousWeek: { id: "prev", label: "Previous Week", days: prevDays },
-    monthlyArchive: Array.from(monthMap.entries())
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([mk, days]) => ({ id: mk, label: fmtMonthKey(mk), days })),
-  };
+  Array.from(monthMap.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .forEach(([mk, mNotes]) => {
+      const [y, m] = mk.split("-").map(Number);
+      result.push({ id: mk, label: new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long" }), notes: mNotes });
+    });
+
+  Array.from(yearMap.entries())
+    .sort(([a], [b]) => b - a)
+    .forEach(([year, yNotes]) => {
+      result.push({ id: `y${year}`, label: String(year), notes: yNotes });
+    });
+
+  return result;
 }
 
-function NoteSectionNode({
-  label, sublabel, isOpen, onToggle, children, accent = false,
-}: {
-  label: string; sublabel?: string; isOpen: boolean; onToggle: () => void;
-  children: ReactNode; accent?: boolean;
-}) {
+function SectionDivider({ label, count }: { label: string; count: number }) {
   return (
-    <div className={`rounded-xl border overflow-hidden ${
-      accent ? "border-violet-500/20 bg-violet-600/[0.03]" : "border-white/[0.06] bg-white/[0.01]"
-    }`}>
-      <button
-        onClick={onToggle}
-        className={`w-full flex items-center gap-2 px-4 py-2.5 transition-colors duration-150 ${
-          accent ? "hover:bg-violet-600/[0.06]" : "hover:bg-white/[0.03]"
-        }`}
-      >
-        <span className={`text-xs font-semibold flex-1 text-left ${accent ? "text-violet-200" : "text-slate-300"}`}>
-          {label}
-        </span>
-        {sublabel && <span className="text-[10px] text-slate-500 tabular-nums">{sublabel}</span>}
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-600 flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-      </button>
-      <div
-        className="overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ maxHeight: isOpen ? "3000px" : "0px" }}
-      >
-        <div className="px-3 pb-3 pt-1 flex flex-col gap-1.5">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function NoteDayAccordion({
-  group, isOpen, onToggle, spheres, onUpdateText,
-}: {
-  group: NoteDayGroup;
-  isOpen: boolean;
-  onToggle: () => void;
-  spheres: Sphere[];
-  onUpdateText: (id: string, text: string) => void;
-}) {
-  return (
-    <div className="rounded-lg border border-white/[0.04] overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-150"
-      >
-        <span className="text-[11px] font-semibold text-white flex-1 text-left">{group.label}</span>
-        <span className="text-[10px] text-slate-500 tabular-nums">
-          {group.notes.length} note{group.notes.length !== 1 ? "s" : ""}
-        </span>
-        <ChevronDown className={`w-3 h-3 text-slate-600 ml-1 flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-      </button>
-      <div
-        className="overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ maxHeight: isOpen ? `${group.notes.length * 120 + 24}px` : "0px" }}
-      >
-        <div className="px-3 pt-1 pb-2 flex flex-col gap-1.5">
-          {group.notes.map((note) => (
-            <ArchiveNoteItem
-              key={note.id}
-              note={note}
-              spheres={spheres}
-              onUpdateText={onUpdateText}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="flex items-center gap-2 pt-4 pb-1.5 first:pt-2">
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 whitespace-nowrap">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-white/[0.06]" />
+      <span className="text-[10px] text-slate-700 tabular-nums">{count}</span>
     </div>
   );
 }
@@ -367,20 +338,13 @@ function NoteDayAccordion({
 // ── Archive modal ─────────────────────────────────────────────────────────────
 
 function ArchiveModal({
-  notes,
-  spheres,
-  onClose,
-  onUpdateText,
+  notes, spheres, onClose, onUpdateText,
 }: {
-  notes: QuickNote[];
-  spheres: Sphere[];
-  onClose: () => void;
+  notes: QuickNote[]; spheres: Sphere[]; onClose: () => void;
   onUpdateText: (id: string, text: string) => void;
 }) {
-  const [query,          setQuery]          = useState("");
-  const [favoritesOnly,  setFavoritesOnly]  = useState(false);
-  // Single dictionary for ALL accordion open states: section keys ("cur", "prev", month id) + day keys (date strings)
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ cur: true, [TODAY]: true });
+  const [query,         setQuery]         = useState("");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   const filtered = useMemo(() => {
     let list = notes;
@@ -390,43 +354,9 @@ function ArchiveModal({
     return list;
   }, [notes, query, favoritesOnly]);
 
-  const buckets = useMemo(() => bucketNotes(filtered), [filtered]);
-
+  const buckets      = useMemo(() => flatBuckets(filtered), [filtered]);
   const favoriteCount = notes.filter((n) => n.isImportant).length;
 
-  const totalNotes = buckets.currentWeek.days.reduce((s, g) => s + g.notes.length, 0)
-    + buckets.previousWeek.days.reduce((s, g) => s + g.notes.length, 0)
-    + buckets.monthlyArchive.reduce((s, b) => s + b.days.reduce((ds, g) => ds + g.notes.length, 0), 0);
-
-  // Every unique key that should be open when "Expand All" fires: section node ids + every day date string
-  const allExpandKeys = useMemo(() => {
-    const nodeKeys: string[] = [];
-    if (buckets.currentWeek.days.length)  nodeKeys.push("cur");
-    if (buckets.previousWeek.days.length) nodeKeys.push("prev");
-    buckets.monthlyArchive.forEach((m) => nodeKeys.push(m.id));
-
-    const dayKeys = [
-      ...buckets.currentWeek.days,
-      ...buckets.previousWeek.days,
-      ...buckets.monthlyArchive.flatMap((m) => m.days),
-    ].map((g) => g.key);
-
-    return [...nodeKeys, ...dayKeys];
-  }, [buckets]);
-
-  const isAllExpanded = allExpandKeys.length > 0 && allExpandKeys.every((k) => !!expandedGroups[k]);
-
-  function handleExpandCollapseAll() {
-    if (isAllExpanded) {
-      // Collapse all: wipe every key from the dictionary
-      setExpandedGroups({});
-    } else {
-      // Expand all: mark every section node AND every day key as open
-      setExpandedGroups(Object.fromEntries(allExpandKeys.map((k) => [k, true])));
-    }
-  }
-
-  // Lock background scroll while modal is open
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
@@ -438,7 +368,7 @@ function ArchiveModal({
 
       <div className="relative bg-[#0F1629] border border-white/[0.08] rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
 
-        {/* Modal header */}
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] flex-shrink-0">
           <div className="flex items-center gap-2">
             <NotebookPen className="w-4 h-4 text-purple-400" />
@@ -453,7 +383,7 @@ function ArchiveModal({
           </button>
         </div>
 
-        {/* Search + filters */}
+        {/* Search + favorites */}
         <div className="px-5 py-3 border-b border-white/[0.05] flex-shrink-0 flex flex-col gap-2">
           <div className="flex items-center gap-2 h-8 px-3 rounded-lg bg-white/[0.04] border border-white/[0.07] focus-within:border-purple-500/50 transition-colors">
             <Search className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
@@ -471,109 +401,43 @@ function ArchiveModal({
               </button>
             )}
           </div>
-          {/* Favorites filter + expand/collapse all */}
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setFavoritesOnly((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 h-6 rounded-full text-[11px] font-medium border transition-all duration-150 ${
-                favoritesOnly
-                  ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                  : "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
-              }`}
-            >
-              🔥 Favorites{favoriteCount > 0 && <span className="tabular-nums">({favoriteCount})</span>}
-            </button>
-            {totalNotes > 0 && (
-              <button
-                type="button"
-                onClick={handleExpandCollapseAll}
-                className="text-[11px] font-normal text-violet-400/70 hover:text-violet-300 transition-colors"
-              >
-                {isAllExpanded ? "▲ Collapse All" : "▼ Expand All"}
-              </button>
+          <button
+            type="button"
+            onClick={() => setFavoritesOnly((v) => !v)}
+            className={`self-start flex items-center gap-1.5 px-3 h-6 rounded-full text-[11px] font-medium border transition-all duration-150 ${
+              favoritesOnly
+                ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                : "bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
+            }`}
+          >
+            🔥 Favorites{favoriteCount > 0 && <span className="tabular-nums ml-0.5">({favoriteCount})</span>}
+          </button>
+        </div>
+
+        {/* Scrollable list */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="px-5 pt-1 pb-5">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-slate-600 text-center py-8">
+                {favoritesOnly ? "No favorites yet — mark notes with 🔥 to save them here." : query ? "No notes match your search." : "No notes captured yet."}
+              </p>
+            ) : (
+              buckets.map((bucket) => (
+                <div key={bucket.id}>
+                  <SectionDivider label={bucket.label} count={bucket.notes.length} />
+                  {bucket.notes.map((note) => (
+                    <ArchiveNoteItem
+                      key={note.id}
+                      note={note}
+                      spheres={spheres}
+                      onUpdateText={onUpdateText}
+                    />
+                  ))}
+                </div>
+              ))
             )}
           </div>
         </div>
-
-        {/* Outer scroll window — owns overflow clipping, no flex-col */}
-        <div className="flex-1 min-h-0 overflow-y-auto pr-2">
-        {/* Inner layout box — owns flex-col spacing, no overflow */}
-        <div className="px-5 pt-3 pb-4 flex flex-col gap-2">
-          {totalNotes === 0 ? (
-            <p className="text-xs text-slate-600 text-center py-8">
-              {favoritesOnly ? "No favorites yet — mark notes with 🔥 to save them here." : query ? "No notes match your search." : "No notes captured yet."}
-            </p>
-          ) : (
-            <>
-              {/* Current week */}
-              {buckets.currentWeek.days.length > 0 && (
-                <NoteSectionNode
-                  label={buckets.currentWeek.label}
-                  sublabel={`${buckets.currentWeek.days.reduce((s, g) => s + g.notes.length, 0)} notes`}
-                  isOpen={!!expandedGroups["cur"]}
-                  onToggle={() => setExpandedGroups((p) => ({ ...p, cur: !p["cur"] }))}
-                  accent
-                >
-                  {buckets.currentWeek.days.map((g) => (
-                    <NoteDayAccordion
-                      key={g.key}
-                      group={g}
-                      isOpen={!!expandedGroups[g.key]}
-                      onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
-                      spheres={spheres}
-                      onUpdateText={onUpdateText}
-                    />
-                  ))}
-                </NoteSectionNode>
-              )}
-
-              {/* Previous week */}
-              {buckets.previousWeek.days.length > 0 && (
-                <NoteSectionNode
-                  label={buckets.previousWeek.label}
-                  sublabel={`${buckets.previousWeek.days.reduce((s, g) => s + g.notes.length, 0)} notes`}
-                  isOpen={!!expandedGroups["prev"]}
-                  onToggle={() => setExpandedGroups((p) => ({ ...p, prev: !p["prev"] }))}
-                >
-                  {buckets.previousWeek.days.map((g) => (
-                    <NoteDayAccordion
-                      key={g.key}
-                      group={g}
-                      isOpen={!!expandedGroups[g.key]}
-                      onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
-                      spheres={spheres}
-                      onUpdateText={onUpdateText}
-                    />
-                  ))}
-                </NoteSectionNode>
-              )}
-
-              {/* Monthly archive */}
-              {buckets.monthlyArchive.map((month) => (
-                <NoteSectionNode
-                  key={month.id}
-                  label={month.label}
-                  sublabel={`${month.days.reduce((s, g) => s + g.notes.length, 0)} notes`}
-                  isOpen={!!expandedGroups[month.id]}
-                  onToggle={() => setExpandedGroups((p) => ({ ...p, [month.id]: !p[month.id] }))}
-                >
-                  {month.days.map((g) => (
-                    <NoteDayAccordion
-                      key={g.key}
-                      group={g}
-                      isOpen={!!expandedGroups[g.key]}
-                      onToggle={() => setExpandedGroups((p) => ({ ...p, [g.key]: !p[g.key] }))}
-                      spheres={spheres}
-                      onUpdateText={onUpdateText}
-                    />
-                  ))}
-                </NoteSectionNode>
-              ))}
-            </>
-          )}
-        </div>{/* end inner layout box */}
-        </div>{/* end outer scroll window */}
       </div>
     </div>
   );
