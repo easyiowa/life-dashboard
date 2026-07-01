@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Crown, MessageSquare, FileText, Plus, Users, Shield } from "lucide-react";
+import { X, Crown, MessageSquare, FileText, Archive, Plus, Users, Shield } from "lucide-react";
 import FeedbackTab from "./FeedbackTab";
 import UpdatesTab from "./UpdatesTab";
+import ArchiveTab from "./ArchiveTab";
 import InsightsTab from "./InsightsTab";
 import ManageAdminsTab from "./ManageAdminsTab";
 import DuduMetricsTab from "./DuduMetricsTab";
 
-type WorkbenchTab = "feedback" | "updates";
+type WorkbenchTab = "feedback" | "updates" | "archive";
 type Mode         = "workbench" | "insights" | "admins" | "dudu";
 
 interface Props {
@@ -65,8 +66,9 @@ export default function FounderDashboard({ isOpen, onClose, mode }: Props) {
           <>
             <div className="flex gap-1 px-5 pt-3 pb-0 shrink-0">
               {([
-                { id: "feedback" as WorkbenchTab, label: "Feedback", Icon: MessageSquare },
-                { id: "updates"  as WorkbenchTab, label: "Draft Updates", Icon: FileText  },
+                { id: "feedback" as WorkbenchTab, label: "Feedback",      Icon: MessageSquare },
+                { id: "updates"  as WorkbenchTab, label: "Draft Updates", Icon: FileText      },
+                { id: "archive"  as WorkbenchTab, label: "Archive",       Icon: Archive       },
               ] as const).map(t => (
                 <button
                   key={t.id}
@@ -95,7 +97,11 @@ export default function FounderDashboard({ isOpen, onClose, mode }: Props) {
             ? <ManageAdminsTab />
             : mode === "dudu"
             ? <DuduMetricsTab />
-            : workbenchTab === "feedback" ? <FeedbackTab /> : <UpdatesTab />}
+            : workbenchTab === "feedback"
+            ? <FeedbackTab />
+            : workbenchTab === "archive"
+            ? <ArchiveTab />
+            : <UpdatesTab />}
         </div>
 
         {/* Footer */}
@@ -110,6 +116,8 @@ export default function FounderDashboard({ isOpen, onClose, mode }: Props) {
               ? "Every Dudu trigger fired and what each user did about it."
               : workbenchTab === "feedback"
               ? "Feedback arrives here from the beacon drawer on every user session."
+              : workbenchTab === "archive"
+              ? "Text-only log of all resolved feedback · screenshots excluded to save storage."
               : "Only published updates appear in user drawer · drafts visible to founder only."}
           </p>
         </div>

@@ -46,10 +46,25 @@ export default function FeedbackTab() {
     if (!supabase) return;
     if (!window.confirm("Resolve & permanently delete this feedback entry?")) return;
 
-    // Optimistically remove from UI immediately
+    // Archive text content first — intentionally no screenshot_url (storage savings).
+    const { error: archiveErr } = await supabase
+      .from("workbench_feedback_archive")
+      .insert({
+        original_id:         item.id,
+        user_nickname:       item.user_nickname,
+        message:             item.message,
+        original_created_at: item.created_at,
+      });
+
+    if (archiveErr) {
+      setError(`Archive step failed — aborting delete: ${archiveErr.message}`);
+      return;
+    }
+
+    // Optimistically remove from UI now that archive is confirmed
     setItems((prev) => prev.filter((f) => f.id !== item.id));
 
-    // Delete the DB row asynchronously
+    // Hard delete the live row
     const { error: dbErr } = await supabase
       .from("workbench_feedback")
       .delete()
