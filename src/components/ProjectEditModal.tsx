@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Trash2 } from "lucide-react";
 import { useDashboard, type Project } from "@/context/DashboardContext";
 import EmojiPickerButton from "@/components/EmojiPickerButton";
 
@@ -55,16 +55,16 @@ const COLOR_PALETTE: { value: string; dot: string }[] = [
 
 // Active pill styles — full literal class strings so Tailwind JIT includes them
 const TAG_ACTIVE: Record<string, string> = {
-  emerald: "bg-emerald-500/25 text-emerald-200 border border-emerald-400/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]",
-  violet:  "bg-violet-500/25 text-violet-200 border border-violet-400/60 shadow-[0_0_10px_rgba(139,92,246,0.3)]",
-  sky:     "bg-sky-500/25 text-sky-200 border border-sky-400/60 shadow-[0_0_10px_rgba(14,165,233,0.3)]",
-  amber:   "bg-amber-500/25 text-amber-200 border border-amber-400/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]",
-  pink:    "bg-pink-500/25 text-pink-200 border border-pink-400/60 shadow-[0_0_10px_rgba(236,72,153,0.3)]",
-  teal:    "bg-teal-500/25 text-teal-200 border border-teal-400/60 shadow-[0_0_10px_rgba(20,184,166,0.3)]",
-  blue:    "bg-blue-500/25 text-blue-200 border border-blue-400/60 shadow-[0_0_10px_rgba(59,130,246,0.3)]",
-  rose:    "bg-rose-500/25 text-rose-200 border border-rose-400/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]",
-  orange:  "bg-orange-500/25 text-orange-200 border border-orange-400/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]",
-  indigo:  "bg-indigo-500/25 text-indigo-200 border border-indigo-400/60 shadow-[0_0_10px_rgba(99,102,241,0.3)]",
+  emerald: "bg-emerald-500/25 text-emerald-900 dark:text-emerald-200 border border-emerald-400/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]",
+  violet:  "bg-violet-500/25 text-violet-900 dark:text-violet-200 border border-violet-400/60 shadow-[0_0_10px_rgba(139,92,246,0.3)]",
+  sky:     "bg-sky-500/25 text-sky-900 dark:text-sky-200 border border-sky-400/60 shadow-[0_0_10px_rgba(14,165,233,0.3)]",
+  amber:   "bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-400/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]",
+  pink:    "bg-pink-500/25 text-pink-900 dark:text-pink-200 border border-pink-400/60 shadow-[0_0_10px_rgba(236,72,153,0.3)]",
+  teal:    "bg-teal-500/25 text-teal-900 dark:text-teal-200 border border-teal-400/60 shadow-[0_0_10px_rgba(20,184,166,0.3)]",
+  blue:    "bg-blue-500/25 text-blue-900 dark:text-blue-200 border border-blue-400/60 shadow-[0_0_10px_rgba(59,130,246,0.3)]",
+  rose:    "bg-rose-500/25 text-rose-900 dark:text-rose-200 border border-rose-400/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]",
+  orange:  "bg-orange-500/25 text-orange-900 dark:text-orange-200 border border-orange-400/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]",
+  indigo:  "bg-indigo-500/25 text-indigo-900 dark:text-indigo-200 border border-indigo-400/60 shadow-[0_0_10px_rgba(99,102,241,0.3)]",
 };
 
 const STATUS_OPTIONS: { value: Project["status"]; label: string; active: string }[] = [
@@ -88,14 +88,16 @@ const PTAG_COLORS: Array<{ name: string; dot: string; ring: string }> = [
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export default function ProjectEditModal({ project, onClose }: Props) {
-  const { tags, addTag, updateTag, deleteTag, updateProject } = useDashboard();
+  const { tags, addTag, updateTag, deleteTag, updateProject, deleteProject } = useDashboard();
 
   const [name,        setName]        = useState("");
   const [emoji,       setEmoji]       = useState("📁");
   const [emojiLocked, setEmojiLocked] = useState(false);
   const [tagIds,      setTagIds]      = useState<string[]>([]);
   const [status,      setStatus]      = useState<Project["status"]>("on-track");
-  const [nameErr,     setNameErr]     = useState(false);
+  const [nameErr,       setNameErr]       = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showGuard,     setShowGuard]     = useState(false);
   // Used to auto-select a newly created tag after the reducer updates
   const [pendingLabel, setPendingLabel] = useState<string | null>(null);
 
@@ -123,6 +125,8 @@ export default function ProjectEditModal({ project, onClose }: Props) {
       setTagIds(project.tagIds ?? []);
       setStatus(project.status);
       setNameErr(false);
+      setConfirmDelete(false);
+      setShowGuard(false);
       setAddingPTag(false);
       setNewTagName("");
       setNewTagColor("violet");
@@ -210,14 +214,71 @@ export default function ProjectEditModal({ project, onClose }: Props) {
                 locked={emojiLocked}
                 onPick={(e) => { setEmoji(e); setEmojiLocked(true); }}
               />
-              <input
-                autoFocus
-                type="text"
-                value={name}
-                onChange={(e) => { setName(e.target.value); setNameErr(false); }}
-                className={`flex-1 h-10 px-3 rounded-xl bg-white/[0.04] border text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors ${nameErr ? "border-red-500/60" : "border-white/[0.07]"}`}
-              />
+              <div className="relative flex-1">
+                <input
+                  autoFocus
+                  type="text"
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setNameErr(false); }}
+                  className={`w-full h-10 px-3 pr-10 rounded-xl bg-white/[0.04] border text-sm text-white outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors ${nameErr ? "border-red-500/60" : "border-white/[0.07]"}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (project!.name === "Simple Tasks") {
+                      setShowGuard((v) => !v);
+                    } else {
+                      setConfirmDelete((v) => !v);
+                    }
+                  }}
+                  title="Delete project"
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 transition-all ${
+                    confirmDelete
+                      ? "text-red-400 opacity-100"
+                      : showGuard
+                        ? "text-violet-400 opacity-100"
+                        : "text-slate-500 opacity-40 hover:opacity-100 hover:text-red-400"
+                  }`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+            {showGuard && (
+              <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                <span className="text-xs text-violet-200 leading-relaxed flex-1">
+                  This project is meant to collect all your tasks which are not intentionally assigned to a project. So, let&apos;s not delete it, but feel free to rename it!
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowGuard(false)}
+                  className="flex-shrink-0 text-slate-500 hover:text-slate-300 transition-colors mt-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            {confirmDelete && (
+              <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20">
+                <span className="text-xs text-red-300 truncate min-w-0">Delete this project and all its tasks?</span>
+                <div className="flex gap-1.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="h-6 px-2.5 rounded-lg border border-white/[0.07] bg-white/[0.03] text-[11px] text-slate-400 hover:text-white transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { deleteProject(project!.id); onClose(); }}
+                    className="h-6 px-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-[11px] text-white font-medium transition-all"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
             {nameErr && <p className="text-[10px] text-red-400">Name is required.</p>}
             {!emojiLocked && name.length > 0 && (
               <p className="text-[10px] text-slate-600">

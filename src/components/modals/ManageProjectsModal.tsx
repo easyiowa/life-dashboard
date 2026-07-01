@@ -251,6 +251,7 @@ function SortableProjectRow({ project, tintClassName }: { project: Project; tint
   const [emojiLocked,  setEmojiLocked]  = useState(true);
   const [tagIds,       setTagIds]       = useState<string[]>(project.tagIds ?? []);
   const [confirm,      setConfirm]      = useState(false);
+  const [showGuard,    setShowGuard]    = useState(false);
 
   useEffect(() => { if (!editing) setName(project.name); }, [project.name, editing]);
 
@@ -290,9 +291,21 @@ function SortableProjectRow({ project, tintClassName }: { project: Project; tint
           <GripVertical className="w-4 h-4" />
         </button>
 
-        {confirm ? (
-          <div className="flex-1 flex items-center justify-between gap-2">
-            <p className="text-xs text-slate-300 truncate">
+        {showGuard ? (
+          <div className="flex-1 min-w-0 flex items-start gap-2.5">
+            <p className="flex-1 min-w-0 text-xs text-violet-200 leading-relaxed">
+              This project is meant to collect all your tasks which are not intentionally assigned to a project. So, let&apos;s not delete it, but feel free to rename it!
+            </p>
+            <button
+              onClick={() => setShowGuard(false)}
+              className="flex-shrink-0 text-slate-500 hover:text-slate-300 transition-colors mt-0.5"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : confirm ? (
+          <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+            <p className="flex-1 min-w-0 text-xs text-slate-300 truncate">
               Delete <span className="text-white font-medium">&quot;{project.name}&quot;</span> and all its tasks?
             </p>
             <div className="flex gap-1.5 flex-shrink-0">
@@ -350,7 +363,13 @@ function SortableProjectRow({ project, tintClassName }: { project: Project; tint
                 <Pencil className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => setConfirm(true)}
+                onClick={() => {
+                  if (project.name === "Simple Tasks") {
+                    setShowGuard(true);
+                  } else {
+                    setConfirm(true);
+                  }
+                }}
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
                 title="Delete project"
               >

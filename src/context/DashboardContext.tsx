@@ -148,6 +148,7 @@ export interface Habit {
   targetCount: number;                           // how many completions per frequency window
   emoji: string;
   notes: string;
+  motivationWhy?: string;                        // optional long-term motivation anchor
   history: Record<string, boolean>;              // { "YYYY-MM-DD": true }
 }
 
@@ -934,8 +935,18 @@ function reducer(state: State, action: Action): State {
         ),
       };
 
-    case "DELETE_RELATIONSHIP_GROUP":
-      return { ...state, relationshipGroups: state.relationshipGroups.filter((g) => g.id !== action.id) };
+    case "DELETE_RELATIONSHIP_GROUP": {
+      const deletedLabel = state.relationshipGroups.find((g) => g.id === action.id)?.label ?? null;
+      return {
+        ...state,
+        relationshipGroups: state.relationshipGroups.filter((g) => g.id !== action.id),
+        networkContacts: deletedLabel
+          ? state.networkContacts.map((c) =>
+              c.relationshipType === deletedLabel ? { ...c, relationshipType: "" } : c
+            )
+          : state.networkContacts,
+      };
+    }
 
     default:
       return state;
@@ -1060,7 +1071,8 @@ async function loadDashboardData(userId: string): Promise<Partial<State>> {
       id: h.id as string, title: h.title as string,
       type: h.type as Habit["type"], routine: (h.routine as Habit["routine"]) ?? "day",
       frequency: h.frequency as Habit["frequency"], targetCount: h.target_count as number,
-      emoji: h.emoji as string, notes: (h.notes as string) ?? "", history,
+      emoji: h.emoji as string, notes: (h.notes as string) ?? "",
+      motivationWhy: (h.motivation_why as string) ?? "", history,
     };
   });
 
@@ -2017,6 +2029,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             id: _id, user_id: uid, title: habit.title, type: habit.type,
             routine: habit.routine ?? "day", frequency: habit.frequency,
             target_count: habit.targetCount, emoji: habit.emoji, notes: habit.notes ?? "",
+            motivation_why: habit.motivationWhy ?? null,
           }).then(() => {});
         },
         toggleHabitDate: (id, dateString) => {
@@ -2039,8 +2052,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             if (fields.routine !== undefined)     dbFields.routine = fields.routine;
             if (fields.frequency !== undefined)   dbFields.frequency = fields.frequency;
             if (fields.targetCount !== undefined) dbFields.target_count = fields.targetCount;
-            if (fields.emoji !== undefined)       dbFields.emoji = fields.emoji;
-            if (fields.notes !== undefined)       dbFields.notes = fields.notes;
+            if (fields.emoji !== undefined)         dbFields.emoji = fields.emoji;
+            if (fields.notes !== undefined)         dbFields.notes = fields.notes;
+            if (fields.motivationWhy !== undefined) dbFields.motivation_why = fields.motivationWhy || null;
             db.from("habits").update(dbFields).eq("id", id).then(() => {});
           }
         },
@@ -2101,7 +2115,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         },
         deleteRelationshipGroup: (id) => {
           dispatch({ type: "DELETE_RELATIONSHIP_GROUP", id });
-          if (db) db.from("relationship_groups").delete().eq("id", id).then(() => {});
+          if (db) {
+            db.from("network_contacts").update({ relationship_group_id: null }).eq("relationship_group_id", id).then(() => {});
+            db.from("relationship_groups").delete().eq("id", id).then(() => {});
+          }
         },
 
         networkContacts: state.networkContacts,

@@ -72,10 +72,11 @@ export default function HabitEditModal({ habit, onClose }: Props) {
   const [routine,     setRoutine]     = useState<NonNullable<Habit["routine"]>>("day");
   const [frequency,   setFrequency]   = useState<Habit["frequency"]>("daily");
   const [targetCount, setTargetCount] = useState(5);
-  const [notes,       setNotes]       = useState("");
-  const [emoji,       setEmoji]       = useState("⭐");
-  const [emojiLocked, setEmojiLocked] = useState(false);
-  const [titleErr,    setTitleErr]    = useState(false);
+  const [notes,          setNotes]          = useState("");
+  const [motivationWhy,  setMotivationWhy]  = useState("");
+  const [emoji,          setEmoji]          = useState("⭐");
+  const [emojiLocked,    setEmojiLocked]    = useState(false);
+  const [titleErr,       setTitleErr]       = useState(false);
 
   // Seed form from the active habit whenever it changes
   useEffect(() => {
@@ -86,6 +87,7 @@ export default function HabitEditModal({ habit, onClose }: Props) {
       setFrequency(habit.frequency);
       setTargetCount(habit.targetCount);
       setNotes(habit.notes);
+      setMotivationWhy(habit.motivationWhy ?? "");
       setEmoji(habit.emoji);
       setEmojiLocked(true); // existing emoji treated as locked by default
       setTitleErr(false);
@@ -101,7 +103,7 @@ export default function HabitEditModal({ habit, onClose }: Props) {
 
   function handleSave() {
     if (!title.trim()) { setTitleErr(true); return; }
-    updateHabit(habit!.id, { title: title.trim(), type, routine, frequency, targetCount, notes, emoji });
+    updateHabit(habit!.id, { title: title.trim(), type, routine, frequency, targetCount, notes, emoji, motivationWhy: motivationWhy.trim() || undefined });
     onClose();
   }
 
@@ -242,6 +244,21 @@ export default function HabitEditModal({ habit, onClose }: Props) {
               minRows={2}
               maxHeightVariant="modal"
               className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors"
+            />
+          </div>
+
+          {/* Why statement */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+              Why are you starting/stopping this habit?
+            </label>
+            <AutoExpandingTextarea
+              value={motivationWhy}
+              onChange={(e) => setMotivationWhy(e.target.value)}
+              placeholder="Optional reminder for your future self when things get tough or you start to slip away…"
+              minRows={2}
+              maxHeightVariant="modal"
+              className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:border-amber-500/50 transition-colors"
             />
           </div>
 

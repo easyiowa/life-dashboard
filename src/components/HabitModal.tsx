@@ -101,8 +101,9 @@ export default function HabitModal({ open, onClose }: Props) {
   const [targetCount, setTargetCount] = useState<number | "">(5);
   const [emoji,       setEmoji]       = useState("⭐");
   const [emojiLocked, setEmojiLocked] = useState(false);
-  const [notes,       setNotes]       = useState("");
-  const [titleErr,    setTitleErr]    = useState(false);
+  const [notes,          setNotes]          = useState("");
+  const [motivationWhy,  setMotivationWhy]  = useState("");
+  const [titleErr,       setTitleErr]       = useState(false);
 
   // Live emoji suggestion while the user types (unless they've overridden it)
   useEffect(() => {
@@ -112,7 +113,7 @@ export default function HabitModal({ open, onClose }: Props) {
   function reset() {
     setTitle(""); setType("start"); setRoutine("morning"); setFrequency("daily");
     setTargetCount(5); setEmoji("⭐"); setEmojiLocked(false);
-    setNotes(""); setTitleErr(false);
+    setNotes(""); setMotivationWhy(""); setTitleErr(false);
   }
 
   function handleClose() { reset(); onClose(); }
@@ -120,7 +121,7 @@ export default function HabitModal({ open, onClose }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setTitleErr(true); return; }
-    addHabit({ title: title.trim(), type, routine, frequency, targetCount: targetCount || 1, emoji, notes });
+    addHabit({ title: title.trim(), type, routine, frequency, targetCount: targetCount || 1, emoji, notes, motivationWhy: motivationWhy.trim() || undefined });
     handleClose();
   }
 
@@ -240,6 +241,21 @@ export default function HabitModal({ open, onClose }: Props) {
               minRows={2}
               maxHeightVariant="modal"
               className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 transition-colors"
+            />
+          </div>
+
+          {/* Why statement */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+              Why are you starting/stopping this habit?
+            </label>
+            <AutoExpandingTextarea
+              value={motivationWhy}
+              onChange={(e) => setMotivationWhy(e.target.value)}
+              placeholder="Optional reminder for your future self when things get tough or you start to slip away…"
+              minRows={2}
+              maxHeightVariant="modal"
+              className="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:border-amber-500/50 transition-colors"
             />
           </div>
 

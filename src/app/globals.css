@@ -1505,3 +1505,13 @@ button.rounded-full {
   color: rgba(148, 163, 184, 0.20) !important;
   cursor: not-allowed;
 }
+
+/* ── emoji-picker-react search input ──────────────────────────────────────── */
+/* The blanket `.light input { color: #1c1917 !important }` rule above bleeds
+   into the emoji picker portal (which always uses Theme.DARK with a dark
+   search-field background). Restore white text so typed queries are visible
+   regardless of the app's current theme. */
+.EmojiPickerReact input[type="text"] {
+  color: #ffffff !important;
+  border-color: transparent !important;
+}

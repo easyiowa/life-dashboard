@@ -99,6 +99,7 @@ function SortableGroupRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: group.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const [confirming, setConfirming] = useState(false);
 
   if (isEditing) {
     return (
@@ -172,32 +173,57 @@ function SortableGroupRow({
         <GripVertical className="w-3.5 h-3.5" />
       </button>
 
-      {/* Emoji + label — the row's own tinted background now carries the color, no separate dot */}
-      <span className="flex-1 text-sm text-slate-200 truncate min-w-0">
-        {group.emoji} {group.label}
-      </span>
+      {confirming ? (
+        <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+          <p className="flex-1 min-w-0 text-xs text-slate-300 truncate">
+            This will unassign all contacts inside it.
+          </p>
+          <div className="flex gap-1.5 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="h-7 px-2.5 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-slate-400 hover:text-white transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => { onDelete(); setConfirming(false); }}
+              className="h-7 px-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-xs text-white font-medium transition-all"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Emoji + label */}
+          <span className="flex-1 text-sm text-slate-200 truncate min-w-0">
+            {group.emoji} {group.label}
+          </span>
 
-      {/* Actions — always visible on mobile (touch has no hover state); desktop keeps the
-          hover-reveal so the list reads cleanly at rest on a pointer device. */}
-      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
-        <button
-          type="button"
-          onClick={onStartEdit}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
-          title="Edit group"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={!canDelete}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Delete group"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
+          {/* Actions — always visible on mobile; hover-reveal on desktop */}
+          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <button
+              type="button"
+              onClick={onStartEdit}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+              title="Edit group"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              disabled={!canDelete}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title="Delete group"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
