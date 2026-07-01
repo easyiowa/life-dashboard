@@ -15,15 +15,16 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
-  closestCenter,
+  closestCorners,
   useDroppable,
   type DragStartEvent,
   type DragEndEvent,
+  type DragOverEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
   arrayMove,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -98,7 +99,7 @@ function packRows(ids: string[]): RowSlot[][] {
 
 // ── Sortable widget card ───────────────────────────────────────────────────────
 
-function BlueprintCard({ id, colSpan }: { id: string; colSpan: 1 | 2 | 3 }) {
+function BlueprintCard({ id, colSpan, isDropTarget }: { id: string; colSpan: 1 | 2 | 3; isDropTarget?: boolean }) {
   const meta = WIDGET_META[id];
   const Icon = meta?.Icon;
 
@@ -112,34 +113,45 @@ function BlueprintCard({ id, colSpan }: { id: string; colSpan: 1 | 2 | 3 }) {
   } = useSortable({ id });
 
   return (
+    // Outer wrapper owns the grid span, the dnd ref, and the relative anchor for the overlay.
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`${SPAN_CLS[colSpan]} flex items-center gap-2.5 px-3 py-3 rounded-xl border select-none transition-all duration-150 cursor-grab active:cursor-grabbing ${
-        isDragging
-          ? "opacity-25 border-white/[0.05] bg-transparent"
-          : "bg-[#0F1629] border-white/[0.09] hover:border-violet-500/40 hover:bg-[#131929]"
-      }`}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition: transition ?? undefined,
+        willChange: transform ? "transform" : undefined,
+      }}
+      className={`${SPAN_CLS[colSpan]} relative select-none cursor-grab active:cursor-grabbing`}
     >
-      {/* System icon */}
-      {Icon && <Icon className="w-3.5 h-3.5 shrink-0 text-slate-500" />}
-
-      {/* Label */}
-      <span className="text-xs font-medium text-slate-300 truncate flex-1 leading-none">
-        {meta?.label ?? id}
-      </span>
-
-      {/* Column-span badge */}
-      <span className="shrink-0 text-[9px] text-slate-700 font-mono leading-none">
-        {colSpan}×
-      </span>
-
-      {/* Drag handle — visual only, moved to the right */}
-      <div className="shrink-0 text-slate-600">
-        <GripVertical className="w-3 h-3" />
+      {/* Card face — invisible during drag so the grid slot holds its exact height */}
+      <div
+        className={[
+          "flex items-center gap-2.5 px-3 py-3 rounded-xl border transition-all duration-200 ease-out",
+          isDragging
+            ? "invisible"
+            : isDropTarget
+              ? "bg-violet-500/[0.08] border-violet-500/50 ring-1 ring-violet-500/30 ring-offset-1 ring-offset-[#0B0F19]"
+              : "bg-white/[0.03] dark:bg-[#0F1629] border-slate-200/40 dark:border-white/[0.09] hover:border-violet-500/40 hover:bg-violet-500/[0.04] dark:hover:bg-[#131929]",
+        ].join(" ")}
+      >
+        {Icon && <Icon className="w-3.5 h-3.5 shrink-0 text-slate-500 dark:text-slate-500" />}
+        <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate flex-1 leading-none">
+          {meta?.label ?? id}
+        </span>
+        <span className="shrink-0 text-[9px] text-slate-400 dark:text-slate-700 font-mono leading-none">
+          {colSpan}×
+        </span>
+        <div className="shrink-0 text-slate-400 dark:text-slate-600">
+          <GripVertical className="w-3 h-3" />
+        </div>
       </div>
+
+      {/* Dashed placeholder — covers the invisible card face while dragging */}
+      {isDragging && (
+        <div className="absolute inset-0 rounded-xl border border-dashed border-violet-500/30 dark:border-violet-500/20 bg-violet-500/[0.04] dark:bg-violet-500/[0.02]" />
+      )}
     </div>
   );
 }
@@ -171,10 +183,18 @@ function OverlayCard({ id }: { id: string }) {
   const meta = WIDGET_META[id];
   const Icon = meta?.Icon;
   return (
-    <div className="flex items-center gap-2.5 px-3 py-3 rounded-xl border border-violet-500/55 bg-[#0F1629]/95 backdrop-blur-xl shadow-2xl ring-1 ring-violet-500/25 pointer-events-none">
-      {Icon && <Icon className="w-3.5 h-3.5 text-violet-400 shrink-0" />}
-      <span className="text-xs font-medium text-violet-300 flex-1">{meta?.label ?? id}</span>
-      <GripVertical className="w-3 h-3 text-slate-600 shrink-0" />
+    <div
+      className={[
+        "flex items-center gap-2.5 px-3 py-3 rounded-xl pointer-events-none backdrop-blur-xl",
+        // Light mode
+        "bg-white/[0.97] border border-slate-200/90 shadow-xl ring-1 ring-slate-900/[0.06]",
+        // Dark mode
+        "dark:bg-[#0F1629]/95 dark:border-violet-500/55 dark:shadow-2xl dark:ring-violet-500/25",
+      ].join(" ")}
+    >
+      {Icon && <Icon className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-violet-400" />}
+      <span className="text-xs font-medium text-slate-700 dark:text-violet-300 flex-1">{meta?.label ?? id}</span>
+      <GripVertical className="w-3 h-3 text-slate-400 dark:text-slate-600 shrink-0" />
     </div>
   );
 }
@@ -189,8 +209,10 @@ interface Props {
 }
 
 export default function DashboardBlueprintModal({ isOpen, onClose, initialOrder, onApply }: Props) {
-  const [items,    setItems]    = useState<string[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [items,      setItems]      = useState<string[]>([]);
+  const [activeId,   setActiveId]   = useState<string | null>(null);
+  const [overId,     setOverId]     = useState<string | null>(null);
+  const [activeDims, setActiveDims] = useState<{ width: number } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -206,11 +228,19 @@ export default function DashboardBlueprintModal({ isOpen, onClose, initialOrder,
 
   const onDragStart = useCallback(({ active }: DragStartEvent) => {
     setActiveId(active.id as string);
+    const rect = active.rect.current.initial;
+    if (rect) setActiveDims({ width: rect.width });
     if (typeof navigator !== "undefined") navigator.vibrate?.(10);
+  }, []);
+
+  const onDragOver = useCallback(({ over }: DragOverEvent) => {
+    setOverId((over?.id as string | null) ?? null);
   }, []);
 
   const onDragEnd = useCallback(({ active, over }: DragEndEvent) => {
     setActiveId(null);
+    setOverId(null);
+    setActiveDims(null);
     if (!over || active.id === over.id) return;
 
     const overId    = over.id as string;
@@ -296,12 +326,13 @@ export default function DashboardBlueprintModal({ isOpen, onClose, initialOrder,
         <div className="flex-1 overflow-y-auto px-5 py-3">
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={closestCorners}
             modifiers={[restrictToWindowEdges]}
             onDragStart={onDragStart}
+            onDragOver={onDragOver}
             onDragEnd={onDragEnd}
           >
-            <SortableContext items={items} strategy={verticalListSortingStrategy}>
+            <SortableContext items={items} strategy={rectSortingStrategy}>
               <div className="flex flex-col gap-2">
                 {rows.map((row, rowIdx) => (
                   <div key={rowIdx} className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -311,6 +342,7 @@ export default function DashboardBlueprintModal({ isOpen, onClose, initialOrder,
                           key={slot.id}
                           id={slot.id}
                           colSpan={slot.colSpan}
+                          isDropTarget={activeId !== null && activeId !== slot.id && overId === slot.id}
                         />
                       ) : (
                         <EmptySlot
@@ -326,7 +358,11 @@ export default function DashboardBlueprintModal({ isOpen, onClose, initialOrder,
             </SortableContext>
 
             <DragOverlay modifiers={[restrictToWindowEdges]}>
-              {activeId ? <OverlayCard id={activeId} /> : null}
+              {activeId ? (
+                <div style={{ width: activeDims?.width ?? "auto" }}>
+                  <OverlayCard id={activeId} />
+                </div>
+              ) : null}
             </DragOverlay>
           </DndContext>
         </div>

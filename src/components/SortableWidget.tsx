@@ -35,11 +35,21 @@ export default function SortableWidget({ id, label, colSpan = 1, children }: Pro
       id={`widget-${id}`}
       data-widget-id={id}
       data-widget-label={label ?? id}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`col-span-1 ${SPAN[colSpan]} rounded-2xl ${isDragging ? "opacity-40" : ""} transition-opacity`}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        // Use dnd-kit's transition during sort reflow; GPU-accelerate during active move
+        transition: transition ?? undefined,
+        willChange: transform ? "transform" : undefined,
+      }}
+      className={`col-span-1 ${SPAN[colSpan]} rounded-2xl relative`}
     >
+      {/*
+       * Keep the widget in the DOM with `invisible` during drag so the grid slot
+       * holds its natural height exactly. Replacing content with a fixed-height div
+       * would collapse tall widgets to min-h and cause neighbours to jump.
+       */}
       <div
-        className="relative group h-full"
+        className={`relative group h-full${isDragging ? " invisible pointer-events-none" : ""}`}
         style={{ userSelect: "none", WebkitTouchCallout: "none" } as CSSProperties}
       >
         {/* Drag handle — visible on card hover */}
@@ -54,6 +64,11 @@ export default function SortableWidget({ id, label, colSpan = 1, children }: Pro
         </div>
         {children}
       </div>
+
+      {/* Dashed drop-zone placeholder — painted over the invisible widget when dragging */}
+      {isDragging && (
+        <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-violet-500/30 dark:border-violet-500/25 bg-violet-500/[0.05] dark:bg-violet-500/[0.03]" />
+      )}
     </div>
   );
 }
