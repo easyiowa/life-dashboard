@@ -153,22 +153,24 @@ function TaskRow({
                 : <Circle className="w-4 h-4 text-slate-600 hover:text-slate-400 transition-colors" />}
           </button>
 
-          <div className="flex flex-col gap-1 min-w-0">
-            <p className={`text-sm leading-normal pb-1 truncate ${task.done ? "line-through text-slate-500" : isQueued ? "text-slate-400" : "text-white"}`}>
+          <div className="flex flex-col min-w-0">
+            <p className={`text-sm leading-normal truncate ${task.done ? "line-through text-slate-500" : isQueued ? "text-slate-400" : "text-white"}`}>
               {task.title}
             </p>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {task.urgency === "urgent" && (
-                <span className="text-[11px] leading-none" title="Urgent">🔥</span>
-              )}
-              {task.priority && <Pill label={task.priority} className={PRIORITY_STYLE[task.priority]} />}
-              {task.energy   && <Pill label={task.energy}   className={ENERGY_STYLE[task.energy]}     />}
-              {task.deadline && (
-                <span className="text-[10px] text-slate-500">
-                  {new Date(task.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </span>
-              )}
-            </div>
+            {(task.urgency === "urgent" || task.priority || task.energy || task.deadline) && (
+              <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                {task.urgency === "urgent" && (
+                  <span className="text-[11px] leading-none" title="Urgent">🔥</span>
+                )}
+                {task.priority && <Pill label={task.priority} className={PRIORITY_STYLE[task.priority]} />}
+                {task.energy   && <Pill label={task.energy}   className={ENERGY_STYLE[task.energy]}     />}
+                {task.deadline && (
+                  <span className="text-[10px] text-slate-500">
+                    {new Date(task.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

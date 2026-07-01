@@ -1471,7 +1471,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
                 id: _id, user_id: agentUid,
                 sphere_id: agentSphereId(task.sphere),
                 project_id: agentProjectId(task.project, task.sphere),
-                title: task.title, priority: task.priority ?? "Med", energy: task.energy ?? "Easy",
+                title: task.title, priority: task.priority, energy: task.energy,
                 urgency: task.urgency ?? "not-urgent", done: task.done ?? false,
                 deadline: task.deadline ?? null, notes: task.notes ?? "",
                 manual_minutes: task.manualMinutes ?? 0, queued_date: task.queuedDate ?? null,
@@ -1908,15 +1908,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             return;
           }
           if (db && uid) {
-            Promise.resolve(db.from("tasks").insert({
+            const insertPayload = {
               id: _id, user_id: uid,
               sphere_id: getSphereId(task.sphere),
               project_id: projectId ?? getProjectId(task.project, task.sphere),
               title: task.title,
-              // Omit priority/energy entirely when unset — sending an explicit null
-              // trips Postgres CHECK constraints on pre-migration schemas; omitting
-              // the key lets the DB use its column default (pre-migration) or NULL
-              // (post-migration once DROP DEFAULT + DROP NOT NULL are applied).
               ...(task.priority ? { priority: task.priority } : {}),
               ...(task.energy   ? { energy:   task.energy   } : {}),
               urgency: task.urgency ?? "not-urgent", done: task.done,
@@ -1925,7 +1921,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
               time_spent_minutes: task.timeSpentMinutes ?? 0, intent: task.intent ?? "finish",
               daily_target_minutes: task.dailyTargetMinutes ?? null,
               rollover_count: task.rolloverCount ?? 0, daily_tracking: task.dailyTracking ?? {},
-            })).then(({ error: insertError }) => {
+            };
+            console.log("👉 RAW INSERT PAYLOAD:", insertPayload);
+            Promise.resolve(db.from("tasks").insert(insertPayload)).then(({ error: insertError }) => {
               if (insertError) {
                 console.error("[addTask] Supabase insert failed — full error:", insertError);
                 return;

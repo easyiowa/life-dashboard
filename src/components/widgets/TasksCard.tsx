@@ -102,7 +102,7 @@ export default function TasksCard() {
               <div
                 key={task.id}
                 onClick={() => setInspectTask(task)}
-                className={`group flex items-center gap-3 px-4 min-h-[4rem] rounded-xl border transition-all duration-200 cursor-pointer ${
+                className={`group flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 cursor-pointer ${
                   isActive
                     ? "border-violet-500/30 bg-violet-600/[0.07]"
                     : task.done
@@ -122,21 +122,23 @@ export default function TasksCard() {
                   )}
                 </button>
 
-                <div className="flex flex-col flex-1 min-w-0 gap-1">
-                  <p className={`text-sm text-white leading-none ${task.done ? "line-through text-slate-500" : ""}`}>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <p className={`text-sm text-white leading-snug ${task.done ? "line-through text-slate-500" : ""}`}>
                     {task.title}
                   </p>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] text-slate-600">{task.project}</span>
-                    {(task.priority || task.energy) && <span className="text-slate-700">·</span>}
-                    {task.priority && <Pill label={task.priority} className={PRIORITY_STYLE[task.priority]} />}
-                    {task.energy   && <Pill label={task.energy}   className={ENERGY_STYLE[task.energy]}    />}
-                    {task.deadline && (
-                      <span className="text-[10px] text-slate-500">
-                        {new Date(task.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </span>
-                    )}
-                  </div>
+                  {(task.priority || task.energy || task.deadline || task.project) && (
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                      <span className="text-[10px] text-slate-600">{task.project}</span>
+                      {(task.priority || task.energy) && <span className="text-slate-700">·</span>}
+                      {task.priority && <Pill label={task.priority} className={PRIORITY_STYLE[task.priority]} />}
+                      {task.energy   && <Pill label={task.energy}   className={ENERGY_STYLE[task.energy]}    />}
+                      {task.deadline && (
+                        <span className="text-[10px] text-slate-500">
+                          {new Date(task.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {!task.done && (
