@@ -245,7 +245,7 @@ function QueueRow({ task, onInspect }: { task: Task; onInspect: (t: Task) => voi
           {isComplete && <Check className="w-2.5 h-2.5 text-emerald-300" />}
         </button>
         {isThisTaskActive && <Zap className="w-3 h-3 text-violet-400 flex-shrink-0" />}
-        <span className={`text-sm flex-1 leading-none truncate ${isComplete ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
+        <span className={`text-sm flex-1 leading-normal pb-0.5 truncate ${isComplete ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
           {task.title}
         </span>
         {totalFocusMinutes > 0 && (
@@ -714,7 +714,7 @@ function BirthdayRows() {
             >
               {done && <Check className="w-2.5 h-2.5 text-emerald-300" />}
             </button>
-            <span className={`flex-1 text-sm leading-none truncate ${done ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
+            <span className={`flex-1 text-sm leading-normal pb-0.5 truncate ${done ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
               🎂 {c.name}
             </span>
             <button
@@ -759,7 +759,7 @@ function AddedRecurringRows({ items, onRemove }: { items: RecurringTask[]; onRem
             >
               {done && <Check className="w-2.5 h-2.5 text-emerald-300" />}
             </button>
-            <span className={`flex-1 text-sm leading-none truncate ${done ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
+            <span className={`flex-1 text-sm leading-normal pb-0.5 truncate ${done ? "line-through text-emerald-300/60" : "text-white font-medium"}`}>
               ♻️ {rt.title}
             </span>
             <button

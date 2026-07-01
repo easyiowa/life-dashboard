@@ -1256,9 +1256,10 @@ function MarketplaceStep({
   nickname: string;
   onNext: (widgets: string[]) => void;
 }) {
-  const [userPicked, setUserPicked] = useState<Set<string>>(new Set());
-  const [hoveredId,  setHoveredId]  = useState<string | null>(null);
-  const [flashedId,  setFlashedId]  = useState<string | null>(null);
+  const [userPicked,     setUserPicked]     = useState<Set<string>>(new Set());
+  const [hoveredId,      setHoveredId]      = useState<string | null>(null);
+  const [flashedId,      setFlashedId]      = useState<string | null>(null);
+  const [showEmptyHint,  setShowEmptyHint]  = useState(false);
 
   // Expand userPicked transitively — daily-focus → projects → progress resolves in one pass.
   const selected: string[] = (() => {
@@ -1380,13 +1381,33 @@ function MarketplaceStep({
         {allSelected ? "Deselect All Widgets" : "Select All Widgets"}
       </button>
 
-      <button
-        onClick={() => onNext(selected)}
-        className="w-full h-12 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)]"
-        style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+      {/* Wrapper intercepts pointer events so hover/tap reveals the hint even on a disabled button */}
+      <div
+        className="flex flex-col gap-2"
+        onMouseEnter={() => { if (selected.length === 0) setShowEmptyHint(true); }}
+        onMouseLeave={() => setShowEmptyHint(false)}
+        onClick={() => { if (selected.length === 0) setShowEmptyHint(true); }}
       >
-        Continue <ArrowRight className="w-4 h-4" />
-      </button>
+        <button
+          type="button"
+          onClick={() => { if (selected.length > 0) onNext(selected); }}
+          disabled={selected.length === 0}
+          className={`w-full h-12 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all ${
+            selected.length === 0
+              ? "opacity-50 cursor-not-allowed"
+              : "shadow-[0_0_24px_rgba(139,92,246,0.3)]"
+          }`}
+          style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+        >
+          Continue <ArrowRight className="w-4 h-4" />
+        </button>
+
+        {showEmptyHint && selected.length === 0 && (
+          <p className="text-xs text-center text-amber-400/80 leading-snug">
+            Please select at least one widget to build your initial dashboard.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

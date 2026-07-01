@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield, MessageSquare, Sun, Moon, Smartphone } from "lucide-react";
+import { X, User, Mail, Calendar, Lock, KeyRound, LogOut, Eye, EyeOff, Loader2, LayoutGrid, Crown, Users, Shield, MessageSquare, Sun, Moon, Smartphone, Pencil } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
@@ -100,9 +100,11 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
   const { openInstallModal } = usePWAInstaller();
   useModalOverlay(isOpen);
 
-  const [displayName, setDisplayName] = useState("");
-  const [nameLoading, setNameLoading] = useState(false);
-  const [nameToast,   setNameToast]   = useState<Toast | null>(null);
+  const [displayName,   setDisplayName]   = useState("");
+  const [savedName,     setSavedName]     = useState("");
+  const [nameEditing,   setNameEditing]   = useState(false);
+  const [nameLoading,   setNameLoading]   = useState(false);
+  const [nameToast,     setNameToast]     = useState<Toast | null>(null);
 
   const [newPwd,     setNewPwd]     = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
@@ -111,9 +113,11 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
 
   const [signOutLoading, setSignOutLoading] = useState(false);
 
-  const [pinEnabled, setPinEnabled] = useState(false);
-  const [pinValue,   setPinValue]   = useState("");
-  const [pinToast,   setPinToast]   = useState<Toast | null>(null);
+  const [pinEnabled,      setPinEnabled]      = useState(false);
+  const [savedPinEnabled, setSavedPinEnabled] = useState(false);
+  const [pinValue,        setPinValue]        = useState("");
+  const [savedPinValue,   setSavedPinValue]   = useState("");
+  const [pinToast,        setPinToast]        = useState<Toast | null>(null);
 
   const [widgetMarketplaceOpen, setWidgetMarketplaceOpen] = useState(false);
   const [pendingWidgets,        setPendingWidgets]        = useState<string[]>(ALL_IDS);
@@ -148,14 +152,21 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
   // Seed state from user metadata + localStorage when modal opens
   useEffect(() => {
     if (isOpen) {
-      setDisplayName(user?.user_metadata?.display_name ?? "");
+      const initialName = user?.user_metadata?.display_name ?? "";
+      setDisplayName(initialName);
+      setSavedName(initialName);
+      setNameEditing(false);
       setNameToast(null);
       setPwdToast(null);
       setPinToast(null);
       setNewPwd("");
       setConfirmPwd("");
-      setPinEnabled(localStorage.getItem(PIN_ENABLED_KEY) === "true");
-      setPinValue(localStorage.getItem(PIN_VALUE_KEY) ?? "");
+      const storedPinEnabled = localStorage.getItem(PIN_ENABLED_KEY) === "true";
+      const storedPinValue   = localStorage.getItem(PIN_VALUE_KEY) ?? "";
+      setPinEnabled(storedPinEnabled);
+      setSavedPinEnabled(storedPinEnabled);
+      setPinValue(storedPinValue);
+      setSavedPinValue(storedPinValue);
       setWidgetMarketplaceOpen(false);
 
       // Seed widget selection from saved layout
@@ -169,8 +180,6 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
 
       setQuickActionsConfig(loadQuickActionsConfig(user));
       setQuickActionsOpen(false);
-
-      setTimeout(() => nameInputRef.current?.focus(), 50);
     }
   }, [isOpen, user]);
 
@@ -207,6 +216,12 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
 
   if (!isOpen) return null;
 
+  // Save button appears only when the PIN toggle has drifted from the persisted state,
+  // or when the PIN value itself has changed (while already enabled).
+  const pinDirty =
+    pinEnabled !== savedPinEnabled ||
+    (pinEnabled && pinValue !== savedPinValue);
+
   const email       = user?.email ?? "—";
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -224,10 +239,13 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
     setNameLoading(true);
     const { error } = await updateDisplayName(displayName.trim());
     setNameLoading(false);
-    setNameToast(error
-      ? { type: "error",   message: error }
-      : { type: "success", message: "Display name updated successfully." }
-    );
+    if (error) {
+      setNameToast({ type: "error", message: error });
+    } else {
+      setNameToast({ type: "success", message: "Display name updated." });
+      setSavedName(displayName.trim());
+      setNameEditing(false);
+    }
   }
 
   async function handleChangePassword() {
@@ -252,6 +270,8 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
     }
     localStorage.setItem(PIN_ENABLED_KEY, String(pinEnabled));
     if (pinEnabled) localStorage.setItem(PIN_VALUE_KEY, pinValue);
+    setSavedPinEnabled(pinEnabled);
+    setSavedPinValue(pinEnabled ? pinValue : "");
     setPinToast({ type: "success", message: pinEnabled ? "Lock screen PIN saved." : "Lock screen PIN disabled." });
   }
 
@@ -304,41 +324,10 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
 
         <div className="px-6 py-5 flex flex-col gap-6">
 
-          {/* ── 1. Profile ────────────────────────────────────────── */}
-          {isConfigured && (
-            <section>
-              <SectionHeading icon={User} label="Profile" />
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Display Name</label>
-                  <input
-                    ref={nameInputRef}
-                    type="text"
-                    value={displayName}
-                    onChange={e => setDisplayName(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") handleSaveName(); }}
-                    placeholder="Your name"
-                    autoComplete="name"
-                    className="h-10 px-3.5 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
-                  />
-                </div>
-                <ToastBanner toast={nameToast} />
-                <button
-                  onClick={handleSaveName}
-                  disabled={nameLoading}
-                  className="h-9 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
-                  style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
-                >
-                  {nameLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Name"}
-                </button>
-              </div>
-            </section>
-          )}
 
-          {/* ── Security (email accounts only — bundled divider) ── */}
+          {/* ── Security (email accounts only) ───────────────────── */}
           {isConfigured && !isOAuthUser && (
             <>
-              <div className="h-px bg-white/[0.06]" />
               <section>
                 <SectionHeading icon={Lock} label="Security" />
                 <div className="flex flex-col gap-3">
@@ -535,22 +524,84 @@ export default function SettingsModal({ isOpen, onClose, onOpenBlueprint }: Prop
                 </div>
               )}
               <ToastBanner toast={pinToast} />
-              <button
-                onClick={handleSavePin}
-                className="h-9 rounded-xl text-sm font-semibold text-white transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
-                style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+              {/* Save button slides in only when the toggle/PIN has drifted from the saved state */}
+              <div
+                className={`overflow-hidden transition-all duration-200 ease-out ${
+                  pinDirty ? "max-h-12 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+                }`}
               >
-                Save Lock Settings
-              </button>
+                <button
+                  onClick={handleSavePin}
+                  className="w-full h-9 rounded-xl text-sm font-semibold text-white transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                  style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+                >
+                  Save Lock Settings
+                </button>
+              </div>
             </div>
           </section>
 
           <div className="h-px bg-white/[0.06]" />
 
-          {/* ── 5. Account Info (read-only) ───────────────────────── */}
+          {/* ── 5. Account Info ───────────────────────────────────── */}
           <section>
             <SectionHeading icon={Mail} label="Account Info" />
             <div className="flex flex-col gap-2.5">
+
+              {/* Display Name — editable; Save button appears only when the user has made a change */}
+              {isConfigured && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Display Name</label>
+                  <div className="relative">
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      value={displayName}
+                      onChange={e => { setDisplayName(e.target.value); setNameEditing(true); }}
+                      onClick={() => setNameEditing(true)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") handleSaveName();
+                        if (e.key === "Escape") { setDisplayName(savedName); setNameEditing(false); nameInputRef.current?.blur(); }
+                      }}
+                      placeholder="Your name"
+                      autoComplete="name"
+                      className="w-full h-10 px-3.5 pr-9 rounded-xl bg-white/[0.04] border border-white/[0.07] text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-500/60 focus:bg-white/[0.06] transition-colors"
+                    />
+                    {/* Pencil icon — signals the field is editable; hidden once editing is active */}
+                    <button
+                      type="button"
+                      onClick={() => { setNameEditing(true); nameInputRef.current?.focus(); }}
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-all duration-150 ${
+                        nameEditing ? "opacity-0 pointer-events-none" : "opacity-50 hover:opacity-100"
+                      }`}
+                      tabIndex={-1}
+                      aria-label="Edit display name"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Save Name button + toast — slides in only when editing is active */}
+                  <div
+                    className={`overflow-hidden transition-all duration-200 ease-out ${
+                      nameEditing ? "max-h-24 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-2 pt-0.5">
+                      <ToastBanner toast={nameToast} />
+                      <button
+                        onClick={handleSaveName}
+                        disabled={nameLoading}
+                        className="h-9 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                        style={{ background: "linear-gradient(to right, #8B5CF6, #7C3AED)" }}
+                      >
+                        {nameLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Name"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Email</span>
                 <span className="text-sm text-slate-300 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3.5 py-2.5">{email}</span>
