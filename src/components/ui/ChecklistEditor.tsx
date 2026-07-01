@@ -245,7 +245,22 @@ const ChecklistEditor = forwardRef<ChecklistEditorHandle, ChecklistEditorProps>(
 
     const sel = window.getSelection();
     const container = getLineContainer(editor, sel);
-    if (!container || container.classList?.contains("qn-check-line")) return;
+    if (!container) return;
+
+    // Cross-format: To-Do → Bullet (convert instead of no-op)
+    if (container.classList?.contains("qn-check-line")) {
+      const textSpan = container.querySelector(".qn-check-text");
+      const plainLine = document.createElement("div");
+      if (textSpan) {
+        while (textSpan.firstChild) plainLine.appendChild(textSpan.firstChild);
+      }
+      if (!plainLine.hasChildNodes()) plainLine.appendChild(document.createElement("br"));
+      plainLine.insertBefore(document.createTextNode(BULLET_GLYPH), plainLine.firstChild);
+      container.replaceWith(plainLine);
+      placeCursor(plainLine, false);
+      emitChange();
+      return;
+    }
 
     // Toggle off: cursor is already on a bullet line → strip the "• " prefix
     if (BULLET_LINE_RE.test(container.textContent ?? "")) {

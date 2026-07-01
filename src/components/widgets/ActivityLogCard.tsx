@@ -297,7 +297,7 @@ export default function ActivityLogCard() {
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-violet-400" />
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-            Activity Log
+            Focus Sessions 
           </h2>
         </div>
         <span className="text-xs text-slate-500">

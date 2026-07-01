@@ -353,7 +353,7 @@ function TaskPicker({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex flex-col gap-2 p-3 rounded-xl border border-violet-500/20 bg-violet-600/[0.04]">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-widest">Add from backlog</span>
+        <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-widest">Tasks from Project Widget</span>
         <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
@@ -977,7 +977,7 @@ export default function DailyFocusQueueCard() {
           {commitments.length === 0 && maybes.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <Target className="w-6 h-6 text-slate-700" />
-              <p className="text-xs text-slate-600">No tasks queued for today.</p>
+              <p className="text-xs text-slate-600">Plan your day, add existing tasks.</p>
               {showPicker
                 ? <TaskPicker onClose={() => setShowPicker(false)} />
                 : (
@@ -985,7 +985,7 @@ export default function DailyFocusQueueCard() {
                     onClick={() => setShowPicker(true)}
                     className="flex items-center gap-1.5 justify-center h-7 px-4 rounded-xl border border-dashed border-white/[0.10] text-[11px] text-slate-600 hover:text-slate-300 hover:border-white/[0.20] transition-all duration-150"
                   >
-                    + Plan a task for today
+                    + Add a task
                   </button>
                 )}
             </div>
